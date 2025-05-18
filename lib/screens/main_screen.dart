@@ -6,11 +6,8 @@ class MainScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Main Screen'),
-      ),
       body: const Center(
-        child: Text('Welcome to the main screen!'),
+        child: Text('메인페이지'),
       ),
     );
   }

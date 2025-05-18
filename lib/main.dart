@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:stockapp/routes/TabView.dart';
+import 'package:stockapp/screens/login_screen.dart';
 import 'screens/main_screen.dart';
 
 void main() {
@@ -15,7 +17,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MainScreen(),  // MainScreen 호출
+      home: const LoginScreen(),  // MainScreen 호출
     );
   }
 }
