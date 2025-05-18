@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:stockapp/routes/TabView.dart';
 import 'package:stockapp/screens/login_screen.dart';
-import 'screens/main_screen.dart';
+
 
 void main() {
   runApp(const MyApp());
