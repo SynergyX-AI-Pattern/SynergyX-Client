@@ -3,10 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
-void main() => runApp(const MyApp());
+void main() => runApp(const ChartScreen());
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class ChartScreen extends StatelessWidget {
+  const ChartScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
