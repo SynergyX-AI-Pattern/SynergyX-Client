@@ -1,9 +1,113 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
 
 void main() => runApp(const MyApp());
+
+class PatternDetailPage extends StatelessWidget {
+  final String patternJson;
+  final File imageFile;
+
+  const PatternDetailPage({super.key, required this.patternJson, required this.imageFile});
+
+  @override
+  Widget build(BuildContext context) {
+    final Map<String, dynamic> data = jsonDecode(patternJson);
+    final interval = data['interval'].toString();
+    final tolerance = double.parse(data['tolerance'].toString());
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('패턴 상세 보기'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: () async {
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (dialogContext) => AlertDialog(
+                  title: const Text('삭제 확인'),
+                  content: const Text('이 패턴을 삭제하시겠습니까?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(dialogContext, false),
+                      child: const Text('취소'),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        Navigator.pop(dialogContext, true);
+
+                        final ts = data['timestamp'];
+                        final dir = await getApplicationDocumentsDirectory();
+                        final imageFile = File('${dir.path}/pattern_$ts.png');
+                        final jsonFile = File('${dir.path}/pattern_$ts.json');
+
+                        await Future.wait([
+                          if (await imageFile.exists()) imageFile.delete(),
+                          if (await jsonFile.exists()) jsonFile.delete(),
+                        ]);
+
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (Navigator.canPop(context)) {
+                            Navigator.pop(context, true);
+                          }
+                        });
+                      },
+                      child: const Text('삭제'),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirmed == true) {
+                final ts = data['timestamp'];
+                final dir = await getApplicationDocumentsDirectory();
+                final imageFile = File('${dir.path}/pattern_$ts.png');
+                final jsonFile = File('${dir.path}/pattern_$ts.json');
+
+                await Future.wait([
+                  if (await imageFile.exists()) imageFile.delete(),
+                  if (await jsonFile.exists()) jsonFile.delete(),
+                ]);
+
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (Navigator.canPop(context)) {
+                    Navigator.pop(context, true);
+                  }
+                });
+              }
+            },
+          )
+        ],
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: imageFile.existsSync() ? Image.file(imageFile, fit: BoxFit.contain)
+                  : const Center(child: Icon(Icons.image_not_supported, size: 50)),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('시간 간격: $interval분', style: const TextStyle(fontSize: 16)),
+                const SizedBox(height: 8),
+                Text('오차 범위: ${(tolerance * 100).toStringAsFixed(0)}%', style: const TextStyle(fontSize: 16)),
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -25,6 +129,7 @@ class PatternListPage extends StatefulWidget {
 
 class _PatternListPageState extends State<PatternListPage> {
   List<String> savedPatterns = [];
+  List<File> previewImages = [];
 
   @override
   void initState() {
@@ -37,8 +142,23 @@ class _PatternListPageState extends State<PatternListPage> {
     final file = File('${dir.path}/pattern_list.json');
     if (await file.exists()) {
       final content = await file.readAsString();
+      final patterns = List<String>.from(jsonDecode(content));
+
+      final previews = <File>[];
+      for (var p in patterns) {
+        final json = jsonDecode(p);
+        final ts = json['timestamp'];
+        final imgFile = File('${dir.path}/pattern_$ts.png');
+        if (await imgFile.exists()) {
+          previews.add(imgFile);
+        } else {
+          previews.add(File(''));
+        }
+      }
+
       setState(() {
-        savedPatterns = List<String>.from(jsonDecode(content));
+        savedPatterns = patterns;
+        previewImages = previews;
       });
     }
   }
@@ -55,8 +175,14 @@ class _PatternListPageState extends State<PatternListPage> {
       MaterialPageRoute(builder: (context) => const InteractiveGridGraph()),
     );
     if (result != null) {
+      final json = jsonDecode(result);
+      final ts = json['timestamp'];
+      final dir = await getApplicationDocumentsDirectory();
+      final imgFile = File('${dir.path}/pattern_$ts.png');
+
       setState(() {
         savedPatterns.add(result);
+        previewImages.add(imgFile);
       });
       _savePatternList();
     }
@@ -67,11 +193,38 @@ class _PatternListPageState extends State<PatternListPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('패턴 목록')),
       body: ListView.builder(
-        itemCount: savedPatterns.length,
-        itemBuilder: (context, index) => ListTile(
-          title: Text('패턴 ${index + 1}'),
-          subtitle: Text(savedPatterns[index]),
-        ),
+        itemCount: previewImages.length,
+        itemBuilder: (context, index) {
+          return GestureDetector(
+            onTap: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PatternDetailPage(
+                    patternJson: savedPatterns[index],
+                    imageFile: previewImages[index],
+                  ),
+                ),
+              );
+              if (result == true) {
+                setState(() {
+                  savedPatterns.removeAt(index);
+                  previewImages.removeAt(index);
+                });
+                _savePatternList();
+              }
+            },
+            child: Card(
+              margin: const EdgeInsets.all(8.0),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: previewImages[index].existsSync()
+                    ? Image.file(previewImages[index], fit: BoxFit.cover)
+                    : const Icon(Icons.image_not_supported, size: 50),
+              ),
+            ),
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateToCreatePattern,
@@ -95,39 +248,77 @@ class _InteractiveGridGraphState extends State<InteractiveGridGraph> {
   int? selectedIndex;
   double interval = 1.0;
   double tolerance = 1.0;
+  final GlobalKey _repaintKey = GlobalKey();
+  late int timestamp;
 
   @override
   void initState() {
     super.initState();
+    timestamp = DateTime.now().millisecondsSinceEpoch;
     _initializePoints();
   }
 
   void _initializePoints() {
-    points = List.generate(
-      7,
-          (i) => Offset(i * spacing, spacing * 6), // x축 시간, y축 100%에서 시작
-    );
+    // 초기에는 첫번째와 마지막 점만 포함
+    points = [
+      Offset(0, spacing * 6),
+      Offset((gridSize - 1) * spacing, spacing * 6),
+    ];
   }
 
-  void _savePattern() {
+  Future<void> _captureAndSaveImage() async {
+    try {
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      final boundary = _repaintKey.currentContext?.findRenderObject();
+      if (boundary is! RenderRepaintBoundary) {
+        debugPrint('RepaintBoundary not found or not ready.');
+        return;
+      }
+
+      if (boundary.debugNeedsPaint) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+
+      final image = await boundary.toImage(pixelRatio: 3.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final pngBytes = byteData!.buffer.asUint8List();
+
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File('${dir.path}/pattern_$timestamp.png');
+      await file.writeAsBytes(pngBytes);
+    } catch (e, stackTrace) {
+      debugPrint('이미지 저장 실패: $e');
+      debugPrint('StackTrace: $stackTrace');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('이미지 저장에 실패했습니다.')),
+        );
+      }
+    }
+  }
+
+  void _savePattern() async {
     final jsonData = {
+      'timestamp': timestamp,
       'interval': interval,
       'tolerance': tolerance,
       'points': points.map((e) => {'x': e.dx, 'y': e.dy}).toList(),
     };
 
-    getApplicationDocumentsDirectory().then((dir) async {
-      final file = File('${dir.path}/pattern_${DateTime.now().millisecondsSinceEpoch}.json');
-      await file.writeAsString(jsonEncode(jsonData));
+    final dir = await getApplicationDocumentsDirectory();
+    final file = File('${dir.path}/pattern_$timestamp.json');
+    await file.writeAsString(jsonEncode(jsonData));
 
-      if (!mounted) return;
-      Navigator.pop(context, jsonEncode(jsonData));
-    });
+    await _captureAndSaveImage();
+
+    if (!mounted) return;
+    Navigator.pop(context, jsonEncode(jsonData));
   }
 
   @override
   Widget build(BuildContext context) {
-    final double size = spacing * (gridSize - 1);
+    final double canvasSize = spacing * (gridSize - 1);
 
     return Scaffold(
       appBar: AppBar(title: const Text('패턴 설정')),
@@ -156,6 +347,7 @@ class _InteractiveGridGraphState extends State<InteractiveGridGraph> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
+                    const SizedBox(height: 12),
                     const Text('오차 범위: '),
                     const SizedBox(width: 12),
                     DropdownButton<double>(
@@ -178,87 +370,110 @@ class _InteractiveGridGraphState extends State<InteractiveGridGraph> {
               ],
             ),
           ),
-          Expanded(
-            child: Center(
-              child: SizedBox(
-                width: size,
-                height: size,
-                child: GestureDetector(
-                  onPanStart: (details) {
-                    final box = context.findRenderObject() as RenderBox;
-                    final localPos = box.globalToLocal(details.globalPosition);
 
-                    // GestureDetector 좌표 → CustomPaint 좌표로 변환
-                    final size = spacing * (gridSize - 1);
-                    final Offset offsetToCenter = Offset(
-                      (box.size.width - size) / 2,
-                      (box.size.height - size) / 2,
-                    );
-
-                    final customPaintPos = localPos - offsetToCenter;
-
-                    for (int i = 0; i < points.length; i++) {
-                      if ((points[i] - customPaintPos).distance < 15) {
-                        setState(() {
-                          selectedIndex = i;
-                        });
-                        break;
-                      }
-                    }
-                  },
-
-                  onPanUpdate: (details) {
-                    if (selectedIndex != null) {
-                      final box = context.findRenderObject() as RenderBox;
-                      final localPos = box.globalToLocal(details.globalPosition);
-
-                      // GestureDetector 좌표 → CustomPaint 좌표로 변환
-                      final size = spacing * (gridSize - 1);
-                      final Offset offsetToCenter = Offset(
-                        (box.size.width - size) / 2,
-                        (box.size.height - size) / 2,
-                      );
-
-                      final customPaintPos = localPos - offsetToCenter;
-
-                      final clampedY = customPaintPos.dy.clamp(0.0, spacing * 6).toDouble();
-
-                      setState(() {
-                        final dx = points[selectedIndex!].dx;
-                        points[selectedIndex!] = Offset(dx, clampedY);
-
-                        if (selectedIndex == 0) {
-                          final baseY = clampedY;
+    Expanded(
+    child: Column(
+    children: [
+    Row(
+    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    children: List.generate(gridSize, (i) {
+    return Column(
+    children: [
+    GestureDetector(
+    onTap: () {
+    final existing = points.where((p) => p.dx == i * spacing).length;
+    if (existing < 3 && points.length < 10) {
+    setState(() {
+    points.add(Offset(i * spacing, spacing * (gridSize - 1)));
+    points.sort((a, b) => a.dx.compareTo(b.dx));
+    });
+    }
+    },
+    child: const Text("➕", style: TextStyle(fontSize: 20)),
+    ),
+    const SizedBox(height: 4),
+    GestureDetector(
+    onTap: () {
+      final columnPoints = points.where((p) => p.dx == i * spacing).toList();
+      final isFirstColumn = i == 0;
+      final isLastColumn = i == gridSize - 1;
+      final mustKeepAtLeastOne = isFirstColumn || isLastColumn;
+      if (columnPoints.length > (mustKeepAtLeastOne ? 1 : 0)) {
+    setState(() {
+    points.remove(columnPoints.last);
+    });
+    }
+    },
+    child: const Text("➖", style: TextStyle(fontSize: 20)),
+    ),
+    ],
+    );
+    }),
+    ),
+    const SizedBox(height: 8),
+    Expanded(
+    child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Center(
+                  child: SizedBox(
+                    width: canvasSize,
+                    height: canvasSize,
+                    child: RepaintBoundary(
+                      key: _repaintKey,
+                      child: GestureDetector(
+                        onPanStart: (details) {
+                          final localPos = details.localPosition;
                           for (int i = 0; i < points.length; i++) {
-                            final newRelativeY =
-                            (points[i].dy - baseY).clamp(0.0, spacing * 6).toDouble();
-                            points[i] = Offset(points[i].dx, newRelativeY);
+                            if ((points[i] - localPos).distance < 15) {
+                              setState(() {
+                                selectedIndex = i;
+                              });
+                              break;
+                            }
                           }
-                          points[0] = Offset(dx, 0);
-                        }
-                      });
-                    }
-                  },
+                        },
+                        onPanUpdate: (details) {
+                          if (selectedIndex != null) {
+                            final localPos = details.localPosition;
+                            final fixedX = points[selectedIndex!].dx;
+                            final clampedY = localPos.dy.clamp(0.0, spacing * (gridSize - 1));
+                            final snappedY = (clampedY / spacing).round() * spacing;
 
-                  onPanEnd: (_) => setState(() => selectedIndex = null),
-                  child: CustomPaint(
-                    painter: GridPainter(
-                      points: points,
-                      gridSize: gridSize,
-                      spacing: spacing,
-                      selectedIndex: selectedIndex,
+                            setState(() {
+                              points[selectedIndex!] = Offset(fixedX, snappedY);
+                            });
+                          }
+                        },
+                        onPanEnd: (_) => setState(() => selectedIndex = null),
+                        child: Stack(
+                          children: [
+                            CustomPaint(
+                              size: Size(canvasSize, canvasSize),
+                              painter: GridPainter(
+                                points: points,
+                                gridSize: gridSize,
+                                spacing: spacing,
+                                selectedIndex: selectedIndex,
+                              ),
+                            ),
+
+                          ],
+                        ),
+                      ),
                     ),
-                    size: Size(size, size),
                   ),
-                ),
-              ),
+                );
+              },
             ),
           ),
+
         ],
+      ),
+    ),
+    ]
       ),
     );
   }
-
 }
 
 class GridPainter extends CustomPainter {
@@ -304,4 +519,3 @@ class GridPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
-
