@@ -1,9 +1,83 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
+import 'search_screen.dart';
+
+
+
+/// Computes the Dynamic Time Warping (DTW) distance between two lists of doubles.
+double computeDTW(List<double> a, List<double> b) {
+  int n = a.length;
+  int m = b.length;
+  List<List<double>> dp = List.generate(n + 1, (_) => List.filled(m + 1, double.infinity));
+  dp[0][0] = 0;
+
+  for (int i = 1; i <= n; i++) {
+    for (int j = 1; j <= m; j++) {
+      double cost = (a[i - 1] - b[j - 1]).abs();
+      dp[i][j] = cost + [dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]].reduce(min);
+    }
+  }
+
+  return dp[n][m];
+}
+
+/// Converts a list of Offset points into normalized Y-values (0.0 to 1.0) for DTW comparison.
+List<double> normalizeYPoints(List<Offset> points, double maxHeight) {
+  return points.map((e) => 1.0 - (e.dy / maxHeight)).toList();
+}
+
+
+Future<List<Offset>> loadPatternPointsFromJson(File jsonFile) async {
+  final content = await jsonFile.readAsString();
+  final data = jsonDecode(content);
+  final List<dynamic> pointsData = data['points'];
+  return pointsData.map((p) => Offset(p['x'].toDouble(), p['y'].toDouble())).toList();
+}
+
+/// Compares user pattern with stock chart segments and returns DTW matches below a threshold.
+Future<List<int>> findMatchingSegments({
+  required List<double> chartData,
+  required List<double> pattern,
+  required double threshold,
+}) async {
+  List<int> matchingIndices = [];
+  int windowSize = pattern.length;
+
+  for (int i = 0; i <= chartData.length - windowSize; i++) {
+    List<double> segment = chartData.sublist(i, i + windowSize);
+    double distance = computeDTW(pattern, segment);
+    if (distance < threshold) {
+      matchingIndices.add(i);
+    }
+  }
+
+  return matchingIndices;
+}
+
+/// Simulates real-time data and triggers callback when a pattern match is detected.
+void monitorLiveChart({
+  required Stream<List<double>> liveChartStream,
+  required List<double> pattern,
+  required double threshold,
+  required void Function(int index, double score) onMatch,
+}) {
+  int windowSize = pattern.length;
+
+  liveChartStream.listen((data) {
+    if (data.length >= windowSize) {
+      List<double> segment = data.sublist(data.length - windowSize);
+      double distance = computeDTW(pattern, segment);
+      if (distance < threshold) {
+        onMatch(data.length - windowSize, distance);
+      }
+    }
+  });
+}
 
 class PatternDetailPage extends StatelessWidget {
   final String patternJson;
@@ -95,7 +169,75 @@ class PatternDetailPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('시간 간격: $interval분', style: const TextStyle(fontSize: 16)),
+                Row(
+                  children: [
+                    const Text('적용 종목: '),
+                    const SizedBox(width: 12),
+                    (data['stocks'] != null && data['stocks'] is List && (data['stocks'] as List).isNotEmpty)
+                        ? Wrap(
+                        spacing: 8,
+                        children: List<Widget>.from((data['stocks'] as List).map((s) => Chip(label: Text(s), onDeleted: () async {
+                          final ts = data['timestamp'];
+                          final updatedData = jsonDecode(await File('${(await getApplicationDocumentsDirectory()).path}/pattern_${data['timestamp']}.json').readAsString());
+                          if (updatedData['stocks'] == null || updatedData['stocks'] is! List) {
+                            updatedData['stocks'] = [];
+                          }
+                          final stock = s.toString();
+                          final current = List<String>.from(updatedData['stocks']);
+                          current.remove(stock);
+                          updatedData['stocks'] = current;
+
+                          final file = File('${(await getApplicationDocumentsDirectory()).path}/pattern_$ts.json');
+                          await file.writeAsString(jsonEncode(updatedData));
+
+                          if (!context.mounted) return;
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => PatternDetailPage(patternJson: jsonEncode(updatedData), imageFile: imageFile),
+                            ),
+                          );
+                        })))
+                    )
+                        : const Text('없음'),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      onPressed: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const StockSearchPage(),
+                          ),
+                        );
+                        if (result != null && result is String) {
+                          final updatedData = Map<String, dynamic>.from(data);
+                          if (updatedData['stocks'] == null || updatedData['stocks'] is! List) {
+                            updatedData['stocks'] = [];
+                          }
+                          final current = List<String>.from(updatedData['stocks']);
+                          if (!current.contains(result)) {
+                            current.add(result);
+                          }
+                          updatedData['stocks'] = current;                          final dir = await getApplicationDocumentsDirectory();
+                          final ts = data['timestamp'];
+                          final file = File('${dir.path}/pattern_$ts.json');
+                          await file.writeAsString(jsonEncode(updatedData));
+
+                          if (!context.mounted) return;
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => PatternDetailPage(patternJson: jsonEncode(updatedData), imageFile: imageFile),
+                            ),
+                          );
+                        }
+                      },
+                      child: const Text('종목 변경'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text('시간 간격: ${interval.toString()}분', style: const TextStyle(fontSize: 16)),
                 const SizedBox(height: 8),
                 Text('오차 범위: ${(tolerance * 100).toStringAsFixed(0)}%', style: const TextStyle(fontSize: 16)),
               ],
@@ -247,6 +389,7 @@ class _InteractiveGridGraphState extends State<InteractiveGridGraph> {
   double interval = 1.0;
   double tolerance = 1.0;
   final GlobalKey _repaintKey = GlobalKey();
+  String selectedStock = '';
   late int timestamp;
 
   @override
@@ -302,6 +445,7 @@ class _InteractiveGridGraphState extends State<InteractiveGridGraph> {
       'interval': interval,
       'tolerance': tolerance,
       'points': points.map((e) => {'x': e.dx, 'y': e.dy}).toList(),
+      'stock': selectedStock,
     };
 
     final dir = await getApplicationDocumentsDirectory();
@@ -380,7 +524,7 @@ class _InteractiveGridGraphState extends State<InteractiveGridGraph> {
                           GestureDetector(
                             onTap: () {
                               final existing = points.where((p) => p.dx == i * spacing).length;
-                              if (existing < 3 && points.length < 10) {
+                              if (existing < 2 && points.length < 14) {
                                 setState(() {
                                   points.add(Offset(i * spacing, spacing * (gridSize - 1)));
                                   points.sort((a, b) => a.dx.compareTo(b.dx));
