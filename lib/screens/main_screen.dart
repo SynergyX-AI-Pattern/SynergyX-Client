@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:stockapp/screens/stock_detail_screen.dart';
+import 'package:stockapp/widgets/main/recentStock.dart';
+import 'package:stockapp/widgets/main/topStock.dart';
+import 'package:stockapp/widgets/searchBar.dart';
 
 class MainScreen extends StatelessWidget {
   const MainScreen({super.key});
@@ -13,19 +16,25 @@ class MainScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text('메인페이지'),
-              ElevatedButton(
-                  onPressed: () => _handleDetail(context),
-                  child: const Text('종목 상세 페이지')
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: Colors.white,
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Column(
+                //mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  StockSerachBar(text: '증권 검색'),
+                  SizedBox(height: 8),
+                  Topstock(),
+                  SizedBox(height: 8),
+                  Recentstock()
+                ],
               ),
-            ],
-          ),
-        )
+            ),
+          )
+      ),
     );
   }
 }
