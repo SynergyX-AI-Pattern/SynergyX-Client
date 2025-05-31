@@ -1,0 +1,50 @@
+import 'package:flutter/material.dart';
+import 'package:stockapp/screens/stock_detail_screen.dart';
+import 'package:stockapp/models/StockItemModel.dart';
+import 'package:stockapp/widgets/main/StockRankItem.dart';
+
+class TopStocksScreen extends StatelessWidget {
+  final List<StockItem> stockList;
+
+  const TopStocksScreen({super.key, required this.stockList});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text('TOP 20 종목', style: TextStyles.title,),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        centerTitle: true,
+      ),
+      body: ListView.builder(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        itemCount: stockList.length,
+        itemBuilder: (context, index) {
+          final stock = stockList[index];
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => DetailScreen(), // stock 넘기기
+                ),
+              );
+            },
+            child: StockRankItem(stock: stock),
+          );
+        },
+      ),
+    );
+  }
+}
+
+
+class TextStyles {
+  static const TextStyle title = TextStyle(
+    fontWeight: FontWeight.w700,
+    fontSize: 20,
+  );
+
+}
