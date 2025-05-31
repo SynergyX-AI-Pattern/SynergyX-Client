@@ -20,28 +20,24 @@ class TopTabSelector extends StatelessWidget {
         mainAxisSize: MainAxisSize.max,
         children: List.generate(tabs.length, (index) {
           final isSelected = index == selectedIndex;
-          return SizedBox(
-            width: 80,
-            child: GestureDetector(
-              onTap: () => onTap(index),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: isSelected ? Colors.black : Colors.grey[300]!,
-                      width: 1.5,
-                    ),
+          return GestureDetector(
+            onTap: () => onTap(index),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12), // 여백 추가
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: isSelected ? Colors.black : Colors.grey[300]!,
+                    width: 1.5,
                   ),
                 ),
-                alignment: Alignment.center,
-                child: Text(
-                  tabs[index],
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.normal,
-                    color: isSelected ? Colors.black : Colors.grey,
-                  ),
+              ),
+              child: Text(
+                tabs[index],
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: isSelected ? Colors.black : Colors.grey,
                 ),
               ),
             ),
@@ -52,4 +48,4 @@ class TopTabSelector extends StatelessWidget {
   }
 }
 
-// styles
+//style

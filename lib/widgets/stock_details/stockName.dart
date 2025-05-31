@@ -66,12 +66,12 @@ class _StockNameState extends State<StockName> {
 // styles
 class AppStyles {
   static const TextStyle title = TextStyle(
-    fontWeight: FontWeight.bold,
+    fontWeight: FontWeight.w700,
     fontSize: 20,
   );
 
   static const TextStyle cost = TextStyle(
-    fontWeight: FontWeight.bold,
+    fontWeight: FontWeight.w700,
     fontSize: 36,
   );
 
