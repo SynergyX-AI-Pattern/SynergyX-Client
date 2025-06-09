@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:stockapp/screens/stock_detail_screen.dart';
-import 'package:stockapp/widgets/main/recentStock.dart';
+import 'package:stockapp/widgets/main/RecentStockList.dart';
 import 'package:stockapp/widgets/main/topStock.dart';
-import 'package:stockapp/widgets/searchBar.dart';
+import 'package:stockapp/widgets/common/searchBar.dart';
 
 class MainScreen extends StatelessWidget {
   const MainScreen({super.key});
@@ -19,7 +19,7 @@ class MainScreen extends StatelessWidget {
     return SafeArea(
       child: Scaffold(
         backgroundColor: Colors.white,
-          body: Center(
+          body: SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.only(top: 10),
               child: Column(
@@ -29,7 +29,7 @@ class MainScreen extends StatelessWidget {
                   SizedBox(height: 8),
                   Topstock(),
                   SizedBox(height: 8),
-                  Recentstock()
+                  const RecentStockList()
                 ],
               ),
             ),

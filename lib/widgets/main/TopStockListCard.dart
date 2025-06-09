@@ -3,6 +3,7 @@ import 'package:stockapp/data/dummy/dummy_stock_data.dart';
 import 'package:stockapp/screens/stock_detail_screen.dart';
 import 'package:stockapp/screens/topStock_screen.dart';
 import 'package:stockapp/models/StockItemModel.dart';
+import 'package:stockapp/widgets/common/RecentStocks.dart';
 import 'package:stockapp/widgets/main/StockRankItem.dart';
 
 // Top 20 리스트 카드
@@ -45,10 +46,12 @@ class TopStockListCard extends StatelessWidget {
             // 종목 리스트
             ...topFive.map((stock) {
               return GestureDetector(
+                //종목 상세 페이지로 이동
                 onTap: () {
+                  RecentStocks.add(stock);
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => DetailScreen()),
+                    MaterialPageRoute(builder: (_) => DetailScreen(stock: stock)),
                   );
                 },
                 child: StockRankItem(stock: stock),
@@ -74,7 +77,7 @@ class TopStockListCard extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder:
-                          (_) => TopStocksScreen(stockList: stockList),
+                          (_) => TopStocksScreen(stockList: stockList, stockTitle: title),
                     ),
                   );
                 },
