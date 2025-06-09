@@ -5,15 +5,16 @@ import 'package:stockapp/widgets/main/StockRankItem.dart';
 
 class TopStocksScreen extends StatelessWidget {
   final List<StockItem> stockList;
+  final String stockTitle;
 
-  const TopStocksScreen({super.key, required this.stockList});
+  const TopStocksScreen({super.key, required this.stockList, required this.stockTitle});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('TOP 20 종목', style: TextStyles.title,),
+        title: Text(stockTitle, style: TextStyles.title,),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         centerTitle: true,

@@ -4,7 +4,7 @@ import 'package:stockapp/models/StockItemModel.dart';
 import 'package:stockapp/widgets/common/TopTabSelector.dart';
 import 'package:stockapp/widgets/main/TopStockListCard.dart';
 
-// Top Navigation
+// 주식 종목 탑 네비게이션
 class Topstock extends StatefulWidget {
   const Topstock({super.key});
 
