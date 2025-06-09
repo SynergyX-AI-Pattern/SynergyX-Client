@@ -12,7 +12,7 @@ class CandlestickChart extends StatefulWidget {
 
 class _CandlestickChartState extends State<CandlestickChart> {
   final List<CandleData> _data = MockDataTesla.candles;
-  bool _showAverage = false; // 이동 평균선
+  // bool _showAverage = false; // 이동 평균선
 
   @override
   Widget build(BuildContext context) {
@@ -37,19 +37,18 @@ class _CandlestickChartState extends State<CandlestickChart> {
               //       ..color = Colors.orange,
               //   ],
               //   priceGridLineColor: Colors.blue[200]!,
-              //   priceLabelStyle: TextStyle(color: Colors.blue[200]),
-              //   timeLabelStyle: TextStyle(color: Colors.blue[200]),
+                priceLabelStyle: TextStyle(color: Colors.grey, fontFamily: 'Pretendard', fontWeight: FontWeight.w400),
+                timeLabelStyle: TextStyle(color: Colors.grey, fontFamily: 'Pretendard', fontWeight: FontWeight.w400),
               //   selectionHighlightColor: Colors.red.withOpacity(0.2),
                 overlayBackgroundColor: Colors.black.withOpacity(0.6),
-              //   overlayTextStyle: TextStyle(color: Colors.red[100]),
+                overlayTextStyle: TextStyle(color: Colors.white, fontFamily: 'Pretendard', fontWeight: FontWeight.w400),
                 // timeLabelHeight: 32,
               //   volumeHeightFactor: 0.2, // volume area is 20% of total height
               ),
-              /** Customize axis labels */
+
               // timeLabel: (timestamp, visibleDataCount) => "📅",
               priceLabel: (price) => "${price.round()}",
-              /** Customize overlay (tap and hold to see it)
-               ** Or return an empty object to disable overlay info. */
+
               // 시간, 시가, 고가, 저가, 종가, 거래량 -> 한글로 변경
               overlayInfo: (candle) {
                 final date = DateTime.fromMillisecondsSinceEpoch(candle.timestamp);
