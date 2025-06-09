@@ -70,18 +70,19 @@ class InfoCardGroup extends StatelessWidget {
 // styles
 class CardStyles {
   static const TextStyle title = TextStyle(
-    fontWeight: FontWeight.bold,
+    fontWeight: FontWeight.w700,
     fontSize: 16,
     color: Color(0xFF03314B),
   );
 
   static const TextStyle subtitle = TextStyle(
       color: Color(0xFF8198A5),
-      fontSize: 12
+      fontWeight: FontWeight.w400,
+      fontSize: 13
   );
 
   static const TextStyle cost = TextStyle(
-    fontWeight: FontWeight.bold,
+    fontWeight: FontWeight.w600,
     fontSize: 16,
   );
 }

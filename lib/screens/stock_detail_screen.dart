@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:stockapp/models/StockItemModel.dart';
 import 'package:stockapp/widgets/stock_details/StockChart.dart';
 import 'package:stockapp/widgets/stock_details/stockDetail.dart';
 import 'package:stockapp/widgets/stock_details/stockName.dart';
 
 class DetailScreen extends StatelessWidget {
-  const DetailScreen({super.key});
+  final StockItem? stock;
+
+  const DetailScreen({super.key, this.stock});
 
   @override
   Widget build(BuildContext context) {
