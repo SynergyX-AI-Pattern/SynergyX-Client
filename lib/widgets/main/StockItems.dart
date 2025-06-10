@@ -71,7 +71,6 @@ class StockItems extends StatelessWidget {
   }
 }
 
-// 텍스트 스타일도 함께 정의 (필요 시 공통 스타일에서 분리 가능)
 class TextStyles {
   static const TextStyle costText = TextStyle(
     fontWeight: FontWeight.w600,
