@@ -10,10 +10,6 @@ class RecentStockList extends StatelessWidget {
   Widget build(BuildContext context) {
     final recent = RecentStocks.recent;
 
-    // if (recent.isEmpty) {
-    //   return const SizedBox.shrink();
-    // }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -21,10 +17,19 @@ class RecentStockList extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
           child: Text('최근 조회 종목', style: TextStyles.title),
         ),
-        ...recent.map((stock) => Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4),
-          child: StockItems(stock: stock),
-        )),
+
+        if (recent.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 4),
+            child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text('최근 조회된 종목이 없습니다.', style: TextStyles.content)),
+          )
+        else
+          ...recent.map((stock) => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4),
+            child: StockItems(stock: stock),
+          )),
       ],
     );
   }
