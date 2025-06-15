@@ -19,13 +19,14 @@ class StockSerachBar extends StatelessWidget {
 
     return SizedBox(
       width: size.width * 0.9,
+      height: 44,
       child: ElevatedButton(
         style: AppButtonStyles.stockSearch,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           mainAxisSize: MainAxisSize.max,
           children: [
-            Icon(Icons.search, size: 26, color: Colors.grey),
+            Icon(Icons.search, size: 26, color: Color(0xFF767676)),
             SizedBox(width: 8),
             Text(text, style: AppStyles.buttonText,),
           ],
@@ -40,7 +41,7 @@ class StockSerachBar extends StatelessWidget {
 class AppButtonStyles {
   static final ButtonStyle stockSearch = ElevatedButton.styleFrom(
     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-    backgroundColor: Color(0xFFF9F9F9),
+    backgroundColor: Color(0xFFEEEEEE),
     //버튼 배경색
     // 버튼 클릭 효과 삭제
     elevation: 0,
@@ -54,7 +55,7 @@ class AppButtonStyles {
 class AppStyles {
   static const TextStyle buttonText = TextStyle(
     fontSize: 16,
-    fontWeight: FontWeight.w600,
+    fontWeight: FontWeight.w500,
     color: Color(0xFFB2B2B2),
   );
 }

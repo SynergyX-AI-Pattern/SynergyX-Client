@@ -28,13 +28,19 @@ class TopStockListCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 상단 텍스트
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('10시 기준', style: TextStyles.timeText),
-                SizedBox(width: 8),
-                Text(title, style: TextStyles.topText),
-              ],
+            Padding(
+              padding: const EdgeInsets.only(left: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('10시 기준', style: TextStyles.timeText),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 5),
+                    child: Text(title, style: TextStyles.topText),
+                  ),
+                ],
+              ),
             ),
 
             // 구분선

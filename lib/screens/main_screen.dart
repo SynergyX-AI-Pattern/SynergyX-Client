@@ -25,7 +25,7 @@ class MainScreen extends StatelessWidget {
               child: Column(
                 //mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  StockSerachBar(text: '증권 검색'),
+                  StockSerachBar(text: '종목 검색'),
                   SizedBox(height: 8),
                   Topstock(),
                   SizedBox(height: 8),
