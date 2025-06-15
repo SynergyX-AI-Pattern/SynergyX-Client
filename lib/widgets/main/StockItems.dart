@@ -1,6 +1,6 @@
-// lib/widgets/stock/StockItems.dart
 import 'package:flutter/material.dart';
 import 'package:stockapp/models/StockItemModel.dart';
+import 'package:intl/intl.dart';
 
 class StockItems extends StatelessWidget {
   final StockItem stock;
@@ -10,6 +10,7 @@ class StockItems extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isUp = stock.changeRate >= 0;
+    final numberFormat = NumberFormat('#,###');
 
     return Row(
       children: [
@@ -29,16 +30,10 @@ class StockItems extends StatelessWidget {
 
         const SizedBox(width: 10),
 
-        // 종목명 (심볼 + 이름)
+        // 종목명
         Expanded(
           flex: 2,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(stock.symbol, style: TextStyles.symbolText),
-              // Text(stock.name, style: TextStyles.nameText),
-            ],
-          ),
+          child: Text(stock.name, style: TextStyles.symbolText),
         ),
 
         // 가격 + 등락률
@@ -48,7 +43,7 @@ class StockItems extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '${stock.price.toStringAsFixed(0)}\원',
+                '${numberFormat.format(stock.price)}원',
                 textAlign: TextAlign.right,
                 style: TextStyles.costText,
               ),
@@ -57,7 +52,8 @@ class StockItems extends StatelessWidget {
                 textAlign: TextAlign.right,
                 style: TextStyle(
                   fontSize: 14,
-                  color: isUp ? const Color(0xFFDF1525) : const Color(0xFF1573FE),
+                  color:
+                      isUp ? const Color(0xFFDF1525) : const Color(0xFF1573FE),
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -71,7 +67,6 @@ class StockItems extends StatelessWidget {
   }
 }
 
-// 텍스트 스타일도 함께 정의 (필요 시 공통 스타일에서 분리 가능)
 class TextStyles {
   static const TextStyle costText = TextStyle(
     fontWeight: FontWeight.w600,
@@ -79,8 +74,7 @@ class TextStyles {
   );
 
   static const TextStyle symbolText = TextStyle(
-    fontSize: 14,
-    fontWeight: FontWeight.bold,
+    fontSize: 15,
+    fontWeight: FontWeight.w600,
   );
 }
-
