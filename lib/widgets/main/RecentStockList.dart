@@ -14,16 +14,16 @@ class RecentStockList extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+          padding: EdgeInsets.only(left: 16, right: 16, bottom: 8),
           child: Text('최근 조회 종목', style: TextStyles.title),
         ),
 
         if (recent.isEmpty)
           const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 4),
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Align(
                 alignment: Alignment.centerLeft,
-                child: Text('최근 조회된 종목이 없습니다.', style: TextStyles.content)),
+                child: Text('최근 조회한 종목이 없습니다.', style: TextStyles.content)),
           )
         else
           ...recent.map((stock) => Padding(
