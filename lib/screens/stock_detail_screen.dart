@@ -22,9 +22,11 @@ class DetailScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          StockName(),
+          StockName(
+            stockId: '1',
+          ),
           Expanded(child: CandlestickChart()),
-          Expanded(child: StockDetail()),
+          Expanded(child: StockDetail(stockId: '1')),
         ],
       ),
     );
