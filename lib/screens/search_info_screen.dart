@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:stockapp/models/stock.dart';
-import 'package:stockapp/screens/stock_detail_screen.dart';
 import 'package:stockapp/widgets/search/SearchStockItem.dart';
 
 class StockSearchPage extends StatefulWidget {
@@ -117,10 +116,7 @@ class _StockSearchPageState extends State<StockSearchPage> {
                       if (widget.onStockSelected != null) {
                         widget.onStockSelected!(stock.symbol);
                       }
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => DetailScreen()),
-                      );
+                      Navigator.pop(context, stock.symbol);
                     },
                   );
                 },

@@ -24,7 +24,7 @@ class ApiService {
   // API의 기본 경로는 http://52.79.115.136:8080/ 일 가능성이 높습니다.
   // 실제 API 엔드포인트가 /api/v1/... 와 같이 시작한다면 그에 맞게 조정해야 합니다.
   final Dio _dio = Dio(BaseOptions(
-    baseUrl: "http://52.79.115.136:8080", // <-- API 서버의 기본 URL
+    baseUrl:"http://52.79.115.136:8080", // <-- API 서버의 기본 URL
     connectTimeout: const Duration(seconds: 5), // 연결 타임아웃
     receiveTimeout: const Duration(seconds: 3), // 응답 타임아웃
   ));
