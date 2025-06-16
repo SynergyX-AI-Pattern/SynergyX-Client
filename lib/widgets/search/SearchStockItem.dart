@@ -1,26 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:stockapp/models/stock.dart';
+import '../../models/stock.dart';
 
 class SearchStockItem extends StatelessWidget {
   final Stock stock;
-  final VoidCallback? onTap;
+  final VoidCallback onTap;
 
   const SearchStockItem({
     super.key,
     required this.stock,
-    this.onTap,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: const CircleAvatar(
-        backgroundColor: Colors.blue,
-      ),
-      title: Text(
-        stock.name,
-        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-      ),
+      leading: Image.network(stock.imageUrl, width: 30, height: 30),
+      title: Text(stock.name, style: TextStyle(fontWeight: FontWeight.w600),),
       onTap: onTap,
     );
   }

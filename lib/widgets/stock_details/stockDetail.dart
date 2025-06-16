@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:stockapp/data/stock_detail_api.dart';
+import 'package:stockapp/models/stock_detail_model.dart';
 import 'package:stockapp/widgets/common/TopTabSelector.dart';
 import 'package:stockapp/widgets/common/InfoCardGroup.dart';
 
 
 class StockDetail extends StatefulWidget {
-  const StockDetail({super.key});
+  final String stockId;
+  const StockDetail({super.key, required this.stockId});
 
   @override
   State<StockDetail> createState() => _StockDetailScreenState();
@@ -12,68 +15,104 @@ class StockDetail extends StatefulWidget {
 
 class _StockDetailScreenState extends State<StockDetail> {
   int _selectedTabIndex = 0;
+  late Future<StockDetailResponse> _stockDetailFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _stockDetailFuture = fetchStockDetail(widget.stockId); // 예시 종목 코드
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        TopTabSelector(
-          tabs: const ['AI 예측', '재무정보'],
-          selectedIndex: _selectedTabIndex,
-          onTap: (index) {
-            setState(() {
-              _selectedTabIndex = index;
-            });
-          },
-        ),
-        Expanded(
-          child: _selectedTabIndex == 0
-              ? const AIPredictionView()
-              : const FinancialInfoView(),
-        ),
-      ],
+    return FutureBuilder(
+      future: _stockDetailFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(child: Text('에러 발생: ${snapshot.error}'));
+        }
+
+        final data = snapshot.data!;
+        return Column(
+          children: [
+            TopTabSelector(
+              tabs: const ['AI 예측', '재무정보'],
+              selectedIndex: _selectedTabIndex,
+              onTap: (index) {
+                setState(() {
+                  _selectedTabIndex = index;
+                });
+              },
+            ),
+            Expanded(
+              child: _selectedTabIndex == 0
+                  ? AIPredictionView(prediction: data.prediction, currentPrice: data.price)
+                  : FinancialInfoView(financials: data.financials),
+            ),
+          ],
+        );
+      },
     );
   }
 }
 
+
 // AI 예측 탭 내용
 class AIPredictionView extends StatelessWidget {
-  const AIPredictionView({super.key});
+  final Prediction prediction;
+  final String currentPrice;
+
+  const AIPredictionView({
+    super.key,
+    required this.prediction,
+    required this.currentPrice,
+  });
 
   @override
   Widget build(BuildContext context) {
     return InfoCardGroup(
       title: 'AI 예측 주가',
-      rows: const [
-        {'label': '현재가', 'value': '54,300', 'color': Color(0xFFF99F01)},
-        {'label': '상한 예측가', 'value': '63,000', 'color': Color(0xFFEC221F)},
-        {'label': '하한 예측가', 'value': '53,100', 'color': Color(0xFF289BF6)},
-        {'label': '적정 매도 가격', 'value': '62,500'},
-        {'label': '적정 매수 가격', 'value': '52,900'},
-        {'label': '예측 범위', 'value': '20일 이내'},
+      rows: [
+        {'label': '현재가', 'value': currentPrice, 'color': const Color(0xFFF99F01)},
+        {'label': '상한 예측가', 'value': prediction.upperBound, 'color': const Color(0xFFEC221F)},
+        {'label': '하한 예측가', 'value': prediction.lowerBound, 'color': const Color(0xFF289BF6)},
+        {'label': '적정 매도 가격', 'value': prediction.sellPrice},
+        {'label': '적정 매수 가격', 'value': prediction.buyPrice},
+        {'label': '예측 범위', 'value': prediction.targetRange},
       ],
     );
+  }
+
+  String _format(int number) {
+    return number.toString().replaceAllMapped(
+        RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]},');
   }
 }
 
 // 재무정보 탭 내용
 class FinancialInfoView extends StatelessWidget {
-  const FinancialInfoView({super.key});
+  final Financials financials;
+
+  const FinancialInfoView({super.key, required this.financials});
 
   @override
   Widget build(BuildContext context) {
     return InfoCardGroup(
       title: '재무 정보',
-      rows: const [
-        {'label': '시가총액', 'value': '372.1조원'},
-        {'label': '배당수익률', 'value': '2.56%'},
-        {'label': 'ROE', 'value': '9.0%'},
-        {'label': 'PBR', 'value': '1.0배'},
-        {'label': 'PER', 'value': '11.3배'},
-        {'label': 'PSR', 'value': '1.3배'},
-
+      rows: [
+        {'label': '시가총액', 'value': financials.marketCap},
+        {'label': '배당수익률', 'value': financials.dividendYield ?? '2.56%'}, //임의값
+        {'label': 'ROE', 'value': financials.roe},
+        {'label': 'PBR', 'value': financials.pbr},
+        {'label': 'PER', 'value': financials.per},
+        {'label': 'PSR', 'value': financials.psr},
       ],
     );
   }
 }
+
 
