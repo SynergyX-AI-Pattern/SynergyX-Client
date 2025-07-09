@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:stockapp/data/stock_detail_api.dart';
 import 'package:stockapp/models/stock_detail_model.dart';
+import 'package:stockapp/data/watchlist_api.dart';
 
-// StockName
 class StockName extends StatefulWidget {
   final String stockId;
 
@@ -15,11 +15,13 @@ class StockName extends StatefulWidget {
 class _StockNameState extends State<StockName> {
   bool isFavorite = false;
   late Future<StockDetailResponse> _stockNameFuture;
+  final StockDetailApiService _apiService = StockDetailApiService();
+  final WatchlistApiService _apiService2 = WatchlistApiService();
 
   @override
   void initState() {
     super.initState();
-    _stockNameFuture = fetchStockDetail(widget.stockId); // 예시 종목 코드
+    _stockNameFuture = _apiService.fetchStockDetail(widget.stockId);
   }
 
   @override
@@ -37,13 +39,7 @@ class _StockNameState extends State<StockName> {
 
         final data = snapshot.data!;
 
-        final String changeAmount = data.changeAmount;
-        final String changeRate = data.changeRate;
-        //final bool isRising = changeAmount >= 0;
-        //final Color changeColor = isRising ? Color(0xFFDF1525) : Color(0xFF1573FE);
-        //final String sign = isRising ? '+' : '';
-        final String changeText =
-            '$changeAmount($changeRate)';
+        final String changeText = '${data.changeAmount}(${data.changeRate})';
 
         return Padding(
           padding: const EdgeInsets.only(left: 28, right: 15),
@@ -54,18 +50,42 @@ class _StockNameState extends State<StockName> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(data.stockName, style: AppStyles.title),
-                  Text('${data.price}', style: AppStyles.cost),
-                  Text(changeText,
-                      style: AppStyles.profit.copyWith(color: Color(0xFFDF1525))),
+                  Text(data.price, style: AppStyles.cost),
+                  Text(changeText, style: AppStyles.profit.copyWith(color: const Color(0xFFDF1525))),
                 ],
               ),
               Padding(
                 padding: const EdgeInsets.only(top: 12),
                 child: IconButton(
-                  onPressed: () {
+                  onPressed: () async {
+                    final previousState = isFavorite; // 현재 상태 저장
+
                     setState(() {
-                      isFavorite = !isFavorite;
+                      isFavorite = !isFavorite; // 하트 상태 토글
                     });
+
+                    try {
+                      if (isFavorite) {
+                        await _apiService2.addToWatchlist(widget.stockId);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('관심종목에 등록되었습니다.')),
+                        );
+                      } else {
+                        await _apiService2.removeFromWatchlist(widget.stockId);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('관심종목에서 해제되었습니다.')),
+                        );
+                      }
+                    } catch (e) {
+                      // 실패하면 원래 상태로 복구
+                      setState(() {
+                        isFavorite = previousState;
+                      });
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('관심종목 처리 실패!')),
+                      );
+                    }
                   },
                   icon: Icon(
                     isFavorite ? Icons.favorite : Icons.favorite_outline,
@@ -82,21 +102,8 @@ class _StockNameState extends State<StockName> {
   }
 }
 
-// styles
 class AppStyles {
-  static const TextStyle title = TextStyle(
-    fontWeight: FontWeight.w700,
-    fontSize: 20,
-  );
-
-  static const TextStyle cost = TextStyle(
-    fontWeight: FontWeight.w700,
-    fontSize: 36,
-  );
-
-  static const TextStyle profit = TextStyle(
-    fontWeight: FontWeight.w500,
-    fontSize: 16,
-    color: Colors.red,
-  );
+  static const TextStyle title = TextStyle(fontWeight: FontWeight.w700, fontSize: 20);
+  static const TextStyle cost = TextStyle(fontWeight: FontWeight.w700, fontSize: 36);
+  static const TextStyle profit = TextStyle(fontWeight: FontWeight.w500, fontSize: 16, color: Colors.red);
 }
