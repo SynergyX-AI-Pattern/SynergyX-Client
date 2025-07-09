@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:stockapp/data/dummy/dummy_stock_data.dart';
 import 'package:stockapp/screens/stock_detail_screen.dart';
 import 'package:stockapp/screens/topStock_screen.dart';
 import 'package:stockapp/models/StockItemModel.dart';
