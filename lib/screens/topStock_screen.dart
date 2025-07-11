@@ -29,7 +29,7 @@ class TopStocksScreen extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => DetailScreen(), // stock 넘기기
+                  builder: (_) => DetailScreen(stock: stock), // stock 넘기기
                 ),
               );
             },
