@@ -5,9 +5,9 @@ import 'package:stockapp/widgets/stock_details/stockDetail.dart';
 import 'package:stockapp/widgets/stock_details/stockName.dart';
 
 class DetailScreen extends StatelessWidget {
-  final StockItem? stock;
+  final StockItem stock;
 
-  const DetailScreen({super.key, this.stock});
+  const DetailScreen({super.key, required this.stock});
 
   @override
   Widget build(BuildContext context) {
@@ -23,10 +23,10 @@ class DetailScreen extends StatelessWidget {
       body: Column(
         children: [
           StockName(
-            stockId: '1',
+            stockId: stock.stockId.toString(),
           ),
-          Expanded(child: CandlestickChart()),
-          Expanded(child: StockDetail(stockId: '1')),
+          Expanded(child: CandlestickChart( stockId: stock.stockId.toString())),
+          Expanded(child: StockDetail(stockId: stock.stockId.toString())),
         ],
       ),
     );

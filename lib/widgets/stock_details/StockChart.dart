@@ -1,91 +1,139 @@
 import 'package:flutter/material.dart';
 import 'package:interactive_chart/interactive_chart.dart';
-
 import '../../data/candle_api.dart';
 
 class CandlestickChart extends StatefulWidget {
-  const CandlestickChart({super.key});
+  final String stockId;
+
+  const CandlestickChart({
+    super.key,
+    required this.stockId,
+  });
 
   @override
   State<CandlestickChart> createState() => _CandlestickChartState();
 }
 
 class _CandlestickChartState extends State<CandlestickChart> {
-  final List<CandleData> _data = MockDataTesla.candles;
-  // bool _showAverage = false; // 이동 평균선
+  List<CandleData> _candles = [];
+  bool _loading = true;
+
+  String _selectedInterval = '1M'; // 기본 interval
+
+  final Map<String, String> intervalLabels = {
+    '1D': '1D',
+    '1W': '1W',
+    '1M': '1M',
+    '1Y': '1Y',
+    '5Y': '5Y',
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCandles();
+  }
+
+  Future<void> _loadCandles() async {
+    setState(() {
+      _loading = true;
+    });
+
+    try {
+      final data = await fetchCandles(
+        stockId: widget.stockId,
+        interval: _selectedInterval,
+      );
+      setState(() {
+        _candles = data;
+        _loading = false;
+      });
+    } catch (e) {
+      print("❌ Candle API error: $e");
+      setState(() {
+        _loading = false;
+      });
+    }
+  }
+
+  Widget _buildIntervalSelector() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: intervalLabels.entries.map((entry) {
+        final isSelected = entry.key == _selectedInterval;
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              _selectedInterval = entry.key;
+            });
+            _loadCandles();
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: isSelected ? Color(0xFFFFE5E5) : Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              entry.value,
+              style: TextStyle(
+                color: isSelected ? Color(0xFFDF1525) : Colors.grey,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontFamily: 'Pretendard',
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-          child: SafeArea(
-            minimum: const EdgeInsets.all(24.0),
+    return Column(
+      children: [
+        const SizedBox(height: 16),
+        _buildIntervalSelector(),
+        const SizedBox(height: 8),
+        Expanded(
+          child: _loading
+              ? const Center(child: CircularProgressIndicator())
+              : _candles.isEmpty
+              ? const Center(child: Text("데이터 없음"))
+              : SafeArea(
+            minimum: const EdgeInsets.all(16),
             child: InteractiveChart(
-              candles: _data, //데이터
-              // 차트 스타일
+              candles: _candles,
               style: ChartStyle(
-                priceGainColor: Color(0xFFDF1525),   // 상승 → 빨강
+                priceGainColor: Color(0xFFDF1525),
                 priceLossColor: Color(0xFF1573FE),
-              //   volumeColor: Colors.teal.withOpacity(0.8),
-              //   trendLineStyles: [
-              //     Paint()
-              //       ..strokeWidth = 2.0
-              //       ..strokeCap = StrokeCap.round
-              //       ..color = Colors.deepOrange,
-              //     Paint()
-              //       ..strokeWidth = 4.0
-              //       ..strokeCap = StrokeCap.round
-              //       ..color = Colors.orange,
-              //   ],
-              //   priceGridLineColor: Colors.blue[200]!,
-                priceLabelStyle: TextStyle(color: Colors.grey, fontFamily: 'Pretendard', fontWeight: FontWeight.w400),
-                timeLabelStyle: TextStyle(color: Colors.grey, fontFamily: 'Pretendard', fontWeight: FontWeight.w400),
-              //   selectionHighlightColor: Colors.red.withOpacity(0.2),
-                overlayBackgroundColor: Colors.black.withOpacity(0.6),
-                overlayTextStyle: TextStyle(color: Colors.white, fontFamily: 'Pretendard', fontWeight: FontWeight.w400),
-                // timeLabelHeight: 32,
-              //   volumeHeightFactor: 0.2, // volume area is 20% of total height
+                priceLabelStyle: TextStyle(color: Colors.grey),
+                timeLabelStyle: TextStyle(color: Colors.grey),
+                overlayBackgroundColor:
+                Colors.black.withOpacity(0.6),
+                overlayTextStyle: TextStyle(color: Colors.white),
               ),
-
-              // timeLabel: (timestamp, visibleDataCount) => "📅",
               priceLabel: (price) => "${price.round()}",
-
-              // 시간, 시가, 고가, 저가, 종가, 거래량 -> 한글로 변경
               overlayInfo: (candle) {
-                final date = DateTime.fromMillisecondsSinceEpoch(candle.timestamp);
-                final formattedDate = "${date.year}-${date.month}-${date.day}";
-                final volumeMillion = (candle.volume ?? 0) / 1000000;
-
+                final date = DateTime.fromMillisecondsSinceEpoch(
+                    candle.timestamp);
+                final formattedDate =
+                    "${date.year}-${date.month}-${date.day}";
+                final volumeMillion =
+                    (candle.volume ?? 0) / 1000000;
                 return {
                   "날짜": formattedDate,
                   "시가": "${candle.open?.toStringAsFixed(2)}",
                   "고가": "${candle.high?.toStringAsFixed(2)}",
                   "저가": "${candle.low?.toStringAsFixed(2)}",
                   "종가": "${candle.close?.toStringAsFixed(2)}",
-                  "거래량": "${volumeMillion.toStringAsFixed(3)}M",  // 예: 17.500M
+                  "거래량": "${volumeMillion.toStringAsFixed(3)}M",
                 };
               },
-              /** Callbacks */
-              // onTap: (candle) => print("user tapped on $candle"),
-              // onCandleResize: (width) => print("each candle is $width wide"),
             ),
           ),
-        );
-  }
-
-// 이동 평균선
-  _computeTrendLines() {
-    final ma7 = CandleData.computeMA(_data, 7);
-    final ma30 = CandleData.computeMA(_data, 30);
-    final ma90 = CandleData.computeMA(_data, 90);
-
-    for (int i = 0; i < _data.length; i++) {
-      _data[i].trends = [ma7[i], ma30[i], ma90[i]];
-    }
-  }
-
-  _removeTrendLines() {
-    for (final data in _data) {
-      data.trends = [];
-    }
+        ),
+      ],
+    );
   }
 }
