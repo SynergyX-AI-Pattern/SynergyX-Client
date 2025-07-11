@@ -4,9 +4,9 @@ import 'package:stockapp/models/stock_detail_model.dart';
 import 'package:stockapp/widgets/common/TopTabSelector.dart';
 import 'package:stockapp/widgets/common/InfoCardGroup.dart';
 
-
 class StockDetail extends StatefulWidget {
   final String stockId;
+
   const StockDetail({super.key, required this.stockId});
 
   @override
@@ -16,16 +16,17 @@ class StockDetail extends StatefulWidget {
 class _StockDetailScreenState extends State<StockDetail> {
   int _selectedTabIndex = 0;
   late Future<StockDetailResponse> _stockDetailFuture;
+  final StockDetailApiService _apiService = StockDetailApiService();
 
   @override
   void initState() {
     super.initState();
-    _stockDetailFuture = fetchStockDetail(widget.stockId); // 예시 종목 코드
+    _stockDetailFuture = _apiService.fetchStockDetail(widget.stockId);
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
+    return FutureBuilder<StockDetailResponse>(
       future: _stockDetailFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -37,6 +38,7 @@ class _StockDetailScreenState extends State<StockDetail> {
         }
 
         final data = snapshot.data!;
+
         return Column(
           children: [
             TopTabSelector(
@@ -60,8 +62,6 @@ class _StockDetailScreenState extends State<StockDetail> {
   }
 }
 
-
-// AI 예측 탭 내용
 class AIPredictionView extends StatelessWidget {
   final Prediction prediction;
   final String currentPrice;
@@ -86,14 +86,8 @@ class AIPredictionView extends StatelessWidget {
       ],
     );
   }
-
-  String _format(int number) {
-    return number.toString().replaceAllMapped(
-        RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]},');
-  }
 }
 
-// 재무정보 탭 내용
 class FinancialInfoView extends StatelessWidget {
   final Financials financials;
 
@@ -105,7 +99,7 @@ class FinancialInfoView extends StatelessWidget {
       title: '재무 정보',
       rows: [
         {'label': '시가총액', 'value': financials.marketCap},
-        {'label': '배당수익률', 'value': financials.dividendYield ?? '2.56%'}, //임의값
+        {'label': '배당수익률', 'value': financials.dividendYield ?? '2.56%'},
         {'label': 'ROE', 'value': financials.roe},
         {'label': 'PBR', 'value': financials.pbr},
         {'label': 'PER', 'value': financials.per},
@@ -114,5 +108,3 @@ class FinancialInfoView extends StatelessWidget {
     );
   }
 }
-
-

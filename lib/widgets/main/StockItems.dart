@@ -17,13 +17,33 @@ class StockItems extends StatelessWidget {
         // 아이콘 영역
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 5),
-          child: Container(
-            width: 45,
-            height: 45,
-            decoration: const BoxDecoration(
-              color: Color(0xFFF8FAFB),
-              //color: Colors.red,
-              borderRadius: BorderRadius.all(Radius.circular(50)),
+          child: ClipOval(
+            child: Image.network(
+              stock.imageUrl,
+              width: 40,
+              height: 40,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                width: 40,
+                height: 40,
+                color: const Color(0xFFF8FAFB),
+                child: const Icon(Icons.image_not_supported, color: Colors.grey),
+              ),
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  width: 40,
+                  height: 40,
+                  color: const Color(0xFFF8FAFB),
+                  child: const Center(
+                    child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ),
