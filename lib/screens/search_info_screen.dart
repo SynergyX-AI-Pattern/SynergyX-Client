@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:stockapp/data/stock_api.dart';
 import 'package:stockapp/widgets/search/SearchStockItem.dart';
 import '../models/stock.dart';
-import 'stock_detail_screen.dart';
 
 class StockSearchPage extends StatefulWidget {
   final void Function(String stockCode)? onStockSelected;
