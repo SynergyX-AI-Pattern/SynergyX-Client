@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:stockapp/data/stock_api.dart';
 import 'package:stockapp/widgets/search/SearchStockItem.dart';
 import '../models/stock.dart';
-import 'stock_detail_screen.dart';
 
 class StockSearchPage extends StatefulWidget {
   final void Function(String stockCode)? onStockSelected;
@@ -125,13 +124,9 @@ class _StockSearchPageState extends State<StockSearchPage> {
                     stock: stock,
                     onTap: () {
                       if (widget.onStockSelected != null) {
-                           widget.onStockSelected!(stock.name); // 또는 stock.id
-                          }
-                          Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                          builder: (_) => DetailScreen()),
-                          );
+                        widget.onStockSelected!(stock.name); // 또는 stock.id
+                      }
+                      Navigator.pop(context, stock.name);
                     },
                   );
                 },

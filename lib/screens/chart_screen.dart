@@ -40,22 +40,29 @@ class _PatternListPageState extends State<PatternListPage> {
     final file = File('${dir.path}/pattern_list.json');
     if (await file.exists()) {
       final content = await file.readAsString();
-      final patterns = List<String>.from(jsonDecode(content));
+      final patternJsonStrings = List<String>.from(jsonDecode(content));
 
+      final updatedPatterns = <String>[];
       final previews = <File>[];
-      for (var p in patterns) {
-        final json = jsonDecode(p);
-        final ts = json['timestamp'];
-        final imgFile = File('${dir.path}/pattern_$ts.png');
-        if (await imgFile.exists()) {
-          previews.add(imgFile);
+
+      for (var p in patternJsonStrings) {
+        final original = jsonDecode(p);
+        final ts = original['timestamp'];
+        final patternFile = File('${dir.path}/pattern_$ts.json');
+
+        if (await patternFile.exists()) {
+          final latestContent = await patternFile.readAsString();
+          updatedPatterns.add(latestContent);
         } else {
-          previews.add(File(''));
+          updatedPatterns.add(p);
         }
+
+        final imgFile = File('${dir.path}/pattern_$ts.png');
+        previews.add(await imgFile.exists() ? imgFile : File(''));
       }
 
       setState(() {
-        savedPatterns = patterns;
+        savedPatterns = updatedPatterns;
         previewImages = previews;
       });
     }
@@ -100,20 +107,23 @@ class _PatternListPageState extends State<PatternListPage> {
           final preview = previewImages[index];
           return GestureDetector(
             onTap: () async {
+              final ts = jsonDecode(savedPatterns[index])['timestamp'];
+              final dir = await getApplicationDocumentsDirectory();
+              final jsonFile = File('${dir.path}/pattern_$ts.json');
+              final updatedJson = await jsonFile.readAsString();
+
+              if (!context.mounted) return;
               final result = await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => PatternDetailPage(
-                    patternJson: savedPatterns[index],
+                    patternJson: updatedJson,
                     imageFile: preview,
                   ),
                 ),
               );
               if (result == true) {
-                setState(() {
-                  savedPatterns.removeAt(index);
-                  previewImages.removeAt(index);
-                });
+                await _loadSavedPatterns();
                 _savePatternList();
               }
             },
