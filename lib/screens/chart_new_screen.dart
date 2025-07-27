@@ -1,9 +1,11 @@
 import 'dart:ui' as ui;
 import 'dart:io';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:stockapp/models/pattern.dart';
+import 'package:stockapp/services/api_service.dart';
+
 
 class ChartNewScreen extends StatefulWidget {
   const ChartNewScreen({super.key});
@@ -62,22 +64,36 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
   }
 
   void _savePattern() async {
-    final jsonData = {
-      'timestamp': timestamp,
-      'tolerance': tolerance,
-      'points': points.map((e) => {'x': e.dx, 'y': e.dy}).toList(),
-      'periodValue': periodValue,
-      'periodUnit': periodUnit,
-      'stock': selectedStock,
-    };
+    final patternName = 'Pattern_$timestamp';
 
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File('${dir.path}/pattern_$timestamp.json');
-    await file.writeAsString(jsonEncode(jsonData));
-    await _captureAndSaveImage();
-    if (!mounted) return;
-    Navigator.pop(context, jsonEncode(jsonData));
+    final convertedPoints = points.map((p) => (p.dy ~/ spacing)).toList();
+
+    final request = PatternRequest(
+      patternName: patternName,
+      points: convertedPoints,
+      tolerance: tolerance,
+      periodValue: periodValue,
+      periodUnit: periodUnit,
+    );
+
+    try {
+      await ApiService.sendPatternToServer(request);
+      await _captureAndSaveImage();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('✅ 패턴이 서버에 저장되었습니다!')),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('❌ 저장 실패: ${e.toString()}')),
+      );
+    }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
