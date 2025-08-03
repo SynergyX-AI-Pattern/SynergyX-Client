@@ -4,8 +4,9 @@ import 'package:stockapp/models/stock_detail_model.dart';
 
 class StockName extends StatefulWidget {
   final StockDetailResponse detail;
+  final String stockId;
 
-  const StockName({super.key, required this.detail});
+  const StockName({super.key, required this.detail, required this.stockId});
 
   @override
   State<StockName> createState() => _StockNameState();
@@ -46,12 +47,12 @@ class _StockNameState extends State<StockName> {
 
                 try {
                   if (isFavorite) {
-                    await _apiService2.addToWatchlist(detail.stockName);
+                    await _apiService2.addToWatchlist(widget.stockId);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('관심종목에 등록되었습니다.')),
                     );
                   } else {
-                    await _apiService2.removeFromWatchlist(detail.stockName);
+                    await _apiService2.removeFromWatchlist(widget.stockId);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('관심종목에서 해제되었습니다.')),
                     );
