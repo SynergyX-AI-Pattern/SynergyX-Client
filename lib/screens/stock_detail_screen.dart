@@ -56,7 +56,7 @@ class _DetailScreenState extends State<DetailScreen> {
           ),
           body: Column(
             children: [
-              StockName(detail: detail),
+              StockName(detail: detail, stockId: widget.stock.stockId.toString(), ),
               Expanded(
                 child: CandlestickChart(
                   stockId: widget.stock.stockId.toString(),
