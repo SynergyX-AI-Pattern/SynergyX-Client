@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:stockapp/data/stock_detail_api.dart';
 import 'package:stockapp/models/stock_detail_model.dart';
 import 'package:stockapp/widgets/common/TopTabSelector.dart';
 import 'package:stockapp/widgets/common/InfoCardGroup.dart';
 
 class StockDetail extends StatefulWidget {
-  final String stockId;
+  final StockDetailResponse detail;
 
-  const StockDetail({super.key, required this.stockId});
+  const StockDetail({super.key, required this.detail});
 
   @override
   State<StockDetail> createState() => _StockDetailScreenState();
@@ -15,49 +14,31 @@ class StockDetail extends StatefulWidget {
 
 class _StockDetailScreenState extends State<StockDetail> {
   int _selectedTabIndex = 0;
-  late Future<StockDetailResponse> _stockDetailFuture;
-  final StockDetailApiService _apiService = StockDetailApiService();
-
-  @override
-  void initState() {
-    super.initState();
-    _stockDetailFuture = _apiService.fetchStockDetail(widget.stockId);
-  }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<StockDetailResponse>(
-      future: _stockDetailFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    final data = widget.detail;
 
-        if (snapshot.hasError) {
-          return Center(child: Text('에러 발생: ${snapshot.error}'));
-        }
-
-        final data = snapshot.data!;
-
-        return Column(
-          children: [
-            TopTabSelector(
-              tabs: const ['AI 예측', '재무정보'],
-              selectedIndex: _selectedTabIndex,
-              onTap: (index) {
-                setState(() {
-                  _selectedTabIndex = index;
-                });
-              },
-            ),
-            Expanded(
-              child: _selectedTabIndex == 0
-                  ? AIPredictionView(prediction: data.prediction, currentPrice: data.price)
-                  : FinancialInfoView(financials: data.financials),
-            ),
-          ],
-        );
-      },
+    return Column(
+      children: [
+        TopTabSelector(
+          tabs: const ['AI 예측', '재무정보'],
+          selectedIndex: _selectedTabIndex,
+          onTap: (index) {
+            setState(() {
+              _selectedTabIndex = index;
+            });
+          },
+        ),
+        Expanded(
+          child: _selectedTabIndex == 0
+              ? AIPredictionView(
+            prediction: data.prediction,
+            currentPrice: data.price,
+          )
+              : FinancialInfoView(financials: data.financials),
+        ),
+      ],
     );
   }
 }

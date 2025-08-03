@@ -18,12 +18,12 @@ class _CandlestickChartState extends State<CandlestickChart> {
   List<CandleData> _candles = [];
   bool _loading = true;
 
-  String _selectedInterval = '1M'; // 기본 interval
+  String _selectedInterval = '3M'; // 기본 interval
 
   final Map<String, String> intervalLabels = {
     '1D': '1D',
     '1W': '1W',
-    '1M': '1M',
+    '3M': '3M',
     '1Y': '1Y',
     '5Y': '5Y',
   };
