@@ -1,147 +1,109 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:stockapp/screens/chart_new_screen.dart';
+import 'package:stockapp/data/pattern_api.dart';
+import 'package:stockapp/models/pattern.dart';
 import 'package:stockapp/screens/chart_detail_screen.dart';
 
-class ChartScreen extends StatelessWidget {
+class ChartScreen extends StatefulWidget {
   const ChartScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: PatternListPage(),
-    );
-  }
+  State<ChartScreen> createState() => _ChartScreenState();
 }
 
-class PatternListPage extends StatefulWidget {
-  const PatternListPage({super.key});
-
-  @override
-  State<PatternListPage> createState() => _PatternListPageState();
-}
-
-class _PatternListPageState extends State<PatternListPage> {
-  List<Map<String, dynamic>> serverPatterns = [];
-
-  List<String> savedPatterns = [];
+class _ChartScreenState extends State<ChartScreen> {
+  List<Pattern> patterns = [];
   List<File> previewImages = [];
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadSavedPatterns();
+    _fetchPatterns();
   }
 
-  Future<void> _loadSavedPatterns() async {
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File('${dir.path}/pattern_list.json');
-    if (await file.exists()) {
-      final content = await file.readAsString();
-      final patternJsonStrings = List<String>.from(jsonDecode(content));
+  Future<void> _fetchPatterns() async {
+    try {
+      final result = await PatternApi.getPatterns();
 
-      final updatedPatterns = <String>[];
-      final previews = <File>[];
-
-      for (var p in patternJsonStrings) {
-        final original = jsonDecode(p);
-        final ts = original['timestamp'];
-        final patternFile = File('${dir.path}/pattern_$ts.json');
-
-        if (await patternFile.exists()) {
-          final latestContent = await patternFile.readAsString();
-          updatedPatterns.add(latestContent);
-        } else {
-          updatedPatterns.add(p);
-        }
-
-        final imgFile = File('${dir.path}/pattern_$ts.png');
-        previews.add(await imgFile.exists() ? imgFile : File(''));
-      }
-
-      setState(() {
-        savedPatterns = updatedPatterns;
-        previewImages = previews;
-      });
-    }
-  }
-
-  Future<void> _savePatternList() async {
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File('${dir.path}/pattern_list.json');
-    await file.writeAsString(jsonEncode(savedPatterns));
-  }
-
-  void _navigateToCreatePattern() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const ChartNewScreen()),
-    );
-    if (result != null) {
-      final json = jsonDecode(result);
-      final ts = json['timestamp'];
       final dir = await getApplicationDocumentsDirectory();
-      final imgFile = File('${dir.path}/pattern_$ts.png');
+      final images = await Future.wait(result.map((pattern) async {
+        final file = File('${dir.path}/pattern_${pattern.id}.png');
+        return await file.exists() ? file : File('');
+      }));
 
       setState(() {
-        savedPatterns.add(result);
-        previewImages.add(imgFile);
+        patterns = result;
+        previewImages = images;
+        isLoading = false;
       });
-      _savePatternList();
+    } catch (e) {
+      debugPrint('패턴 불러오기 실패: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('❌ 서버 패턴 로딩 실패: ${e.toString()}')),
+      );
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: const Text('패턴 목록'),
-      ),
-      body: ListView.builder(
-        itemCount: savedPatterns.length,
+      appBar: AppBar(title: const Text('서버 패턴 목록')),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView.builder(
+        itemCount: patterns.length,
         itemBuilder: (context, index) {
+          final pattern = patterns[index];
           final preview = previewImages[index];
-          return GestureDetector(
-            onTap: () async {
-              final ts = jsonDecode(savedPatterns[index])['timestamp'];
-              final dir = await getApplicationDocumentsDirectory();
-              final jsonFile = File('${dir.path}/pattern_$ts.json');
-              final updatedJson = await jsonFile.readAsString();
 
-              if (!context.mounted) return;
-              final result = await Navigator.push(
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => PatternDetailPage(
-                    patternJson: updatedJson,
+                  builder: (_) => PatternDetailPage(
+                    pattern: pattern, // 변경: pattern 객체 직접 전달
                     imageFile: preview,
                   ),
                 ),
               );
-              if (result == true) {
-                await _loadSavedPatterns();
-                _savePatternList();
-              }
             },
             child: Card(
-              margin: const EdgeInsets.all(8.0),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: preview.existsSync()
-                    ? Image.file(preview, fit: BoxFit.cover)
-                    : const Icon(Icons.image_not_supported, size: 50),
+              margin: const EdgeInsets.all(8),
+              child: Row(
+                children: [
+                  if (preview.existsSync())
+                    Image.file(
+                      preview,
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.cover,
+                    )
+                  else
+                    const SizedBox(
+                      width: 100,
+                      height: 100,
+                      child: Icon(Icons.image_not_supported),
+                    ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ListTile(
+                      title: Text(pattern.patternName),
+                      subtitle: Text(
+                          '오차 ${pattern.tolerance}, 기간 ${pattern.periodValue} ${pattern.periodUnit}'),
+                    ),
+                  ),
+                ],
               ),
             ),
           );
         },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _navigateToCreatePattern,
-        child: const Icon(Icons.add),
       ),
     );
   }

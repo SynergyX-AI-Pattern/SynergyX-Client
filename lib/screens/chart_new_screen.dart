@@ -3,8 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:stockapp/models/pattern.dart';
-import 'package:stockapp/services/api_service.dart';
+import 'package:stockapp/data/pattern_api.dart';
 
 
 class ChartNewScreen extends StatefulWidget {
@@ -21,7 +20,7 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
   int? selectedIndex;
   double tolerance = 1.0;
   int periodValue = 15;
-  String periodUnit = 'minute';
+  String periodUnit = 'DAY';
   final GlobalKey _repaintKey = GlobalKey();
   String selectedStock = '';
   late int timestamp;
@@ -65,7 +64,6 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
 
   void _savePattern() async {
     final patternName = 'Pattern_$timestamp';
-
     final convertedPoints = points.map((p) => (p.dy ~/ spacing)).toList();
 
     final request = PatternRequest(
@@ -73,11 +71,11 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
       points: convertedPoints,
       tolerance: tolerance,
       periodValue: periodValue,
-      periodUnit: periodUnit,
+      periodUnit: periodUnit, // .toUpperCase()는 toJson()에서 처리됨
     );
 
     try {
-      await ApiService.sendPatternToServer(request);
+      await PatternApi.createPattern(request);
       await _captureAndSaveImage();
 
       if (!mounted) return;
@@ -124,11 +122,8 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
                     DropdownButton<String>(
                       value: periodUnit,
                       items: [
-                        DropdownMenuItem(value: 'sec', child: Text('초')),
-                        DropdownMenuItem(value: 'minute', child: Text('분')),
-                        DropdownMenuItem(value: 'hour', child: Text('시')),
-                        DropdownMenuItem(value: 'day', child: Text('일')),
-                        DropdownMenuItem(value: 'month', child: Text('월')),
+                        DropdownMenuItem(value: 'HOUR', child: Text('시간')),
+                        DropdownMenuItem(value: 'DAY', child: Text('일')),
                       ],
                       onChanged: (val) => setState(() => periodUnit = val!),
                     )
