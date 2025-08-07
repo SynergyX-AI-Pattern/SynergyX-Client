@@ -1,12 +1,12 @@
-class Pattern {
+class PatternRequest {
   final String id;
   final String patternName;
   final List<int> points;
   final double tolerance;
   final int periodValue;
-  final String periodUnit;
+  final String periodUnit; // "HOUR" 또는 "DAY"로 제한
 
-  Pattern({
+  PatternRequest({
     required this.id,
     required this.patternName,
     required this.points,
@@ -15,19 +15,17 @@ class Pattern {
     required this.periodUnit,
   });
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'patternName': patternName,
-      'points': points,
-      'tolerance': tolerance,
-      'periodValue': periodValue,
-      'periodUnit': periodUnit,
-    };
-  }
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    '': patternName,
+    'points': points,
+    'tolerance': tolerance,
+    'periodValue': periodValue,
+    'periodUnit': periodUnit.toUpperCase(),
+  };
 
-  factory Pattern.fromJson(Map<String, dynamic> json) {
-    return Pattern(
+  factory PatternRequest.fromJson(Map<String, dynamic> json) {
+    return PatternRequest(
       id: json['patternId'].toString(),
       patternName: json['patternName'] ?? '이름없음',
       points: (json['points'] as List)

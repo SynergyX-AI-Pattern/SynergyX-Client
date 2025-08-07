@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:stockapp/screens/search_info_screen.dart';
 import 'package:stockapp/screens/chart_edit_screen.dart';
@@ -25,6 +26,36 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
   late Map<String, dynamic> data;
   late List<dynamic> appliedStockList;
   late TextEditingController _titleController;
+
+  Widget _buildResultChart(List<dynamic>? curve) {
+    if (curve == null || curve.isEmpty) {
+      return const Center(child: Text('차트 데이터 없음'));
+    }
+
+    final spots = <FlSpot>[];
+    for (int i = 0; i < curve.length; i++) {
+      final point = curve[i];
+      final value = (point['value'] as num).toDouble();
+      spots.add(FlSpot(i.toDouble(), value));
+    }
+
+    return LineChart(
+      LineChartData(
+        titlesData: FlTitlesData(show: false),
+        gridData: FlGridData(show: false),
+        borderData: FlBorderData(show: false),
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            isCurved: true,
+            color: Colors.blue,
+            barWidth: 2,
+            dotData: FlDotData(show: false),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -305,6 +336,11 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                   const Text(
                     '백테스트 결과',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 200,
+                    child: _buildResultChart(backtest['equityCurve'] as List<dynamic>?),
                   ),
                   const SizedBox(height: 8),
                   Text('종목: ${backtest['stockName']} (${backtest['symbol']})'),

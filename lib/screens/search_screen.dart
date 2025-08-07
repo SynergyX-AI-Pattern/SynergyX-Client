@@ -124,14 +124,14 @@ class _StockSearchPageState extends State<StockSearchPage> {
                   return SearchStockItem(
                     stock: stock,
                     onTap: () {
-                      if (widget.onStockSelected != null) {
-                           widget.onStockSelected!(stock.name); // 또는 stock.id
-                          }
-                          Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                          builder: (_) => DetailScreen()),
-                          );
+                      //if (widget.onStockSelected != null) {
+                      //     widget.onStockSelected!(stock.name); // 또는 stock.id
+                      //    }
+                      //    Navigator.push(
+                      //    context,
+                      //    MaterialPageRoute(
+                      //    builder: (_) => DetailScreen()),
+                      //    );
                     },
                   );
                 },
