@@ -81,28 +81,38 @@ class _StockSearchPageState extends State<StockSearchPage> {
                         decoration: InputDecoration(
                           hintText: '종목 검색',
                           hintStyle: const TextStyle(
-                              color: Color(0xFFAEAEAE),
-                              fontWeight: FontWeight.w500),
+                            color: Color(0xFFAEAEAE),
+                            fontWeight: FontWeight.w500,
+                          ),
                           border: InputBorder.none,
                           prefixIcon: const Padding(
                             padding: EdgeInsets.only(left: 10),
-                            child: Icon(Icons.search,
-                                size: 26, color: Color(0xFF767676)),
+                            child: Icon(
+                              Icons.search,
+                              size: 26,
+                              color: Color(0xFF767676),
+                            ),
                           ),
                           prefixIconConstraints: const BoxConstraints(
-                              minWidth: 40, minHeight: 40),
-                          suffixIcon: _controller.text.isNotEmpty
-                              ? IconButton(
-                            icon: const Icon(Icons.highlight_remove,
-                                size: 18),
-                            onPressed: () {
-                              _controller.clear();
-                              _onSearchChanged();
-                            },
-                          )
-                              : null,
-                          contentPadding:
-                          const EdgeInsets.symmetric(vertical: 11),
+                            minWidth: 40,
+                            minHeight: 40,
+                          ),
+                          suffixIcon:
+                              _controller.text.isNotEmpty
+                                  ? IconButton(
+                                    icon: const Icon(
+                                      Icons.highlight_remove,
+                                      size: 18,
+                                    ),
+                                    onPressed: () {
+                                      _controller.clear();
+                                      _onSearchChanged();
+                                    },
+                                  )
+                                  : null,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 11,
+                          ),
                         ),
                       ),
                     ),
@@ -136,6 +146,7 @@ class _StockSearchPageState extends State<StockSearchPage> {
                   );
                 },
               ),
+
             ),
           ],
         ),

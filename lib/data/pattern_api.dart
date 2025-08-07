@@ -31,8 +31,6 @@ class PatternApi {
     return dataRaw.map((json) => Pattern.fromJson(json)).toList();
   }
 
-
-
   // 패턴 상세 조회 (GET)
   static Future<Pattern> getPatternDetail(String id) async {
     final res = await _dio.get('/patterns/$id');
