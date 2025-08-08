@@ -6,10 +6,13 @@ import 'package:stockapp/services/push_notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await PushNotificationService.initialize();
-  FirebaseMessaging.onBackgroundMessage(
+
+  FirebaseMessaging.onBackgroundMessage( //얘가 앞에 있는게 좋다고 해서 수정
     PushNotificationService.firebaseMessagingBackgroundHandler,
   );
+
+  await PushNotificationService.initialize();
+
   runApp(const MyApp());
 }
 
