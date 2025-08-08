@@ -79,30 +79,34 @@ class _ChartScreenState extends State<ChartScreen> {
             },
             child: Card(
               margin: const EdgeInsets.all(8),
-              child: Row(
-                children: [
-                  if (preview.existsSync())
-                    Image.file(
-                      preview,
-                      width: 100,
-                      height: 100,
-                      fit: BoxFit.cover,
-                    )
-                  else
-                    const SizedBox(
-                      width: 100,
-                      height: 100,
-                      child: Icon(Icons.image_not_supported),
+              child: ListTile(
+                leading: preview.existsSync()
+                    ? Image.file(
+                  preview,
+                  width: 100,
+                  height: 100,
+                  fit: BoxFit.cover,
+                )
+                    : const SizedBox(
+                  width: 100,
+                  height: 100,
+                  child: Icon(Icons.image_not_supported),
+                ),
+                title: Text(pattern.patternName),
+                subtitle: Text(
+                  '오차 ${pattern.tolerance}, 기간 ${pattern.periodValue} ${pattern.periodUnit}',
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PatternDetailPage(
+                        patternJson: jsonEncode(pattern.toJson()),
+                        imageFile: preview,
+                      ),
                     ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: ListTile(
-                      title: Text(pattern.patternName),
-                      subtitle: Text(
-                          '오차 ${pattern.tolerance}, 기간 ${pattern.periodValue} ${pattern.periodUnit}'),
-                    ),
-                  ),
-                ],
+                  );
+                },
               ),
             ),
           );

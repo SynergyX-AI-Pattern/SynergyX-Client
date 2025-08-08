@@ -126,8 +126,10 @@ class _StockSearchPageState extends State<StockSearchPage> {
                       if (widget.onStockSelected != null) {
                         widget.onStockSelected!(stock.name); // 또는 stock.id
                       }
-                      Navigator.pop(context, stock.name);
-                    },
+                      Navigator.pop(context, {
+                        'symbol': stock.name, // 또는 stock.symbol
+                        'id': stock.id,
+                      });                    },
                   );
                 },
               ),

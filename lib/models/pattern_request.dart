@@ -1,5 +1,5 @@
 class PatternRequest {
-  final String id;
+  final int id;
   final String patternName;
   final List<int> points;
   final double tolerance;
@@ -26,7 +26,9 @@ class PatternRequest {
 
   factory PatternRequest.fromJson(Map<String, dynamic> json) {
     return PatternRequest(
-      id: json['patternId'].toString(),
+      id: json['patternId'] is int
+          ? json['patternId']
+          : int.parse(json['patternId'].toString()),
       patternName: json['patternName'] ?? '이름없음',
       points: (json['points'] as List)
           .map((e) => (e as num).toInt())

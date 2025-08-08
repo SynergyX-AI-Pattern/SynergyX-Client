@@ -63,7 +63,7 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
   }
 
   void _savePattern() async {
-    final id = 'pattern_$timestamp';
+    final id = DateTime.now().millisecondsSinceEpoch;
     final patternName = 'Pattern_$timestamp';
     final convertedPoints = points.map((p) => (p.dy ~/ spacing)).toList();
 

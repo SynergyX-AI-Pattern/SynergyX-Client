@@ -9,6 +9,8 @@ class PatternApi {
     BaseOptions(
       baseUrl: 'http://52.79.115.136:8080',
       headers: {'Content-Type': 'application/json'},
+      connectTimeout: Duration(seconds: 10),
+      receiveTimeout: Duration(seconds: 10),
     ),
   );
 
