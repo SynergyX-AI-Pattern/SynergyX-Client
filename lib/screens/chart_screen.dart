@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:stockapp/data/pattern_api.dart';
 import 'package:stockapp/models/pattern.dart';
+import 'dart:convert';
+
 import 'package:stockapp/screens/chart_detail_screen.dart';
 
 class ChartScreen extends StatefulWidget {
@@ -68,7 +70,8 @@ class _ChartScreenState extends State<ChartScreen> {
                 context,
                 MaterialPageRoute(
                   builder: (_) => PatternDetailPage(
-                    pattern: pattern, // 변경: pattern 객체 직접 전달
+                    patternJson: jsonEncode(pattern.toJson()),
+
                     imageFile: preview,
                   ),
                 ),

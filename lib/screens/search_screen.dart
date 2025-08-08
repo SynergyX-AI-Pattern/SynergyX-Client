@@ -123,31 +123,30 @@ class _StockSearchPageState extends State<StockSearchPage> {
 
             // 검색 결과 리스트
             Expanded(
-              child:
-                  isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : filtered.isEmpty
-                      ? const Center(child: Text('검색 결과가 없습니다'))
-                      : ListView.builder(
-                        itemCount: filtered.length,
-                        itemBuilder: (context, index) {
-                          final stock = filtered[index];
-                          return SearchStockItem(
-                            stock: stock,
-                            onTap: () {
-                              /** 종목 상세 넘어가는 부분
-                       * if (widget.onStockSelected != null) {
-                          //   widget.onStockSelected!(stock.name); // 또는 stock.id
-                          // }
-                          // Navigator.push(
-                          //   context,
-                          //   MaterialPageRoute(
-                          //       builder: (_) => DetailScreen()),
-                          // ); **/
-                            },
-                          );
-                        },
-                      ),
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : filtered.isEmpty
+                  ? const Center(child: Text('검색 결과가 없습니다'))
+                  : ListView.builder(
+                itemCount: filtered.length,
+                itemBuilder: (context, index) {
+                  final stock = filtered[index];
+                  return SearchStockItem(
+                    stock: stock,
+                    onTap: () {
+                      //if (widget.onStockSelected != null) {
+                      //     widget.onStockSelected!(stock.name); // 또는 stock.id
+                      //    }
+                      //    Navigator.push(
+                      //    context,
+                      //    MaterialPageRoute(
+                      //    builder: (_) => DetailScreen()),
+                      //    );
+                    },
+                  );
+                },
+              ),
+
             ),
           ],
         ),

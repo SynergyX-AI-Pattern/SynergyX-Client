@@ -15,9 +15,20 @@ class PatternApi {
   // 패턴 목록 조회 (GET)
   static Future<List<Pattern>> getPatterns() async {
     final res = await _dio.get('/patterns');
-    return (res.data as List)
-        .map((json) => Pattern.fromJson(json))
-        .toList();
+    print('패턴 목록 응답: ${res.data}');
+
+    if (res.data == null || res.data is! Map) {
+      throw Exception("패턴 응답이 null이거나 올바른 Map이 아님: ${res.data}");
+    }
+
+    final map = res.data as Map<String, dynamic>;
+    final dataRaw = map['result'];
+
+    if (dataRaw == null || dataRaw is! List) {
+      return []; // 패턴이 없을 경우
+    }
+
+    return dataRaw.map((json) => Pattern.fromJson(json)).toList();
   }
 
   // 패턴 상세 조회 (GET)
