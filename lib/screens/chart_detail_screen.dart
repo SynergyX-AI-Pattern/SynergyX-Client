@@ -75,6 +75,7 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
 
   PatternRequest _buildPatternRequestFromData() {
     return PatternRequest(
+      id: DateTime.now().millisecondsSinceEpoch,
       patternName: data['title'] ?? '이름없는 패턴',
       points: (data['points'] is List)
           ? List<int>.from(data['points'].map((e) => int.tryParse(e.toString()) ?? 0))

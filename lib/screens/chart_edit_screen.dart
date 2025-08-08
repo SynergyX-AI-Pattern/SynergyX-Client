@@ -69,8 +69,10 @@ class _ChartEditScreenState extends State<ChartEditPage> {
 
   void _updatePattern() async {
     final convertedPoints = points.map((p) => (p.dy ~/ spacing)).toList();
+    final id = DateTime.now().millisecondsSinceEpoch;
 
     final request = PatternRequest(
+      id: id,
       patternName: patternName,
       points: convertedPoints,
       tolerance: tolerance,
