@@ -12,6 +12,7 @@ class PatternApi {
       connectTimeout: Duration(seconds: 10),
       receiveTimeout: Duration(seconds: 10),
     ),
+  )..interceptors.add(LogInterceptor(requestBody: true, responseBody: true)
   );
 
   // 패턴 목록 조회 (GET)
@@ -33,24 +34,20 @@ class PatternApi {
     return dataRaw.map((json) => Pattern.fromJson(json)).toList();
   }
 
-  // 패턴 상세 조회 (GET)
-  static Future<Pattern> getPatternDetail(String id) async {
+  static Future<Pattern> getPatternDetail(int id) async {         // ✅ int
     final res = await _dio.get('/patterns/$id');
     return Pattern.fromJson(res.data);
   }
 
-  // 패턴 생성 (POST)
   static Future<void> createPattern(PatternRequest request) async {
     await _dio.post('/patterns', data: request.toJson());
   }
 
-  // 패턴 수정 (PATCH)
-  static Future<void> updatePattern(String id, PatternRequest request) async {
+  static Future<void> updatePattern(int id, PatternRequest request) async { // ✅ int
     await _dio.patch('/patterns/$id', data: request.toJson());
   }
 
-  // 패턴 삭제 (DELETE)
-  static Future<void> deletePattern(String id) async {
+  static Future<void> deletePattern(int id) async {                // ✅ int
     await _dio.delete('/patterns/$id');
   }
 }
