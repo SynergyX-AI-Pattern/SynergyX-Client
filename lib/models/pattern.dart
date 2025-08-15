@@ -30,14 +30,13 @@ class Pattern {
     return Pattern(
       id: json['patternId'] is String
           ? int.tryParse(json['patternId']) ?? 0
-          : json['patternId'] ?? 0,
-      patternName: json['patternName'] ?? '이름없음',
-      points: (json['points'] as List)
-          .map((e) => (e as num).toInt())
-          .toList(),
-      tolerance: (json['tolerance'] ?? 0.0) as double,
-      periodValue: json['periodValue'] ?? 0,
-      periodUnit: json['periodUnit'] ?? 'day',
+          : (json['patternId'] as num?)?.toInt() ?? 0,
+      patternName: (json['patternName'] ?? '이름없음').toString(),
+      points: (json['points'] as List).map((e) => (e as num).toInt()).toList(),
+      tolerance: (json['tolerance'] as num?)?.toDouble() ?? 0.0,
+      periodValue: (json['periodValue'] as num?)?.toInt() ?? 0,
+      periodUnit: (json['periodUnit'] ?? 'DAY').toString(),
     );
   }
+
 }

@@ -59,15 +59,31 @@ class _ChartBacktestScreenState extends State<ChartBacktestScreen> {
     updated['backtestResult'] = simulatedResult;
     await file.writeAsString(jsonEncode(updated));
 
-    // 결과 페이지로 이동
+    // 결과 페이지로 이동 (수정본)
     if (mounted) {
+      final merged = {
+        ...simulatedResult, // 서버 응답 { isSuccess, code, result: {...} }
+
+        // 루트에도 보정 필드 싣기
+        'stockId': _selectedStockId,
+        'stockName': _selectedSymbol,
+
+        // 서버가 안 준 필드를 result 안에도 안전하게 주입
+        'result': {
+          ...simulatedResult['result'],
+          'stockId': simulatedResult['result']?['stockId'] ?? _selectedStockId,
+          'stockName': simulatedResult['result']?['stockName'] ?? _selectedSymbol,
+        },
+      };
+
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => BacktestResultScreen(result: simulatedResult),
+          builder: (_) => BacktestResultScreen(result: merged),
         ),
       );
     }
+
   }
 
   @override
