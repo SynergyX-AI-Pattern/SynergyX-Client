@@ -13,8 +13,15 @@ class StockName extends StatefulWidget {
 }
 
 class _StockNameState extends State<StockName> {
-  bool isFavorite = false;
+  late bool isFavorite;
+  bool _busy = false;
   final WatchlistApiService _apiService2 = WatchlistApiService();
+
+  @override
+  void initState() {
+    super.initState();
+    isFavorite = widget.detail.isWatchlist;  // API값으로 초기화
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +50,7 @@ class _StockNameState extends State<StockName> {
 
                 setState(() {
                   isFavorite = !isFavorite;
+                  _busy = true;
                 });
 
                 try {
