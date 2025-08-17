@@ -55,15 +55,14 @@ class ImageSearchApiService {
           'accept': '*/*',
           if (bearerToken != null && bearerToken.isNotEmpty)
             'Authorization': 'Bearer $bearerToken',
-          // Content-Type 생략 (multipart boundary를 Dio가 자동으로 붙임)
         },
+        // 4xx도 throw하지 않음 → UI에서 code/isSuccess로 분기
+        validateStatus: (s) => s != null && s < 500,
       ),
       cancelToken: cancelToken,
     );
 
-    if (res.data == null) {
-      throw Exception('서버 응답이 비어있습니다.');
-    }
+    if (res.data == null) throw Exception('서버 응답이 비어있습니다.');
     return ImageSearchResult.fromJson(res.data!);
   }
 }
