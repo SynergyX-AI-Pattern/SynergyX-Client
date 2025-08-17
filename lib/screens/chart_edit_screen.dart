@@ -9,8 +9,13 @@ import 'package:stockapp/data/pattern_api.dart';
 
 class ChartEditPage extends StatefulWidget {
   final Map<String, dynamic> patternData;
+  final Future<Map<String, dynamic>> Function() onSaved; // 수정 후 데이터를 돌려줄 콜백
 
-  const ChartEditPage({super.key, required this.patternData, required Future<Map<String, dynamic>> Function() onSaved});
+  const ChartEditPage({
+    super.key,
+    required this.patternData,
+    required this.onSaved,
+  });
 
   @override
   State<ChartEditPage> createState() => _ChartEditScreenState();
@@ -24,7 +29,7 @@ class _ChartEditScreenState extends State<ChartEditPage> {
   late int periodValue;
   late String periodUnit;
   late double tolerance;
-  late int timestamp;
+  late int patternId; // 기존 패턴의 ID (이미지 파일명과 매칭)
   final GlobalKey _repaintKey = GlobalKey();
   int? selectedIndex;
 
@@ -32,8 +37,8 @@ class _ChartEditScreenState extends State<ChartEditPage> {
   void initState() {
     super.initState();
     final data = widget.patternData;
-    timestamp = data['timestamp'];
-    patternName = data['title'] ?? 'Pattern_$timestamp';
+    patternId = data['id'];
+    patternName = data['title'] ?? 'Pattern_$patternId';
     periodValue = data['periodValue'] ?? 15;
     periodUnit = (data['periodUnit'] ?? 'DAY').toUpperCase();
     tolerance = data['tolerance']?.toDouble() ?? 1.0;
@@ -45,7 +50,8 @@ class _ChartEditScreenState extends State<ChartEditPage> {
     );
   }
 
-  Future<void> _captureAndSaveImage() async {
+  // 패턴 ID를 기반으로 수정된 이미지를 저장
+  Future<void> _captureAndSaveImage(int patternId) async {
     try {
       await Future.delayed(const Duration(milliseconds: 100));
       final boundary = _repaintKey.currentContext?.findRenderObject();
@@ -55,7 +61,7 @@ class _ChartEditScreenState extends State<ChartEditPage> {
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       final pngBytes = byteData!.buffer.asUint8List();
       final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/pattern_$timestamp.png');
+      final file = File('${dir.path}/pattern_${patternId}.png');
       await file.writeAsBytes(pngBytes);
     } catch (e) {
       debugPrint('이미지 저장 실패: $e');
@@ -69,7 +75,7 @@ class _ChartEditScreenState extends State<ChartEditPage> {
 
   void _updatePattern() async {
     final convertedPoints = points.map((p) => (p.dy ~/ spacing)).toList();
-    final id = DateTime.now().millisecondsSinceEpoch;
+    final id = widget.patternData['id'];
 
     final request = PatternRequest(
       id: id,
@@ -81,14 +87,16 @@ class _ChartEditScreenState extends State<ChartEditPage> {
     );
 
     try {
-      await PatternApi.updatePattern(widget.patternData['id'], request);
-      await _captureAndSaveImage();
+      await PatternApi.updatePattern(id, request); // 서버에 수정 요청
+      await _captureAndSaveImage(id); // 로컬 이미지도 갱신
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('✅ 패턴이 수정되었습니다.')),
       );
-      Navigator.pop(context);
+      // 수정된 패턴 정보를 전달하여 상세 화면 갱신
+      final updated = await widget.onSaved();
+      Navigator.pop(context, updated);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -130,7 +138,6 @@ class _ChartEditScreenState extends State<ChartEditPage> {
                     DropdownButton<String>(
                       value: periodUnit,
                       items: [
-                        DropdownMenuItem(value: 'MINUTE', child: Text('분')),
                         DropdownMenuItem(value: 'HOUR', child: Text('시간')),
                         DropdownMenuItem(value: 'DAY', child: Text('일')),
                       ],

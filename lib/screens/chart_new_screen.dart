@@ -39,7 +39,8 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
     ];
   }
 
-  Future<void> _captureAndSaveImage() async {
+  // 패턴 ID를 받아 로컬에 이미지를 저장하는 함수
+  Future<void> _captureAndSaveImage(int patternId) async {
     try {
       await Future.delayed(const Duration(milliseconds: 100));
       final boundary = _repaintKey.currentContext?.findRenderObject();
@@ -49,7 +50,7 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       final pngBytes = byteData!.buffer.asUint8List();
       final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/pattern_$timestamp.png');
+      final file = File('${dir.path}/pattern_$patternId.png');
       await file.writeAsBytes(pngBytes);
     } catch (e, stackTrace) {
       debugPrint('이미지 저장 실패: $e');
@@ -63,7 +64,9 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
   }
 
   void _savePattern() async {
-    final id = DateTime.now().millisecondsSinceEpoch;
+    // 저장 시점의 타임스탬프로 ID를 생성한다.
+    timestamp = DateTime.now().millisecondsSinceEpoch;
+    final id = timestamp;
     final patternName = 'Pattern_$timestamp';
     final convertedPoints = points.map((p) => (p.dy ~/ spacing)).toList();
 
@@ -78,13 +81,13 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
 
     try {
       await PatternApi.createPattern(request);
-      await _captureAndSaveImage();
+      await _captureAndSaveImage(id); // 이미지도 동일한 ID로 저장
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('✅ 패턴이 서버에 저장되었습니다!')),
       );
-      Navigator.pop(context);
+      Navigator.pop(context, true); // 생성 성공 여부 전달
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -92,6 +95,7 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
       );
     }
   }
+
 
 
 

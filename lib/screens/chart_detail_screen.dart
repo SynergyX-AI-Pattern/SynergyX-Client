@@ -74,14 +74,21 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
   }
 
   PatternRequest _buildPatternRequestFromData() {
+    // 기존 패턴 정보를 기반으로 서버에 보낼 요청 객체 생성
     return PatternRequest(
-      id: DateTime.now().millisecondsSinceEpoch,
-      patternName: data['title'] ?? '이름없는 패턴',
+      id: data['id'] ?? DateTime.now().millisecondsSinceEpoch,
+      patternName: data['title'] ?? data['patternName'] ?? '이름없는 패턴',
       points: (data['points'] is List)
-          ? List<int>.from(data['points'].map((e) => int.tryParse(e.toString()) ?? 0))
+          ? List<int>.from(
+        data['points'].map((e) => int.tryParse(e.toString()) ?? 0),
+      )
           : [],
-      tolerance: (data['tolerance'] as num?)?.toDouble() ?? 0.0,
-      periodValue: data['periodValue'] ?? 0,
+      tolerance: (data['tolerance'] is String)
+          ? double.tryParse(data['tolerance']) ?? 0.0
+          : (data['tolerance'] as num?)?.toDouble() ?? 0.0,
+      periodValue: (data['periodValue'] is String)
+          ? int.tryParse(data['periodValue']) ?? 0
+          : (data['periodValue'] as num?)?.toInt() ?? 0,
       periodUnit: data['periodUnit'] ?? 'HOUR',
     );
   }
@@ -234,8 +241,8 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                             builder: (_) => const StockSearchPage(),
                           ),
                         );
-                        if (result is String) {
-                          await _applyStock(result);
+                        if (result is Map<String, dynamic> && result['symbol'] is String) {
+                          await _applyStock(result['symbol']);
                         }
                       },
                       child: const Text('종목 변경'),

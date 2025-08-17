@@ -25,14 +25,22 @@ class PatternRequest {
   };
 
   factory PatternRequest.fromJson(Map<String, dynamic> json) {
+    // 문자열 형태로 들어오는 숫자 값에 대비
+    final rawTolerance = json['tolerance'];
+    final rawPeriod = json['periodValue'];
+
     return PatternRequest(
       id: json['patternId'] is int
           ? json['patternId']
           : int.parse(json['patternId'].toString()),
       patternName: (json['patternName'] ?? '이름없음').toString(),
       points: (json['points'] as List).map((e) => (e as num).toInt()).toList(),
-      tolerance: (json['tolerance'] as num?)?.toDouble() ?? 0.0,
-      periodValue: (json['periodValue'] as num?)?.toInt() ?? 0,
+      tolerance: rawTolerance is String
+          ? double.tryParse(rawTolerance) ?? 0.0
+          : (rawTolerance as num?)?.toDouble() ?? 0.0,
+      periodValue: rawPeriod is String
+          ? int.tryParse(rawPeriod) ?? 0
+          : (rawPeriod as num?)?.toInt() ?? 0,
       periodUnit: (json['periodUnit'] ?? 'DAY').toString(),
     );
   }
