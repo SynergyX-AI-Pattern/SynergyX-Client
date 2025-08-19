@@ -1,5 +1,6 @@
 // screens/watchlist/widgets/watchlist_item.dart
 import 'package:flutter/material.dart';
+import 'package:stockapp/screens/interest_pattern_screen.dart';
 import '../../../models/stock.dart';
 
 class WatchlistItem extends StatelessWidget {
@@ -99,7 +100,13 @@ class WatchlistItem extends StatelessWidget {
               padding: const EdgeInsets.only(left: 8),
               child: OutlinedButton(
                 onPressed: () {
-                  /* 패턴 화면 */
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => InterestPatternScreen(
+                            /*넘겨줄 값*/
+                      ),
+                    ),
+                  );
                 },
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
