@@ -1,5 +1,5 @@
 class PatternRequest {
-  final int id;                 
+  final int patternId;
   final String patternName;
   final List<int> points;
   final double tolerance;
@@ -7,7 +7,7 @@ class PatternRequest {
   final String periodUnit;      // "HOUR" | "DAY"
 
   PatternRequest({
-    required this.id,
+    required this.patternId,
     required this.patternName,
     required this.points,
     required this.tolerance,
@@ -16,7 +16,7 @@ class PatternRequest {
   });
 
   Map<String, dynamic> toJson() => {
-    'patternId': id,
+    'patternId': patternId,
     'patternName': patternName,
     'points': points,
     'tolerance': tolerance,
@@ -30,7 +30,7 @@ class PatternRequest {
     final rawPeriod = json['periodValue'];
 
     return PatternRequest(
-      id: json['patternId'] is int
+      patternId: json['patternId'] is int
           ? json['patternId']
           : int.parse(json['patternId'].toString()),
       patternName: (json['patternName'] ?? '이름없음').toString(),

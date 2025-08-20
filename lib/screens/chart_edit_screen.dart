@@ -1,10 +1,7 @@
 // chart_edit_screen.dart
 
-import 'dart:io';
-import 'dart:ui' as ui;
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:stockapp/data/pattern_api.dart';
 
 class ChartEditPage extends StatefulWidget {
@@ -26,78 +23,98 @@ class _ChartEditScreenState extends State<ChartEditPage> {
   final double spacing = 50;
   late List<Offset> points;
   late String patternName;
-  late int periodValue;
-  late String periodUnit;
+
+  // ✅ nullable 로 전환
+  int? periodValue;
+  String? periodUnit;
+
+  // tolerance는 드롭다운 옵션 중 가장 가까운 값으로 스냅
   late double tolerance;
-  late int patternId; // 기존 패턴의 ID (이미지 파일명과 매칭)
-  final GlobalKey _repaintKey = GlobalKey();
+
   int? selectedIndex;
+
+  // ✅ 허용 옵션 정의
+  static const List<int> _periodOptions = [3, 5, 7, 15, 30, 60];
+  static const List<String> _unitOptions = ['HOUR', 'DAY'];
+  static const List<double> _toleranceOptions = [0.1, 0.2, 0.5, 0.8, 1.0];
+
+  double _snapTolerance(dynamic raw) {
+    // raw: num or String or null
+    double x;
+    if (raw is num) {
+      x = raw.toDouble();
+    } else if (raw is String) {
+      x = double.tryParse(raw) ?? 1.0;
+    } else {
+      x = 1.0;
+    }
+    // 가장 가까운 허용값으로 스냅
+    double best = _toleranceOptions.first;
+    double bestDiff = (x - best).abs();
+    for (final v in _toleranceOptions) {
+      final d = (x - v).abs();
+      if (d < bestDiff) {
+        best = v;
+        bestDiff = d;
+      }
+    }
+    return best;
+  }
 
   @override
   void initState() {
     super.initState();
     final data = widget.patternData;
-    patternId = data['id'];
-    patternName = data['title'] ?? 'Pattern_$patternId';
-    periodValue = data['periodValue'] ?? 15;
-    periodUnit = (data['periodUnit'] ?? 'DAY').toUpperCase();
-    tolerance = data['tolerance']?.toDouble() ?? 1.0;
+
+    patternName = data['title'] ?? 'Pattern_${DateTime.now().millisecondsSinceEpoch}';
+
+    final pvRaw = data['periodValue'];
+    final int? pv = (pvRaw is int) ? pvRaw : (pvRaw is String ? int.tryParse(pvRaw) : null);
+    periodValue = [3, 5, 7, 15, 30, 60].contains(pv) ? pv ?? 15 : 15;
+
+    final puRaw = (data['periodUnit'] ?? 'DAY').toString().toUpperCase();
+    periodUnit = (puRaw == 'HOUR' || puRaw == 'DAY') ? puRaw : 'DAY';
+
+    // 🔥 여기! 0.0이 와도 허용값으로 스냅
+    tolerance = _snapTolerance(data['tolerance']);
 
     final rawPoints = List.from(data['points'] ?? []);
     points = List.generate(
       rawPoints.length,
-          (i) => Offset(i * spacing, (rawPoints[i] as int) * spacing),
+          (i) => Offset(i * spacing, ((rawPoints[i] as num) * spacing).toDouble()),
     );
-  }
-
-  // 패턴 ID를 기반으로 수정된 이미지를 저장
-  Future<void> _captureAndSaveImage(int patternId) async {
-    try {
-      await Future.delayed(const Duration(milliseconds: 100));
-      final boundary = _repaintKey.currentContext?.findRenderObject();
-      if (boundary is! RenderRepaintBoundary) return;
-      if (boundary.debugNeedsPaint) await Future.delayed(const Duration(milliseconds: 100));
-      final image = await boundary.toImage(pixelRatio: 3.0);
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      final pngBytes = byteData!.buffer.asUint8List();
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/pattern_${patternId}.png');
-      await file.writeAsBytes(pngBytes);
-    } catch (e) {
-      debugPrint('이미지 저장 실패: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('이미지 저장에 실패했습니다.')),
-        );
-      }
-    }
   }
 
   void _updatePattern() async {
     final convertedPoints = points.map((p) => (p.dy ~/ spacing)).toList();
     final id = widget.patternData['id'];
 
+    // ✅ 서버로는 null이 안 가도록 기본값 보정
     final request = PatternRequest(
-      id: id,
+      patternId: id,
       patternName: patternName,
       points: convertedPoints,
       tolerance: tolerance,
-      periodValue: periodValue,
-      periodUnit: periodUnit,
+      periodValue: periodValue ?? _periodOptions.first, // 미선택이면 3 등 기본
+      periodUnit: periodUnit ?? _unitOptions.last,      // 미선택이면 'DAY'
     );
 
     try {
-      await PatternApi.updatePattern(id, request); // 서버에 수정 요청
-      await _captureAndSaveImage(id); // 로컬 이미지도 갱신
-
+      final body = request.toJson();
+      debugPrint('➡️ updatePattern body=$body');  // 요청 JSON 확인
+      await PatternApi.updatePattern(id, request);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('✅ 패턴이 수정되었습니다.')),
       );
-      // 수정된 패턴 정보를 전달하여 상세 화면 갱신
       final updated = await widget.onSaved();
+      if (!mounted) return;
       Navigator.pop(context, updated);
     } catch (e) {
+      if (e is DioException) {
+        debugPrint('❌ status=${e.response?.statusCode}');
+        debugPrint('❌ error body=${e.response?.data}'); // 서버 응답 찍기
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('❌ 수정 실패: ${e.toString()}')),
@@ -127,22 +144,31 @@ class _ChartEditScreenState extends State<ChartEditPage> {
                   children: [
                     const Text('기간: '),
                     const SizedBox(width: 12),
+                    // ✅ periodValue: nullable + hint
                     DropdownButton<int>(
-                      value: periodValue,
-                      items: [3, 5, 7, 15, 30, 60]
-                          .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
+                      isExpanded: false,
+                      value: (_periodOptions.contains(periodValue)) ? periodValue : null,
+                      hint: const Text('값 선택'),
+                      items: _periodOptions
+                          .map((e) => DropdownMenuItem<int>(
+                        value: e,
+                        child: Text('$e'),
+                      ))
                           .toList(),
-                      onChanged: (val) => setState(() => periodValue = val!),
+                      onChanged: (val) => setState(() => periodValue = val),
                     ),
                     const SizedBox(width: 12),
+                    // ✅ periodUnit: nullable + hint
                     DropdownButton<String>(
-                      value: periodUnit,
-                      items: [
+                      isExpanded: false,
+                      value: (_unitOptions.contains(periodUnit)) ? periodUnit : null,
+                      hint: const Text('단위 선택'),
+                      items: const [
                         DropdownMenuItem(value: 'HOUR', child: Text('시간')),
                         DropdownMenuItem(value: 'DAY', child: Text('일')),
                       ],
-                      onChanged: (val) => setState(() => periodUnit = val!),
-                    )
+                      onChanged: (val) => setState(() => periodUnit = val),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -151,14 +177,15 @@ class _ChartEditScreenState extends State<ChartEditPage> {
                     const Text('오차 범위: '),
                     const SizedBox(width: 12),
                     DropdownButton<double>(
-                      value: tolerance,
-                      items: [0.1, 0.2, 0.5, 0.8, 1.0]
-                          .map((e) => DropdownMenuItem(
+                      value: _toleranceOptions.contains(tolerance) ? tolerance : null,
+                      hint: const Text('선택'),
+                      items: _toleranceOptions
+                          .map((e) => DropdownMenuItem<double>(
                         value: e,
                         child: Text('${(e * 100).toStringAsFixed(0)}%'),
                       ))
                           .toList(),
-                      onChanged: (val) => setState(() => tolerance = val!),
+                      onChanged: (val) => setState(() => tolerance = val ?? tolerance),
                     ),
                   ],
                 ),
@@ -175,38 +202,35 @@ class _ChartEditScreenState extends State<ChartEditPage> {
               child: SizedBox(
                 width: canvasSize,
                 height: canvasSize,
-                child: RepaintBoundary(
-                  key: _repaintKey,
-                  child: GestureDetector(
-                    onPanStart: (details) {
+                child: GestureDetector(
+                  onPanStart: (details) {
+                    final local = details.localPosition;
+                    for (int i = 0; i < points.length; i++) {
+                      if ((points[i] - local).distance < 15) {
+                        setState(() => selectedIndex = i);
+                        break;
+                      }
+                    }
+                  },
+                  onPanUpdate: (details) {
+                    if (selectedIndex != null) {
                       final local = details.localPosition;
-                      for (int i = 0; i < points.length; i++) {
-                        if ((points[i] - local).distance < 15) {
-                          setState(() => selectedIndex = i);
-                          break;
-                        }
-                      }
-                    },
-                    onPanUpdate: (details) {
-                      if (selectedIndex != null) {
-                        final local = details.localPosition;
-                        final fixedX = points[selectedIndex!].dx;
-                        final clampedY = local.dy.clamp(0.0, spacing * (gridSize - 1));
-                        final snappedY = (clampedY / spacing).round() * spacing;
-                        setState(() {
-                          points[selectedIndex!] = Offset(fixedX, snappedY);
-                        });
-                      }
-                    },
-                    onPanEnd: (_) => setState(() => selectedIndex = null),
-                    child: CustomPaint(
-                      size: Size(canvasSize, canvasSize),
-                      painter: GridPainter(
-                        points: points,
-                        gridSize: gridSize,
-                        spacing: spacing,
-                        selectedIndex: selectedIndex,
-                      ),
+                      final fixedX = points[selectedIndex!].dx;
+                      final clampedY = local.dy.clamp(0.0, spacing * (gridSize - 1));
+                      final snappedY = (clampedY / spacing).round() * spacing;
+                      setState(() {
+                        points[selectedIndex!] = Offset(fixedX, snappedY);
+                      });
+                    }
+                  },
+                  onPanEnd: (_) => setState(() => selectedIndex = null),
+                  child: CustomPaint(
+                    size: Size(canvasSize, canvasSize),
+                    painter: GridPainter(
+                      points: points,
+                      gridSize: gridSize,
+                      spacing: spacing,
+                      selectedIndex: selectedIndex,
                     ),
                   ),
                 ),

@@ -12,12 +12,10 @@ import 'package:stockapp/models/pattern.dart';
 
 class PatternDetailPage extends StatefulWidget {
   final Pattern pattern;
-  final File imageFile;
 
   const PatternDetailPage({
     super.key,
     required this.pattern,
-    required this.imageFile,
   });
 
   @override
@@ -28,6 +26,31 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
   late Map<String, dynamic> data;
   late List<dynamic> appliedStockList;
   late TextEditingController _titleController;
+
+  /// 패턴 포인트를 선 그래프로 그리는 위젯
+  Widget _buildPatternChart(List<int> points) {
+    final spots = <FlSpot>[];
+    for (int i = 0; i < points.length; i++) {
+      spots.add(FlSpot(i.toDouble(), points[i].toDouble()));
+    }
+
+    return LineChart(
+      LineChartData(
+        titlesData: FlTitlesData(show: false),
+        gridData: FlGridData(show: false),
+        borderData: FlBorderData(show: false),
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            isCurved: true,
+            color: Colors.blue,
+            barWidth: 2,
+            dotData: FlDotData(show: false),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildResultChart(List<dynamic>? curve) {
     if (curve == null || curve.isEmpty) {
@@ -76,7 +99,7 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
   PatternRequest _buildPatternRequestFromData() {
     // 기존 패턴 정보를 기반으로 서버에 보낼 요청 객체 생성
     return PatternRequest(
-      id: data['id'] ?? DateTime.now().millisecondsSinceEpoch,
+      patternId: data['id'] ?? DateTime.now().millisecondsSinceEpoch,
       patternName: data['title'] ?? data['patternName'] ?? '이름없는 패턴',
       points: (data['points'] is List)
           ? List<int>.from(
@@ -95,13 +118,15 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
 
   Future<void> _saveTitle(String title) async {
     data['title'] = title;
-    final id = data['id'];
+    final rawId = data['id'];
+    final int id = (rawId is int) ? rawId : int.parse(rawId.toString());
     await PatternApi.updatePattern(id, _buildPatternRequestFromData());
     if (mounted) setState(() {});
   }
 
   Future<void> _deletePattern() async {
-    final id = data['id'];
+    final rawId = data['id'];
+    final int id = (rawId is int) ? rawId : int.parse(rawId.toString());
     await PatternApi.deletePattern(id);
     if (!mounted) return;
     Navigator.pop(context, true);
@@ -134,7 +159,6 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
       MaterialPageRoute(
         builder: (_) => PatternDetailPage(
           pattern: updatedPattern,
-          imageFile: widget.imageFile,
         ),
       ),
     );
@@ -195,7 +219,8 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                   builder: (_) => ChartEditPage(
                     patternData: Map<String, dynamic>.from(data),
                     onSaved: () async {
-                      final id = data['id'];
+                      final rawId = data['id'];
+                      final int id = (rawId is int) ? rawId : int.parse(rawId.toString());
                       final pattern = await PatternApi.getPatternDetail(id);
                       return pattern.toJson();
                     },
@@ -216,9 +241,11 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: widget.imageFile.existsSync()
-                  ? Image.file(widget.imageFile, fit: BoxFit.contain)
-                  : const Center(child: Icon(Icons.image_not_supported, size: 50)),
+              // 이미지 대신 패턴 포인트를 선 차트로 표시
+              child: SizedBox(
+                width: double.infinity,
+                child: _buildPatternChart(widget.pattern.points),
+              ),
             ),
           ),
           Padding(
