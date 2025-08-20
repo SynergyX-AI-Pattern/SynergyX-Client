@@ -1,9 +1,7 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:stockapp/data/pattern_api.dart';
 import 'package:stockapp/models/pattern.dart';
-import 'dart:convert';
 
 import 'package:stockapp/screens/chart_detail_screen.dart';
 import 'package:stockapp/screens/chart_new_screen.dart';
@@ -16,11 +14,9 @@ class ChartScreen extends StatefulWidget {
 }
 
 class _ChartScreenState extends State<ChartScreen> {
+  // 서버에서 받아온 패턴 리스트
   List<Pattern> patterns = [];
-  List<File> previewImages = [];
   bool isLoading = true;
-
-  Future<Directory> _docsDir() => getApplicationDocumentsDirectory(); // (편의 헬퍼, 있으면 유지)
 
   @override
   void initState() {
@@ -28,20 +24,13 @@ class _ChartScreenState extends State<ChartScreen> {
     _fetchPatterns();
   }
 
+  /// 서버에서 패턴 목록을 불러오는 함수
   Future<void> _fetchPatterns() async {
     try {
       final result = await PatternApi.getPatterns();
-
-      final dir = await _docsDir();
-      final images = await Future.wait(result.map((pattern) async {
-        final file = File('${dir.path}/pattern_${pattern.id}.png');
-        return await file.exists() ? file : File('');
-      }));
-
-      if (!mounted) return; // [ADDED]
+      if (!mounted) return;
       setState(() {
         patterns = result;
-        previewImages = images;
         isLoading = false;
       });
     } catch (e) {
@@ -81,15 +70,13 @@ class _ChartScreenState extends State<ChartScreen> {
     }
   }
 
-  Future<void> _openDetail(Pattern pattern, File preview) async {
+  /// 패턴 상세 페이지로 이동
+  Future<void> _openDetail(Pattern pattern) async {
     try {
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => PatternDetailPage(
-            pattern: pattern,
-            imageFile: preview,
-          ),
+          builder: (_) => PatternDetailPage(pattern: pattern),
         ),
       );
       // 상세에서 수정/삭제가 이루어졌을 수 있으니 돌아오면 새로고침
@@ -111,30 +98,21 @@ class _ChartScreenState extends State<ChartScreen> {
       itemCount: patterns.length,
       itemBuilder: (context, index) {
         final pattern = patterns[index];
-        final preview = index < previewImages.length
-            ? previewImages[index]
-            : File('');
 
         return Card(
           margin: const EdgeInsets.all(8),
           child: ListTile(
-            leading: (preview.path.isNotEmpty && preview.existsSync())
-                ? Image.file(
-              preview,
+            // 이미지 대신 패턴 포인트를 간단한 선 그래프로 표시
+            leading: SizedBox(
               width: 100,
               height: 100,
-              fit: BoxFit.cover,
-            )
-                : const SizedBox(
-              width: 100,
-              height: 100,
-              child: Icon(Icons.image_not_supported),
+              child: _buildPatternChart(pattern.points),
             ),
             title: Text(pattern.patternName),
             subtitle: Text(
               '오차 ${pattern.tolerance}, 기간 ${pattern.periodValue} ${pattern.periodUnit}',
             ),
-            onTap: () => _openDetail(pattern, preview),
+            onTap: () => _openDetail(pattern),
           ),
         );
       },
@@ -151,4 +129,30 @@ class _ChartScreenState extends State<ChartScreen> {
       ),
     );
   }
+}
+
+/// 패턴 포인트를 선 차트로 그려주는 위젯
+Widget _buildPatternChart(List<int> points) {
+  // 패턴 포인트를 FlSpot 리스트로 변환
+  final spots = <FlSpot>[];
+  for (int i = 0; i < points.length; i++) {
+    spots.add(FlSpot(i.toDouble(), points[i].toDouble()));
+  }
+
+  return LineChart(
+    LineChartData(
+      titlesData: FlTitlesData(show: false),
+      gridData: FlGridData(show: false),
+      borderData: FlBorderData(show: false),
+      lineBarsData: [
+        LineChartBarData(
+          spots: spots,
+          isCurved: true,
+          color: Colors.blue,
+          barWidth: 2,
+          dotData: FlDotData(show: false),
+        ),
+      ],
+    ),
+  );
 }

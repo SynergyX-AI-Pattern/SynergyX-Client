@@ -1,8 +1,4 @@
-import 'dart:ui' as ui;
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:stockapp/data/pattern_api.dart';
 
 
@@ -21,8 +17,6 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
   double tolerance = 1.0;
   int periodValue = 15;
   String periodUnit = 'DAY';
-  final GlobalKey _repaintKey = GlobalKey();
-  String selectedStock = '';
   late int timestamp;
 
   @override
@@ -39,36 +33,13 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
     ];
   }
 
-  Future<void> _captureAndSaveImage() async {
-    try {
-      await Future.delayed(const Duration(milliseconds: 100));
-      final boundary = _repaintKey.currentContext?.findRenderObject();
-      if (boundary is! RenderRepaintBoundary) return;
-      if (boundary.debugNeedsPaint) await Future.delayed(const Duration(milliseconds: 100));
-      final image = await boundary.toImage(pixelRatio: 3.0);
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      final pngBytes = byteData!.buffer.asUint8List();
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/pattern_$timestamp.png');
-      await file.writeAsBytes(pngBytes);
-    } catch (e, stackTrace) {
-      debugPrint('이미지 저장 실패: $e');
-      debugPrint('StackTrace: $stackTrace');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('이미지 저장에 실패했습니다.')),
-        );
-      }
-    }
-  }
-
   void _savePattern() async {
     final id = DateTime.now().millisecondsSinceEpoch;
     final patternName = 'Pattern_$timestamp';
     final convertedPoints = points.map((p) => (p.dy ~/ spacing)).toList();
 
     final request = PatternRequest(
-      id: id,
+      patternId: id,
       patternName: patternName,
       points: convertedPoints,
       tolerance: tolerance,
@@ -77,8 +48,7 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
     );
 
     try {
-      await PatternApi.createPattern(request);
-      await _captureAndSaveImage();
+      await PatternApi.createPattern(request); // 이미지 없이 포인트 정보만 전송
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -92,7 +62,6 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
       );
     }
   }
-
 
 
   @override
@@ -203,8 +172,6 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
                         child: SizedBox(
                           width: canvasSize,
                           height: canvasSize,
-                          child: RepaintBoundary(
-                            key: _repaintKey,
                             child: GestureDetector(
                               onPanStart: (details) {
                                 final localPos = details.localPosition;
@@ -242,7 +209,6 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
                               ),
                             ),
                           ),
-                        ),
                       );
                     },
                   ),
