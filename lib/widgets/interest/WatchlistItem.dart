@@ -104,6 +104,8 @@ class WatchlistItem extends StatelessWidget {
                     MaterialPageRoute(
                       builder: (_) => InterestPatternScreen(
                             /*넘겨줄 값*/
+                        stockId: stock.id,       // 모델에 맞게 전달
+                        stockName: stock.name,
                       ),
                     ),
                   );
