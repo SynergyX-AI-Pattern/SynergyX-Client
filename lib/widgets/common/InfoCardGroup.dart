@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 
 class InfoCardGroup extends StatelessWidget {
-  final String title;
+  final String? title;
   final List<Map<String, dynamic>> rows; // 변경된 타입
 
   const InfoCardGroup({
     super.key,
-    required this.title,
+    this.title,
     required this.rows,
   });
 
   @override
   Widget build(BuildContext context) {
+    final hasTitle = (title != null && title!.isNotEmpty); //title 유무
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Padding(
@@ -19,8 +21,8 @@ class InfoCardGroup extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: CardStyles.title),
-            const SizedBox(height: 10),
+            if (hasTitle) Text(title!, style: CardStyles.title),  //title 존재시 출력
+            if (hasTitle) const SizedBox(height: 10),
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -39,6 +41,7 @@ class InfoCardGroup extends StatelessWidget {
                     children: rows.map((row) {
                       final label = row['label'] as String;
                       final value = row['value'] as String;
+                      final String? subValue = row['subValue']?.toString();
                       final color = row['color'] as Color? ?? Colors.black; // 기본값 검정
 
                       return SizedBox(
@@ -52,6 +55,8 @@ class InfoCardGroup extends StatelessWidget {
                               value,
                               style: CardStyles.cost.copyWith(color: color),
                             ),
+                            if (subValue != null && subValue.isNotEmpty) // 값 있을 때만 출력
+                              Text(subValue, style: CardStyles.subvalue.copyWith(color: color)),
                           ],
                         ),
                       );
@@ -84,5 +89,10 @@ class CardStyles {
   static const TextStyle cost = TextStyle(
     fontWeight: FontWeight.w600,
     fontSize: 16,
+  );
+
+  static const TextStyle subvalue = TextStyle(
+    fontWeight: FontWeight.w600,
+    fontSize: 12,
   );
 }
