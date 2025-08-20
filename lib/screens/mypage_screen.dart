@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'package:stockapp/screens/login_screen.dart';
 import 'package:stockapp/screens/profile_edit_screen.dart';
 import 'package:stockapp/screens/notification_settings_screen.dart';
@@ -42,7 +43,7 @@ class MypageScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      : AppBar(
         title: const Text('마이페이지'),
       ),
       body: Padding(
