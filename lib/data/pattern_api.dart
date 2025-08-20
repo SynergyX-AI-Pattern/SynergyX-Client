@@ -50,4 +50,5 @@ class PatternApi {
   static Future<void> deletePattern(int id) async {                // ✅ int
     await _dio.delete('/patterns/$id');
   }
+
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:stockapp/screens/chart_backtest_screen.dart';
 import 'package:stockapp/screens/login_screen.dart';
+import 'package:stockapp/screens/profile_edit_screen.dart';
+import 'package:stockapp/screens/notification_settings_screen.dart';
+import 'package:stockapp/screens/faq_screen.dart';
 
 class MypageScreen extends StatelessWidget {
   const MypageScreen({super.key});
@@ -10,6 +12,30 @@ class MypageScreen extends StatelessWidget {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (_) => const LoginScreen()),
+    );
+  }
+
+  // 회원 정보 수정 화면으로 이동하는 메서드
+  void _goToProfileEdit(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ProfileEditScreen()),
+    );
+  }
+
+  // 알림 설정 화면으로 이동하는 메서드
+  void _goToNotificationSettings(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const NotificationSettingsScreen()),
+    );
+  }
+
+  // FAQ 화면으로 이동하는 메서드
+  void _goToFaq(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const FaqScreen()),
     );
   }
 
@@ -29,28 +55,22 @@ class MypageScreen extends StatelessWidget {
               style: TextStyle(fontSize: 18),
             ),
             const SizedBox(height: 20),
-            // 백테스팅 화면으로 이동하는 버튼
+            // 회원 정보 수정 화면으로 이동하는 버튼
             ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ChartBacktestScreen(
-                      patternData: {
-                        'id': 'mock_pattern',
-                        'patternName': 'Mock 패턴',
-                        'tolerance': 0.05,
-                        'periodValue': 30,
-                        'periodUnit': '일',
-                        'timestamp': DateTime.now()
-                            .millisecondsSinceEpoch
-                            .toString(),
-                      },
-                    ),
-                  ),
-                );
-              },
-              child: const Text('📈 백테스팅 이동'),
+              onPressed: () => _goToProfileEdit(context),
+              child: const Text('회원 정보 수정'),
+            ),
+            const SizedBox(height: 12),
+            // 알림 설정 화면으로 이동하는 버튼
+            ElevatedButton(
+              onPressed: () => _goToNotificationSettings(context),
+              child: const Text('알림 설정'),
+            ),
+            const SizedBox(height: 12),
+            // FAQ 화면으로 이동하는 버튼
+            ElevatedButton(
+              onPressed: () => _goToFaq(context),
+              child: const Text('FAQ'),
             ),
             const SizedBox(height: 12),
             // 로그인 화면으로 이동하는 로그아웃 버튼
