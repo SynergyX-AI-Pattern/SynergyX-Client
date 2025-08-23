@@ -299,7 +299,7 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Theme.of(context).dividerColor),
                   ),
-                  child: const Text('이미지를 선택하세요.'),
+                  child: const Text('이미지를 선택해주세요.'),
                 ),
               const SizedBox(height: 12),
 
