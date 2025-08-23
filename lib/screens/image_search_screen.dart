@@ -27,6 +27,7 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
   ImageSearchResult? _result;
 
   CancelToken? _cancelToken; // 업로드 취소용
+  bool _isDialogOpen = false; // 로딩 다이얼로그 열린 상태 추적
 
   // ─ 권한
   Future<bool> _ensureCameraPermission() async {
@@ -139,7 +140,7 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
       if (!mounted) return;
       setState(() => _result = res);
 
-      if (mounted) Navigator.of(context).pop(); // 로딩 다이얼로그 닫기
+      _closeLoadingIfOpen(); // 로딩 다이얼로그 닫기
 
       // 8초 이상 걸렸으면 사용자 안내
       if (stopwatch.elapsed.inSeconds >= 8 && mounted) {
@@ -182,7 +183,7 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
     } on DioException catch (e) {
       if (!mounted) return;
       // 로딩 다이얼로그 닫기
-      Navigator.of(context).pop();
+      _closeLoadingIfOpen();
 
       if (CancelToken.isCancel(e)) {
         setState(() {
@@ -207,7 +208,7 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
     } catch (e, st) {
       debugPrint('upload error: $e\n$st');
       if (!mounted) return;
-      Navigator.of(context).pop(); // 로딩 닫기
+      _closeLoadingIfOpen(); // 로딩 닫기
       setState(() {
         _error = '업로드 실패: $e';
       });
@@ -217,10 +218,11 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
   }
 
   void _showCancellableLoading() {
+    _isDialogOpen = true;
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) {
+      builder: (dialogCtx) {
         return WillPopScope(
           onWillPop: () async => false,
           child: AlertDialog(
@@ -239,7 +241,8 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
               TextButton(
                 onPressed: () {
                   _cancelToken?.cancel('사용자 취소');
-                  Navigator.of(context).pop(); // 다이얼로그 닫기
+                  _isDialogOpen = false;
+                  Navigator.of(dialogCtx).pop(); // 다이얼로그 닫기
                 },
                 child: const Text('취소'),
               ),
@@ -247,11 +250,19 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
           ),
         );
       },
-    );
+    ).whenComplete(() {
+      _isDialogOpen = false; // 어떤 경로로든 닫히면 false 보장
+    });
+  }
+
+  void _closeLoadingIfOpen() {
+    if (_isDialogOpen && mounted) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+    _isDialogOpen = false;
   }
 
   // ─ UI
-  @override
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -261,17 +272,17 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
         statusBarBrightness: Brightness.light, // iOS 아이콘 색
       ),
       child: Scaffold(
-        backgroundColor: const Color(0xFFFFFFFF),
+        backgroundColor: Colors.white,
         appBar: AppBar(
-          backgroundColor: const Color(0xFFFFFFFF),
-          // 앱바 배경
-          surfaceTintColor: const Color(0xFFFFFFFF),
-          // M3 표면 틴트 제거
+          title: const Text(
+            'AI 종목검색',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+          ),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          centerTitle: true,
           elevation: 0,
-          titleTextStyle: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
-          title: const Text('AI 종목검색'),
+          surfaceTintColor: Colors.white,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () => Navigator.of(context).maybePop(),
@@ -360,7 +371,7 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      // 코드에 따라 힌트 문구가 자연스럽게 섞이도록 간단 조건
+                      // 코드에 따라 힌트 문구가 섞이도록 간단 조건
                       if (_error!.contains('용량'))
                         const Text('• 이미지 크기를 줄이거나 스크린샷 대신 원본 이미지를 사용해 보세요.'),
                       if (_error!.contains('형식'))
