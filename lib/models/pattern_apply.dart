@@ -5,12 +5,18 @@ class PatternApply {
   final PatternInfo? pattern;
   final BacktestResult? backtest;
 
+  final int? patternApplyId;
+  final bool? isAlertEnabled;
+
   PatternApply({
     required this.stockId,
     required this.stockName,
     required this.stockImage,
     required this.pattern,
     required this.backtest,
+
+    this.patternApplyId,
+    this.isAlertEnabled,
   });
 
   factory PatternApply.fromJson(Map<String, dynamic> json) {
@@ -25,6 +31,9 @@ class PatternApply {
       stockImage: stock['stockImage'] as String? ?? '',
       pattern: patt == null ? null : PatternInfo.fromJson(patt),
       backtest: bt == null ? null : BacktestResult.fromJson(bt),
+
+      patternApplyId: r['patternApplyId'] as int?,
+      isAlertEnabled: r['isAlertEnabled'] as bool?,
     );
   }
 

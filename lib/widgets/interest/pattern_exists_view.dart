@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:stockapp/models/pattern_apply.dart';
 import 'package:stockapp/widgets/interest/BacktestResultCard.dart';
+import 'package:stockapp/widgets/interest/pattern_alert_button.dart';
 import 'package:stockapp/widgets/interest/pattern_chart_card.dart';
 import 'package:stockapp/widgets/interest/pattern_controls_row.dart';
 import 'package:stockapp/widgets/interest/pattern_section_header.dart';
@@ -25,14 +26,40 @@ class PatternExistsView extends StatelessWidget {
     final patt = data.pattern!;
 
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(vertical: 8),
       children: [
-        const PatternSectionHeader(title: '내 전략 패턴'),
+        // 헤더 + 알림 버튼 행
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: PatternChartCard(points: patt.points), // 차트 위젯 분리
+          child: Row(
+            children: [
+              const Expanded(
+                child: PatternSectionHeader(title: '내 전략 패턴'),
+              ),
+              if (data.patternApplyId != null)
+                PatternAlertButton(
+                  patternApplyId: data.patternApplyId!,
+                  initialEnabled: data.isAlertEnabled ?? false, // 모델에 없으면 false
+                )
+              else
+                IconButton(
+                  onPressed: null,
+                  icon: const Icon(Icons.notifications_none),
+                  tooltip: '패턴 적용 후 사용 가능',
+                ),
+            ],
+          ),
+        ),
+
+        // 차트
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: PatternChartCard(points: patt.points),
         ),
         const SizedBox(height: 12),
+
+        // 컨트롤
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: PatternControlsRow(
@@ -44,6 +71,7 @@ class PatternExistsView extends StatelessWidget {
         ),
         const SizedBox(height: 20),
 
+        // 백테스팅
         const PatternSectionHeader(title: '최근 백테스팅 결과'),
         if (data.hasBacktest)
           BacktestResultCard(result: data.backtest!)
