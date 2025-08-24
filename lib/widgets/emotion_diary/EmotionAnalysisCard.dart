@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
 
 class EmotionAnalysisCard extends StatelessWidget {
-  const EmotionAnalysisCard({super.key});
+  final List<String> emotions;
+  final String summary;
+  final String feedback;
+
+  const EmotionAnalysisCard({
+    super.key,
+    required this.emotions,
+    required this.summary,
+    required this.feedback,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -16,10 +25,28 @@ class EmotionAnalysisCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
           ),
           child:
-              Text(
-                  style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
-                  '감정 분석: 후회, 분노, 실망 \n투자 조언: 감정이 격한 날은 매매를 자제하는 것도 전략입니다. \n오늘의 일기: 삼성전자 매도 후 하락으로 큰 분노. 감정적 결정에 대해 되돌아보는 하루.'
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.sentiment_satisfied_alt, color: Colors.orange),
+                  const SizedBox(width: 8),
+                  Expanded( // ✅ 요거 추가!
+                    child: Text(
+                      '감정 분석: ${emotions.join(", ")}',
+                      softWrap: true,
+                      overflow: TextOverflow.visible,
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: 10),
+              Text('💡 투자 조언: $feedback'),
+              const SizedBox(height: 10),
+              Text('📝 오늘의 일기: $summary'),
+            ],
+          ),
           ),
         ),
       );
