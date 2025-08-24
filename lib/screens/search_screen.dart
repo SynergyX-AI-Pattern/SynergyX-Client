@@ -3,6 +3,7 @@ import 'package:stockapp/data/stock_api.dart';
 import 'package:stockapp/widgets/search/SearchStockItem.dart';
 import '../models/stock.dart';
 import 'stock_detail_screen.dart';
+import 'package:stockapp/screens/image_search_screen.dart';
 
 class StockSearchPage extends StatefulWidget {
   final void Function(String stockCode)? onStockSelected;
@@ -86,7 +87,7 @@ class _StockSearchPageState extends State<StockSearchPage> {
                           ),
                           border: InputBorder.none,
                           prefixIcon: const Padding(
-                            padding: EdgeInsets.only(left: 10),
+                            padding: EdgeInsets.only(left: 10, right: 10),
                             child: Icon(
                               Icons.search,
                               size: 26,
@@ -97,19 +98,41 @@ class _StockSearchPageState extends State<StockSearchPage> {
                             minWidth: 40,
                             minHeight: 40,
                           ),
-                          suffixIcon:
-                              _controller.text.isNotEmpty
-                                  ? IconButton(
-                                    icon: const Icon(
-                                      Icons.highlight_remove,
-                                      size: 18,
+                          suffixIcon: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (_controller.text.isNotEmpty)
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.highlight_remove,
+                                    size: 18,
+                                  ),
+                                  onPressed: () {
+                                    _controller.clear();
+                                    _onSearchChanged();
+                                  },
+                                  padding: const EdgeInsets.only(right: 0),
+                                  constraints: const BoxConstraints(),
+                                ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.image_search,
+                                  color: Color(0xFF767676),
+                                  size: 26,
+                                ),
+                                onPressed: () {
+                                  Navigator.of(
+                                    context,
+                                    rootNavigator: false,
+                                  ).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => const ImageSearchScreen(),
                                     ),
-                                    onPressed: () {
-                                      _controller.clear();
-                                      _onSearchChanged();
-                                    },
-                                  )
-                                  : null,
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
                           contentPadding: const EdgeInsets.symmetric(
                             vertical: 11,
                           ),
@@ -123,30 +146,30 @@ class _StockSearchPageState extends State<StockSearchPage> {
 
             // 검색 결과 리스트
             Expanded(
-              child: isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : filtered.isEmpty
-                  ? const Center(child: Text('검색 결과가 없습니다'))
-                  : ListView.builder(
-                itemCount: filtered.length,
-                itemBuilder: (context, index) {
-                  final stock = filtered[index];
-                  return SearchStockItem(
-                    stock: stock,
-                    onTap: () {
-                      //if (widget.onStockSelected != null) {
-                      //     widget.onStockSelected!(stock.name); // 또는 stock.id
-                      //    }
-                      //    Navigator.push(
-                      //    context,
-                      //    MaterialPageRoute(
-                      //    builder: (_) => DetailScreen()),
-                      //    );
-                    },
-                  );
-                },
-              ),
-
+              child:
+                  isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : filtered.isEmpty
+                      ? const Center(child: Text('검색 결과가 없습니다'))
+                      : ListView.builder(
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final stock = filtered[index];
+                          return SearchStockItem(
+                            stock: stock,
+                            onTap: () {
+                              //if (widget.onStockSelected != null) {
+                              //     widget.onStockSelected!(stock.name); // 또는 stock.id
+                              //    }
+                              //    Navigator.push(
+                              //    context,
+                              //    MaterialPageRoute(
+                              //    builder: (_) => DetailScreen()),
+                              //    );
+                            },
+                          );
+                        },
+                      ),
             ),
           ],
         ),
