@@ -24,9 +24,47 @@ class PatternControlsRow extends StatelessWidget {
         const SizedBox(width: 8),
         PatternChip(text: toleranceText),
         const Spacer(),
-        OutlinedButton(onPressed: onDelete, child: const Text('삭제')),
+        ElevatedButton(
+          onPressed: onDelete,
+          style: ElevatedButton.styleFrom(
+            // 메인 컬러
+            // primary: Colors.red, // Deprecated
+            // 텍스트색상, ripple컬러
+            foregroundColor: Colors.black,
+            // 버튼 배경 색
+            backgroundColor: Color(0xFFF5F5F5),
+            textStyle: TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
+            // 글자 주변에 적용
+            padding: EdgeInsets.all(12),
+            // 테두리 설정
+            side: BorderSide(color: Colors.black, width: 1),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          child: Text('삭제'),
+        ),
         const SizedBox(width: 8),
-        FilledButton.tonal(onPressed: onEdit, child: const Text('수정')),
+        ElevatedButton(
+          onPressed: onEdit,
+          style: ElevatedButton.styleFrom(
+            // 메인 컬러
+            // primary: Colors.red, // Deprecated
+            // 텍스트색상, ripple컬러
+            foregroundColor: Colors.white,
+            // 버튼 배경 색
+            backgroundColor: Colors.black,
+            textStyle: TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
+            // 글자 주변에 적용
+            padding: EdgeInsets.all(12),
+            // 테두리 설정
+            side: BorderSide(color: Colors.black, width: 1),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          child: Text('수정'),
+        ),
       ],
     );
   }
