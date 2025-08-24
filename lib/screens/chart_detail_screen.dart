@@ -1,8 +1,8 @@
-import 'dart:io';
+//chart_detail_screen
 
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:path_provider/path_provider.dart';
+import 'dart:math' as math;
 
 import 'package:stockapp/screens/search_info_screen.dart';
 import 'package:stockapp/screens/chart_edit_screen.dart';
@@ -13,10 +13,7 @@ import 'package:stockapp/models/pattern.dart';
 class PatternDetailPage extends StatefulWidget {
   final Pattern pattern;
 
-  const PatternDetailPage({
-    super.key,
-    required this.pattern,
-  });
+  const PatternDetailPage({super.key, required this.pattern});
 
   @override
   State<PatternDetailPage> createState() => _PatternDetailPageState();
@@ -28,21 +25,34 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
   late TextEditingController _titleController;
 
   /// 패턴 포인트를 선 그래프로 그리는 위젯
+  /// 패턴 포인트를 선 그래프로 그리는 위젯 (y축 반전)
   Widget _buildPatternChart(List<int> points) {
-    final spots = <FlSpot>[];
-    for (int i = 0; i < points.length; i++) {
-      spots.add(FlSpot(i.toDouble(), points[i].toDouble()));
+    if (points.isEmpty) {
+      return const SizedBox.shrink();
     }
+
+    // 저장된 y의 최고값 (정규화가 0~100이면 double maxY = 100; 로 고정)
+    final double maxY = points.reduce(math.max).toDouble();
+
+    final spots = <FlSpot>[
+      for (int i = 0; i < points.length; i++)
+      // y 반전: 화면좌표(아래로 클수록 큼) -> 그래프좌표(위로 클수록 큼)
+        FlSpot(i.toDouble(), (maxY - points[i]).toDouble()),
+    ];
 
     return LineChart(
       LineChartData(
+        minX: 0,
+        maxX: (points.length - 1).toDouble(),
+        minY: 0,
+        maxY: maxY,
         titlesData: FlTitlesData(show: false),
         gridData: FlGridData(show: false),
         borderData: FlBorderData(show: false),
         lineBarsData: [
           LineChartBarData(
             spots: spots,
-            isCurved: true,
+            isCurved: false,
             color: Colors.blue,
             barWidth: 2,
             dotData: FlDotData(show: false),
@@ -101,15 +111,18 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
     return PatternRequest(
       patternId: data['id'] ?? DateTime.now().millisecondsSinceEpoch,
       patternName: data['title'] ?? data['patternName'] ?? '이름없는 패턴',
-      points: (data['points'] is List)
+      points:
+      (data['points'] is List)
           ? List<int>.from(
         data['points'].map((e) => int.tryParse(e.toString()) ?? 0),
       )
           : [],
-      tolerance: (data['tolerance'] is String)
+      tolerance:
+      (data['tolerance'] is String)
           ? double.tryParse(data['tolerance']) ?? 0.0
           : (data['tolerance'] as num?)?.toDouble() ?? 0.0,
-      periodValue: (data['periodValue'] is String)
+      periodValue:
+      (data['periodValue'] is String)
           ? int.tryParse(data['periodValue']) ?? 0
           : (data['periodValue'] as num?)?.toInt() ?? 0,
       periodUnit: data['periodUnit'] ?? 'HOUR',
@@ -138,7 +151,9 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
         updatedData['appliedStockList'] is! List) {
       updatedData['appliedStockList'] = [];
     }
-    final current = List<Map<String, dynamic>>.from(updatedData['appliedStockList']);
+    final current = List<Map<String, dynamic>>.from(
+      updatedData['appliedStockList'],
+    );
     final alreadyExists = current.any((item) => item['symbol'] == result);
     if (!alreadyExists) {
       current.add({'symbol': result, 'name': result});
@@ -157,9 +172,7 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) => PatternDetailPage(
-          pattern: updatedPattern,
-        ),
+        builder: (_) => PatternDetailPage(pattern: updatedPattern),
       ),
     );
   }
@@ -207,20 +220,26 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
               );
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: _deletePattern,
-          ),
+          IconButton(icon: const Icon(Icons.delete), onPressed: _deletePattern),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.black,
+              side: const BorderSide(color: Colors.black12),
+            ),
             onPressed: () async {
               final updatedMap = await Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => ChartEditPage(
+                  builder:
+                      (_) => ChartEditPage(
                     patternData: Map<String, dynamic>.from(data),
                     onSaved: () async {
                       final rawId = data['id'];
-                      final int id = (rawId is int) ? rawId : int.parse(rawId.toString());
+                      final int id =
+                      (rawId is int)
+                          ? rawId
+                          : int.parse(rawId.toString());
                       final pattern = await PatternApi.getPatternDetail(id);
                       return pattern.toJson();
                     },
@@ -241,10 +260,19 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              // 이미지 대신 패턴 포인트를 선 차트로 표시
-              child: SizedBox(
-                width: double.infinity,
-                child: _buildPatternChart(widget.pattern.points),
+              child: Card(
+                color: Colors.white,
+                elevation: 3, // 살짝 그림자
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(50.0), // 카드 안쪽 여백
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: _buildPatternChart(widget.pattern.points),
+                  ),
+                ),
               ),
             ),
           ),
@@ -261,6 +289,11 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black,
+                        side: const BorderSide(color: Colors.black12), // 테두리 살짝
+                      ),
                       onPressed: () async {
                         final result = await Navigator.push(
                           context,
@@ -268,7 +301,8 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                             builder: (_) => const StockSearchPage(),
                           ),
                         );
-                        if (result is Map<String, dynamic> && result['symbol'] is String) {
+                        if (result is Map<String, dynamic> &&
+                            result['symbol'] is String) {
                           await _applyStock(result['symbol']);
                         }
                       },
@@ -281,7 +315,8 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                     ? Wrap(
                   spacing: 8,
                   runSpacing: 4,
-                  children: appliedStockList.asMap().entries.map<Widget>((entry) {
+                  children:
+                  appliedStockList.asMap().entries.map<Widget>((entry) {
                     final index = entry.key;
                     final stock = entry.value;
                     return Chip(
@@ -292,7 +327,10 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                         data['appliedStockList'] = appliedStockList;
                         final id = data['id'];
                         setState(() {});
-                        await PatternApi.updatePattern(id, _buildPatternRequestFromData());
+                        await PatternApi.updatePattern(
+                          id,
+                          _buildPatternRequestFromData(),
+                        );
                       },
                     );
                   }).toList(),
@@ -318,14 +356,18 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                   const SizedBox(height: 8),
                   SizedBox(
                     height: 200,
-                    child: _buildResultChart(backtest['equityCurve'] as List<dynamic>?),
+                    child: _buildResultChart(
+                      backtest['equityCurve'] as List<dynamic>?,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text('종목: ${backtest['stockName']} (${backtest['symbol']})'),
                   Text('매칭 횟수: ${backtest['matchedCount']}회'),
                   Text('승률: ${backtest['winRate']}%'),
                   Text('평균 수익률: ${backtest['averageReturn']}%'),
-                  Text('최대 수익률: ${backtest['maxReturn']}% (${backtest['maxReturnDate']})'),
+                  Text(
+                    '최대 수익률: ${backtest['maxReturn']}% (${backtest['maxReturnDate']})',
+                  ),
                   Text('기간: ${backtest['startDate']} ~ ${backtest['endDate']}'),
                 ],
               ],
