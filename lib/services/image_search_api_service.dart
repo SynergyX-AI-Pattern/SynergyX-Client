@@ -23,7 +23,7 @@ class ImageSearchApiService {
     _dio.interceptors.add(
       LogInterceptor(
         request: true,
-        requestHeader: true,
+        requestHeader: false,
         requestBody: true,
         responseHeader: false,
         responseBody: true,

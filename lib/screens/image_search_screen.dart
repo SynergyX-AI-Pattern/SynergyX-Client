@@ -27,6 +27,7 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
   ImageSearchResult? _result;
 
   CancelToken? _cancelToken; // 업로드 취소용
+  bool _isDialogOpen = false; // 로딩 다이얼로그 열린 상태 추적
 
   // ─ 권한
   Future<bool> _ensureCameraPermission() async {
@@ -139,7 +140,7 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
       if (!mounted) return;
       setState(() => _result = res);
 
-      if (mounted) Navigator.of(context).pop(); // 로딩 다이얼로그 닫기
+      _closeLoadingIfOpen(); // 로딩 다이얼로그 닫기
 
       // 8초 이상 걸렸으면 사용자 안내
       if (stopwatch.elapsed.inSeconds >= 8 && mounted) {
@@ -182,7 +183,7 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
     } on DioException catch (e) {
       if (!mounted) return;
       // 로딩 다이얼로그 닫기
-      Navigator.of(context).pop();
+      _closeLoadingIfOpen();
 
       if (CancelToken.isCancel(e)) {
         setState(() {
@@ -207,7 +208,7 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
     } catch (e, st) {
       debugPrint('upload error: $e\n$st');
       if (!mounted) return;
-      Navigator.of(context).pop(); // 로딩 닫기
+      _closeLoadingIfOpen(); // 로딩 닫기
       setState(() {
         _error = '업로드 실패: $e';
       });
@@ -217,10 +218,11 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
   }
 
   void _showCancellableLoading() {
+    _isDialogOpen = true;
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) {
+      builder: (dialogCtx) {
         return WillPopScope(
           onWillPop: () async => false,
           child: AlertDialog(
@@ -239,7 +241,8 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
               TextButton(
                 onPressed: () {
                   _cancelToken?.cancel('사용자 취소');
-                  Navigator.of(context).pop(); // 다이얼로그 닫기
+                  _isDialogOpen = false;
+                  Navigator.of(dialogCtx).pop(); // 다이얼로그 닫기
                 },
                 child: const Text('취소'),
               ),
@@ -247,31 +250,47 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
           ),
         );
       },
-    );
+    ).whenComplete(() {
+      _isDialogOpen = false; // 어떤 경로로든 닫히면 false 보장
+    });
   }
 
+  void _closeLoadingIfOpen() {
+    if (_isDialogOpen && mounted) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+    _isDialogOpen = false;
+  }
+
+  // ─ 공통 버튼 스타일
+  ButtonStyle get _moreButtonStyle => ElevatedButton.styleFrom(
+    backgroundColor: const Color(0xFF2C2C2C), // 다크그레이
+    foregroundColor: const Color(0xFFF5F5F5), // 오프화이트
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    padding: const EdgeInsets.symmetric(vertical: 10),
+  );
+
   // ─ UI
-  @override
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
-        statusBarColor: Colors.white, // 상태바 배경
-        statusBarIconBrightness: Brightness.dark, // 안드로이드 아이콘 색
-        statusBarBrightness: Brightness.light, // iOS 아이콘 색
+        statusBarColor: Colors.white,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
       ),
       child: Scaffold(
-        backgroundColor: const Color(0xFFFFFFFF),
+        backgroundColor: Colors.white,
         appBar: AppBar(
-          backgroundColor: const Color(0xFFFFFFFF),
-          // 앱바 배경
-          surfaceTintColor: const Color(0xFFFFFFFF),
-          // M3 표면 틴트 제거
+          title: const Text(
+            'AI 종목검색',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+          ),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          centerTitle: true,
           elevation: 0,
-          titleTextStyle: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
-          title: const Text('AI 종목검색'),
+          surfaceTintColor: Colors.white,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () => Navigator.of(context).maybePop(),
@@ -281,48 +300,80 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              // ─ 이미지 영역 (TopStockListCard 스타일)
               if (_selectedFile != null)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.file(
-                    _selectedFile!,
-                    height: 220,
-                    fit: BoxFit.cover,
+                Card(
+                  color: Colors.white,
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  elevation: 1,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.file(
+                      _selectedFile!,
+                      height: 220,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 )
               else
-                Container(
-                  height: 180,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFFFFF),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Theme.of(context).dividerColor),
+                Card(
+                  color: Colors.white,
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text('이미지를 선택하세요.'),
+                  elevation: 1,
+                  child: Container(
+                    height: 180,
+                    alignment: Alignment.center,
+                    child: const Text(
+                      '이미지를 선택해주세요.',
+                      style: const TextStyle(color: Colors.grey, fontSize: 14),
+                    ),
+                  ),
                 ),
               const SizedBox(height: 12),
 
+              // ─ 카메라/앨범 버튼 (공통 스타일 적용)
               Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton.icon(
-                      icon: const Icon(Icons.photo_camera),
-                      label: const Text('카메라'),
+                    child: ElevatedButton.icon(
+                      style: _moreButtonStyle,
+                      icon: const Icon(
+                        Icons.photo_camera,
+                        color: Color(0xFFF5F5F5),
+                      ),
+                      label: const Text(
+                        '카메라',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
                       onPressed: _loading ? null : _pickCamera,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: OutlinedButton.icon(
-                      icon: const Icon(Icons.photo_library),
-                      label: const Text('앨범'),
+                    child: ElevatedButton.icon(
+                      style: _moreButtonStyle,
+                      icon: const Icon(
+                        Icons.photo_library,
+                        color: Color(0xFFF5F5F5),
+                      ),
+                      label: const Text(
+                        '앨범',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
                       onPressed: _loading ? null : _pickGallery,
                     ),
                   ),
                 ],
               ),
 
+              // ─ 에러 영역 (버튼 포함)
               if (_error != null) ...[
                 const SizedBox(height: 12),
                 Container(
@@ -360,7 +411,6 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      // 코드에 따라 힌트 문구가 자연스럽게 섞이도록 간단 조건
                       if (_error!.contains('용량'))
                         const Text('• 이미지 크기를 줄이거나 스크린샷 대신 원본 이미지를 사용해 보세요.'),
                       if (_error!.contains('형식'))
@@ -370,16 +420,34 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          OutlinedButton.icon(
-                            onPressed: _loading ? null : _pickCamera,
-                            icon: const Icon(Icons.photo_camera),
-                            label: const Text('다시 찍기'),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              style: _moreButtonStyle,
+                              onPressed: _loading ? null : _pickCamera,
+                              icon: const Icon(
+                                Icons.photo_camera,
+                                color: Color(0xFFF5F5F5),
+                              ),
+                              label: const Text(
+                                '다시 찍기',
+                                style: TextStyle(fontWeight: FontWeight.w700),
+                              ),
+                            ),
                           ),
                           const SizedBox(width: 8),
-                          OutlinedButton.icon(
-                            onPressed: _loading ? null : _pickGallery,
-                            icon: const Icon(Icons.photo_library),
-                            label: const Text('다른 이미지'),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              style: _moreButtonStyle,
+                              onPressed: _loading ? null : _pickGallery,
+                              icon: const Icon(
+                                Icons.photo_library,
+                                color: Color(0xFFF5F5F5),
+                              ),
+                              label: const Text(
+                                '다른 이미지',
+                                style: TextStyle(fontWeight: FontWeight.w700),
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -387,45 +455,96 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
                   ),
                 ),
               ],
+
+              // ─ 결과 영역
               if (_result != null) ...[
-                const Divider(height: 24),
+                const Divider(height: 32),
                 const Text(
                   'AI 분석으로 찾은 종목',
-                  style: TextStyle(fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 17,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 if (_result!.imageUrl != null)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      _result!.imageUrl!,
-                      height: 220,
-                      fit: BoxFit.cover,
+                  Card(
+                    color: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  ),
-                const SizedBox(height: 8),
-                Text(_result!.name ?? '종목명 미확인'),
-                const SizedBox(height: 12),
-                if (_result!.id != null)
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.open_in_new),
-                    label: const Text('종목 상세 보기'),
-                    onPressed: () {
-                      final r = _result!;
-                      final item = StockItem(
-                        stockId: r.id!,
-                        name: r.name ?? '',
-                        imageUrl: r.imageUrl ?? '',
-                        price: 0,
-                        changeRate: 0,
-                        rank: 0,
-                      );
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => DetailScreen(stock: item),
-                        ),
-                      );
-                    },
+                    elevation: 1,
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          CircleAvatar(
+                            radius: 36,
+                            backgroundColor: Colors.grey.shade100,
+                            backgroundImage:
+                                _result!.imageUrl != null
+                                    ? NetworkImage(_result!.imageUrl!)
+                                    : null,
+                            child:
+                                _result!.imageUrl == null
+                                    ? const Icon(
+                                      Icons.image_not_supported,
+                                      color: Colors.grey,
+                                    )
+                                    : null,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            _result!.name ?? '종목명 미확인',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 18,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          if (_result!.id != null)
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                style: _moreButtonStyle.copyWith(
+                                  backgroundColor: MaterialStateProperty.all(
+                                    const Color(0xFF1A237E),
+                                  ),
+                                  padding: MaterialStateProperty.all(
+                                    const EdgeInsets.symmetric(vertical: 14),
+                                  ),
+                                ),
+                                icon: const Icon(
+                                  Icons.open_in_new,
+                                  color: Color(0xFFF5F5F5),
+                                ),
+                                label: const Text(
+                                  '종목 상세 보기',
+                                  style: TextStyle(fontWeight: FontWeight.w700),
+                                ),
+                                onPressed: () {
+                                  final r = _result!;
+                                  final item = StockItem(
+                                    stockId: r.id!,
+                                    name: r.name ?? '',
+                                    imageUrl: r.imageUrl ?? '',
+                                    price: 0,
+                                    changeRate: 0,
+                                    rank: 0,
+                                  );
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => DetailScreen(stock: item),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
               ],
             ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:stockapp/screens/search_screen.dart';
+import 'package:stockapp/screens/image_search_screen.dart';
 
 class StockSerachBar extends StatelessWidget {
   final String text;
@@ -23,12 +24,26 @@ class StockSerachBar extends StatelessWidget {
       child: ElevatedButton(
         style: AppButtonStyles.stockSearch,
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Icon(Icons.search, size: 26, color: Color(0xFF767676)),
-            SizedBox(width: 8),
-            Text(text, style: AppStyles.buttonText,),
+            Row(
+              children: [
+                Icon(Icons.search, size: 26, color: Color(0xFF767676)),
+                SizedBox(width: 8),
+                Text(text, style: AppStyles.buttonText,),
+              ],
+            ),
+            IconButton(
+              icon: const Icon(Icons.image_search, color: Color(0xFF767676), size: 26),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ImageSearchScreen()),
+                );
+              },
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
           ],
         ),
         onPressed: () => _handleDetail2(context),
@@ -40,7 +55,7 @@ class StockSerachBar extends StatelessWidget {
 // styles
 class AppButtonStyles {
   static final ButtonStyle stockSearch = ElevatedButton.styleFrom(
-    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+    padding: const EdgeInsets.only(left: 16, right: 4, top: 10, bottom: 10),
     backgroundColor: Color(0xFFEEEEEE),
     //버튼 배경색
     // 버튼 클릭 효과 삭제
