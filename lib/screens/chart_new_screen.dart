@@ -1,3 +1,5 @@
+//chart_new_screen
+
 import 'package:flutter/material.dart';
 import 'package:stockapp/data/pattern_api.dart';
 
@@ -119,6 +121,11 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
                 ),
                 const SizedBox(height: 12),
                 ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    side: const BorderSide(color: Colors.black12),
+                  ),
                   onPressed: _savePattern,
                   child: const Text('패턴 저장'),
                 ),
@@ -172,43 +179,43 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
                         child: SizedBox(
                           width: canvasSize,
                           height: canvasSize,
-                            child: GestureDetector(
-                              onPanStart: (details) {
+                          child: GestureDetector(
+                            onPanStart: (details) {
+                              final localPos = details.localPosition;
+                              for (int i = 0; i < points.length; i++) {
+                                if ((points[i] - localPos).distance < 15) {
+                                  setState(() => selectedIndex = i);
+                                  break;
+                                }
+                              }
+                            },
+                            onPanUpdate: (details) {
+                              if (selectedIndex != null) {
                                 final localPos = details.localPosition;
-                                for (int i = 0; i < points.length; i++) {
-                                  if ((points[i] - localPos).distance < 15) {
-                                    setState(() => selectedIndex = i);
-                                    break;
-                                  }
-                                }
-                              },
-                              onPanUpdate: (details) {
-                                if (selectedIndex != null) {
-                                  final localPos = details.localPosition;
-                                  final fixedX = points[selectedIndex!].dx;
-                                  final clampedY = localPos.dy.clamp(0.0, spacing * (gridSize - 1));
-                                  final snappedY = (clampedY / spacing).round() * spacing;
-                                  setState(() {
-                                    points[selectedIndex!] = Offset(fixedX, snappedY);
-                                  });
-                                }
-                              },
-                              onPanEnd: (_) => setState(() => selectedIndex = null),
-                              child: Stack(
-                                children: [
-                                  CustomPaint(
-                                    size: Size(canvasSize, canvasSize),
-                                    painter: GridPainter(
-                                      points: points,
-                                      gridSize: gridSize,
-                                      spacing: spacing,
-                                      selectedIndex: selectedIndex,
-                                    ),
+                                final fixedX = points[selectedIndex!].dx;
+                                final clampedY = localPos.dy.clamp(0.0, spacing * (gridSize - 1));
+                                final snappedY = (clampedY / spacing).round() * spacing;
+                                setState(() {
+                                  points[selectedIndex!] = Offset(fixedX, snappedY);
+                                });
+                              }
+                            },
+                            onPanEnd: (_) => setState(() => selectedIndex = null),
+                            child: Stack(
+                              children: [
+                                CustomPaint(
+                                  size: Size(canvasSize, canvasSize),
+                                  painter: GridPainter(
+                                    points: points,
+                                    gridSize: gridSize,
+                                    spacing: spacing,
+                                    selectedIndex: selectedIndex,
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ),
+                        ),
                       );
                     },
                   ),

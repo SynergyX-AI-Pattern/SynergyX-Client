@@ -78,14 +78,24 @@ class _ChartEditScreenState extends State<ChartEditPage> {
     // 🔥 여기! 0.0이 와도 허용값으로 스냅
     tolerance = _snapTolerance(data['tolerance']);
 
-    final rawPoints = List.from(data['points'] ?? []);
+    final rawPoints = List<num>.from(data['points'] ?? []);
+    // 점의 개수에 따라 X 간격을 재계산하여 7x7 그리드 전체를 활용
+    final double xStep = rawPoints.length > 1
+        ? (spacing * (gridSize - 1)) / (rawPoints.length - 1)
+        : spacing * (gridSize - 1);
     points = List.generate(
       rawPoints.length,
-          (i) => Offset(i * spacing, ((rawPoints[i] as num) * spacing).toDouble()),
+          (i) => Offset(
+        i * xStep,
+        // 저장된 정수 포인트를 다시 스페이싱 값으로 변환
+        (rawPoints[i].toDouble() * spacing),
+      ),
     );
   }
 
   void _updatePattern() async {
+    // X축 순서대로 정렬 후 서버에 전송할 수치로 변환
+    points.sort((a, b) => a.dx.compareTo(b.dx));
     final convertedPoints = points.map((p) => (p.dy ~/ spacing)).toList();
     final id = widget.patternData['id'];
 
@@ -125,9 +135,9 @@ class _ChartEditScreenState extends State<ChartEditPage> {
   @override
   Widget build(BuildContext context) {
     final canvasSize = spacing * (gridSize - 1);
-
     return Scaffold(
-      appBar: AppBar(title: const Text('패턴 수정')),
+      backgroundColor: Colors.white,
+      appBar: AppBar(backgroundColor: Colors.white, title: const Text('패턴 수정')),
       body: Column(
         children: [
           Padding(
@@ -191,6 +201,11 @@ class _ChartEditScreenState extends State<ChartEditPage> {
                 ),
                 const SizedBox(height: 12),
                 ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    side: const BorderSide(color: Colors.black12),
+                  ),
                   onPressed: _updatePattern,
                   child: const Text('패턴 수정'),
                 ),
@@ -198,43 +213,93 @@ class _ChartEditScreenState extends State<ChartEditPage> {
             ),
           ),
           Expanded(
-            child: Center(
-              child: SizedBox(
-                width: canvasSize,
-                height: canvasSize,
-                child: GestureDetector(
-                  onPanStart: (details) {
-                    final local = details.localPosition;
-                    for (int i = 0; i < points.length; i++) {
-                      if ((points[i] - local).distance < 15) {
-                        setState(() => selectedIndex = i);
-                        break;
-                      }
-                    }
-                  },
-                  onPanUpdate: (details) {
-                    if (selectedIndex != null) {
-                      final local = details.localPosition;
-                      final fixedX = points[selectedIndex!].dx;
-                      final clampedY = local.dy.clamp(0.0, spacing * (gridSize - 1));
-                      final snappedY = (clampedY / spacing).round() * spacing;
-                      setState(() {
-                        points[selectedIndex!] = Offset(fixedX, snappedY);
-                      });
-                    }
-                  },
-                  onPanEnd: (_) => setState(() => selectedIndex = null),
-                  child: CustomPaint(
-                    size: Size(canvasSize, canvasSize),
-                    painter: GridPainter(
-                      points: points,
-                      gridSize: gridSize,
-                      spacing: spacing,
-                      selectedIndex: selectedIndex,
+            child: Column(
+              children: [
+                // 각 열별로 점을 추가/삭제할 수 있는 버튼들
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: List.generate(gridSize, (i) {
+                    return Column(
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            final targetX = i * spacing;
+                            final existing =
+                                points.where((p) => (p.dx - targetX).abs() < 0.1).length;
+                            if (existing < 2 && points.length < gridSize * 2) {
+                              setState(() {
+                                points.add(Offset(targetX, spacing * (gridSize - 1)));
+                                points.sort((a, b) => a.dx.compareTo(b.dx));
+                              });
+                            }
+                          },
+                          child: const Text('➕', style: TextStyle(fontSize: 20)),
+                        ),
+                        const SizedBox(height: 4),
+                        GestureDetector(
+                          onTap: () {
+                            final targetX = i * spacing;
+                            final columnPoints = points
+                                .where((p) => (p.dx - targetX).abs() < 0.1)
+                                .toList();
+                            final isFirst = i == 0;
+                            final isLast = i == gridSize - 1;
+                            final mustKeep = isFirst || isLast;
+                            if (columnPoints.length > (mustKeep ? 1 : 0)) {
+                              setState(() {
+                                points.remove(columnPoints.last);
+                              });
+                            }
+                          },
+                          child: const Text('➖', style: TextStyle(fontSize: 20)),
+                        ),
+                      ],
+                    );
+                  }),
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: Center(
+                    child: SizedBox(
+                      width: canvasSize,
+                      height: canvasSize,
+                      child: GestureDetector(
+                        onPanStart: (details) {
+                          final local = details.localPosition;
+                          for (int i = 0; i < points.length; i++) {
+                            if ((points[i] - local).distance < 15) {
+                              setState(() => selectedIndex = i);
+                              break;
+                            }
+                          }
+                        },
+                        onPanUpdate: (details) {
+                          if (selectedIndex != null) {
+                            final local = details.localPosition;
+                            final fixedX = points[selectedIndex!].dx;
+                            final clampedY =
+                            local.dy.clamp(0.0, spacing * (gridSize - 1));
+                            final snappedY = (clampedY / spacing).round() * spacing;
+                            setState(() {
+                              points[selectedIndex!] = Offset(fixedX, snappedY);
+                            });
+                          }
+                        },
+                        onPanEnd: (_) => setState(() => selectedIndex = null),
+                        child: CustomPaint(
+                          size: Size(canvasSize, canvasSize),
+                          painter: GridPainter(
+                            points: points,
+                            gridSize: gridSize,
+                            spacing: spacing,
+                            selectedIndex: selectedIndex,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
         ],
@@ -242,7 +307,6 @@ class _ChartEditScreenState extends State<ChartEditPage> {
     );
   }
 }
-
 class GridPainter extends CustomPainter {
   final List<Offset> points;
   final int gridSize;

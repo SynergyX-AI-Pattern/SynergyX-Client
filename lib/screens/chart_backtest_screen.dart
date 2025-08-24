@@ -1,3 +1,5 @@
+//chart_backtest_screen
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -98,6 +100,11 @@ class _ChartBacktestScreenState extends State<ChartBacktestScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
+                  side: const BorderSide(color: Colors.black12),
+                ),
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -119,6 +126,11 @@ class _ChartBacktestScreenState extends State<ChartBacktestScreen> {
               Row(
                 children: [
                   ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black,
+                      side: const BorderSide(color: Colors.black12),
+                    ),
                     onPressed: () async {
                       final picked = await showDatePicker(
                         context: context,
@@ -138,6 +150,11 @@ class _ChartBacktestScreenState extends State<ChartBacktestScreen> {
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black,
+                      side: const BorderSide(color: Colors.black12),
+                    ),
                     onPressed: () async {
                       final picked = await showDatePicker(
                         context: context,
@@ -159,6 +176,11 @@ class _ChartBacktestScreenState extends State<ChartBacktestScreen> {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
+                  side: const BorderSide(color: Colors.black12),
+                ),
                 onPressed: (_selectedStockId != null && !_loading) ? _runBacktest : null,
                 child: _loading
                     ? const SizedBox(

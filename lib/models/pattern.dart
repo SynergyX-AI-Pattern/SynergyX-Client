@@ -1,3 +1,5 @@
+//pattern.
+
 class Pattern {
   final int patternId;
   final String patternName;
@@ -5,7 +7,7 @@ class Pattern {
   final double tolerance;       // 0.1 같은 소수
   final int periodValue;        // 3,5,7...
   final String periodUnit;      // 'DAY' | 'HOUR'
-  final List<String> appliedStockList; // 서버가 [] 또는 문자열 배열/객체 배열일 수 있어 안전 변환
+  final List<Map<String, dynamic>> appliedStockList; // 적용 종목 목록
   final dynamic backtestResult;        // null 허용
 
   Pattern({
@@ -25,21 +27,17 @@ class Pattern {
         .toList()
         ?? const <int>[];
 
-    // appliedStockList가 [{symbol,name}] 형태일 수도, ["AAPL"]일 수도, null일 수도 있음
     final stocksRaw = json['appliedStockList'];
-    final stocks = <String>[];
+    final stocks = <Map<String, dynamic>>[];
     if (stocksRaw is List) {
       for (final e in stocksRaw) {
-        if (e is Map) {
-          final name = e['name']?.toString();
-          final symbol = e['symbol']?.toString();
-          if (name != null && name.isNotEmpty) {
-            stocks.add(name);
-          } else if (symbol != null && symbol.isNotEmpty) {
-            stocks.add(symbol);
-          }
+        if (e is Map<String, dynamic>) {
+          final id = e['stockId'] ?? e['id'];
+          final name = e['name'] ?? e['symbol'] ?? '';
+          stocks.add({'stockId': id, 'name': name});
         } else {
-          stocks.add(e.toString());
+          // 문자열만 넘어올 경우 이름만 저장
+          stocks.add({'stockId': null, 'name': e.toString()});
         }
       }
     }
