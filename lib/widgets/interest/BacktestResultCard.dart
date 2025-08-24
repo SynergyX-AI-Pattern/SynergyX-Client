@@ -41,11 +41,28 @@ class BacktestResultCard extends StatelessWidget {
               const SizedBox(height: 12),
               Align(
                 alignment: Alignment.centerRight,
-                child: TextButton.icon(
+                child: ElevatedButton(
                   onPressed: () {
                     // TODO: 재실행 API 있으면 호출 후 상단 RefreshIndicator로 갱신
                   },
-                  label: const Text('다시 돌리기'),
+                  style:  ElevatedButton.styleFrom(
+                // 메인 컬러
+                // primary: Colors.red, // Deprecated
+                // 텍스트색상, ripple컬러
+                foregroundColor: Colors.white,
+                  // 버튼 배경 색
+                  backgroundColor: Colors.black,
+                  textStyle:
+                  TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
+                  // 글자 주변에 적용
+                  padding: EdgeInsets.all(12),
+                  // 테두리 설정
+                  side: BorderSide( color: Colors.black, width: 1),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)
+                  ),
+                ),
+                  child: const Text('다시 돌리기'),
                 ),
               ),
             ],

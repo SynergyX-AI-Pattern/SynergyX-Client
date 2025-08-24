@@ -1,6 +1,7 @@
 // lib/screens/interest/interest_pattern_screen.dart
 import 'package:flutter/material.dart';
 import 'package:stockapp/data/interest_pattern_api.dart';
+import 'package:stockapp/data/pattern_apply_api.dart';
 import 'package:stockapp/models/pattern_apply.dart';
 import 'package:stockapp/widgets/interest/pattern_empty_view.dart';
 import 'package:stockapp/widgets/interest/pattern_exists_view.dart';
@@ -19,6 +20,7 @@ class InterestPatternScreen extends StatefulWidget {
 class _InterestPatternScreenState extends State<InterestPatternScreen> {
   final _api = PatternApi();
   late Future<PatternApply?> _future;
+  final _applyApi = PatternApplyApi(); // delete 호출
 
   @override
   void initState() {
@@ -31,9 +33,49 @@ class _InterestPatternScreenState extends State<InterestPatternScreen> {
     await _future;
   }
 
+  Future<void> _confirmAndDelete(int patternApplyId) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('전략 패턴을 삭제하시겠습니까?'),
+        content: const Text('이 동작은 취소할 수 없으며 내 전략 차트가 삭제됩니다.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('취소')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('삭제')),
+        ],
+      ),
+    );
+
+    if (ok != true) return;
+
+    try {
+      await _applyApi.delete(patternApplyId);
+
+      if (!mounted) return;
+
+      // ★ 1) 낙관적 갱신: 즉시 EmptyView로 전환
+      setState(() {
+        _future = Future<PatternApply?>.value(null);
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('패턴이 해제되었습니다.')),
+      );
+
+      // ★ 2) 서버 상태 동기화: 약간의 지연 후 재조회(백엔드 반영 지연 대비)
+      await Future.delayed(const Duration(milliseconds: 150));
+      _reload();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('패턴 해제 실패: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<PatternApply?>(
+    return FutureBuilder<PatternApply?>( // 그대로 OK
       future: _future,
       builder: (context, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
@@ -60,7 +102,7 @@ class _InterestPatternScreenState extends State<InterestPatternScreen> {
         final hasPattern = data != null && data.hasPattern;
 
         return Scaffold(
-          appBar: AppBar(),
+          appBar: AppBar(backgroundColor: Colors.white),
           backgroundColor: Colors.white,
           body: RefreshIndicator(
             onRefresh: _reload,
@@ -71,7 +113,16 @@ class _InterestPatternScreenState extends State<InterestPatternScreen> {
                   child: hasPattern
                       ? PatternExistsView(
                     data: data!,
-                    onDelete: () {/* TODO */},
+                    onDelete: () {
+                      final id = data.patternApplyId;
+                      if (id == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('패턴 식별자를 찾을 수 없습니다.')),
+                        );
+                        return;
+                      }
+                      _confirmAndDelete(id);
+                    },
                     onEdit: () {/* TODO */},
                     onRunBacktest: () {/* TODO */},
                   )
