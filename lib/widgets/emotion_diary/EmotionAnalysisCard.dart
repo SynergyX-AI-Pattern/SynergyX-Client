@@ -32,7 +32,7 @@ class EmotionAnalysisCard extends StatelessWidget {
                 children: [
                   const Icon(Icons.sentiment_satisfied_alt, color: Colors.orange),
                   const SizedBox(width: 8),
-                  Expanded( // ✅ 요거 추가!
+                  Expanded(
                     child: Text(
                       '감정 분석: ${emotions.join(", ")}',
                       softWrap: true,
