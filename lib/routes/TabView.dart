@@ -19,7 +19,7 @@ class _TabviewState extends State<Tabview> {
     MainScreen(),
     InterestScreen(),
     ChartScreen(),
-    DairyScreen(),
+    DiaryScreen(),
     MypageScreen(),
   ];
 

@@ -1,14 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:stockapp/models/pattern_apply.dart';
 import 'package:stockapp/widgets/common/InfoCardGroup.dart';
+import 'dart:math' as math;
 
 class BacktestResultCard extends StatelessWidget {
   final BacktestResult result;
   const BacktestResultCard({required this.result});
 
-  String _fmtPct(num v, {bool isRatio = false}) {
-    final p = isRatio ? v * 100 : v;
-    return '${p.toStringAsFixed(2)}%';
+  double _truncate(num v, int decimals) {
+    final f = math.pow(10, decimals).toDouble();
+    return (v * f).truncateToDouble() / f; // 소수점 2자리까지 출력
+  }
+
+  String _fmtPct(
+      num v, {
+        bool inputIsRatio = false, // true면 0.053 -> 5.3%
+        int decimals = 2,
+        bool round = true,    // false면 반올림 안 하고 자리수에서 자름(내림/절삭)
+      }) {
+    final p = (inputIsRatio ? v * 100 : v.toDouble());
+    final d = round ? double.parse(p.toStringAsFixed(decimals))
+        : _truncate(p, decimals);
+    return '${d.toStringAsFixed(decimals)}%';
   }
 
   @override
@@ -33,9 +46,9 @@ class BacktestResultCard extends StatelessWidget {
               // 지표들
               InfoCardGroup(
                 rows: [
-                  {'label': '승률', 'value': _fmtPct(result.winRate)},
-                  {'label': '평균 수익', 'value': _fmtPct(result.averageReturn, isRatio: true), 'color': const Color(0xFF289BF6)},
-                  {'label': '최대 수익', 'value': _fmtPct(result.maxReturn), 'subValue': result.maxReturnDate,'color': const Color(0xFF289BF6)},
+                  {'label': '승률', 'value': _fmtPct(result.winRate, decimals: 1)},
+                  {'label': '평균 수익', 'value': _fmtPct(result.averageReturn, decimals: 2, inputIsRatio: false), 'color': const Color(0xFF289BF6)},
+                  {'label': '최대 수익', 'value': _fmtPct(result.maxReturn,   decimals: 2, round: false), 'subValue': result.maxReturnDate,'color': const Color(0xFF289BF6)},
                 ],),
 
               const SizedBox(height: 12),

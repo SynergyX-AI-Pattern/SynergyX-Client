@@ -1,5 +1,6 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:stockapp/screens/login_screen.dart';
 import 'package:stockapp/services/push_notification_service.dart';
 
@@ -13,6 +14,7 @@ void main() async {
 
   await PushNotificationService.initialize();
 
+  await initializeDateFormatting('ko', null);
   runApp(const MyApp());
 }
 
