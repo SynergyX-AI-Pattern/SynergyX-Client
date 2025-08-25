@@ -1,12 +1,9 @@
-//chart_screen
-
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'dart:math' as math;
 
 import 'package:stockapp/data/pattern_api.dart';
 import 'package:stockapp/models/pattern.dart';
-
 
 import 'package:stockapp/screens/chart_detail_screen.dart';
 import 'package:stockapp/screens/chart_new_screen.dart';
@@ -19,79 +16,92 @@ class ChartScreen extends StatefulWidget {
 }
 
 class _ChartScreenState extends State<ChartScreen> {
-  // 서버에서 받아온 패턴 리스트
   List<Pattern> patterns = [];
   bool isLoading = true;
+  bool isLoadingMore = false;
+
+  bool _isLastPage = false; // 서버 페이징 없음 → 한 번만 불러오기
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _fetchPatterns();
+    _scrollController.addListener(_onScroll);
   }
 
-  /// 서버에서 패턴 목록을 불러오는 함수
-  Future<void> _fetchPatterns() async {
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200 &&
+        !isLoadingMore &&
+        !_isLastPage) {
+      _fetchPatterns(loadMore: true);
+    }
+  }
+
+  Future<void> _fetchPatterns({bool loadMore = false, bool forceReload = false}) async {
+    if (_isLastPage && !forceReload) return;
+
     try {
+      if (forceReload) {
+        setState(() {
+          isLoading = true;
+          patterns.clear();
+          _isLastPage = false;
+        });
+      } else if (loadMore) {
+        setState(() => isLoadingMore = true);
+      } else {
+        setState(() => isLoading = true);
+      }
+
       final result = await PatternApi.getPatterns();
+
       if (!mounted) return;
       setState(() {
         patterns = result;
+        _isLastPage = true;
         isLoading = false;
+        isLoadingMore = false;
       });
     } catch (e) {
       debugPrint('패턴 불러오기 실패: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('❌ 서버 패턴 로딩 실패: ${e.toString()}')),
-      );
       setState(() {
         isLoading = false;
+        isLoadingMore = false;
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('❌ 서버 패턴 로딩 실패: $e')),
+      );
     }
   }
 
-  // [ADDED] 패턴 생성 화면으로 이동한 뒤, 성공 시 목록 새로고침
   Future<void> _navigateToCreatePattern() async {
-    try {
-      final result = await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const ChartNewScreen()),
-      );
-
-      // ChartNewScreen이 무엇을 반환하든(예: true, 생성된 id, json 등),
-      // null만 아니면 생성된 것으로 보고 새로고침
-      if (!mounted) return;
-      if (result != null) {
-        await _fetchPatterns();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ 패턴이 생성되었습니다.')),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('패턴 생성 중 오류가 발생했어요. ($e)')),
-      );
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ChartNewScreen()),
+    );
+    if (result == true) {
+      await _fetchPatterns(forceReload: true);
     }
   }
 
-  /// 패턴 상세 페이지로 이동
   Future<void> _openDetail(Pattern pattern) async {
-    try {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => PatternDetailPage(pattern: pattern),
-        ),
-      );
-      // 상세에서 수정/삭제가 이루어졌을 수 있으니 돌아오면 새로고침
-      if (!mounted) return; // [ADDED]
-      await _fetchPatterns(); // [ADDED]
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('상세 화면을 여는 중 오류가 발생했어요. ($e)')),
-      );
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PatternDetailPage(patternId: pattern.patternId),
+      ),
+    );
+    if (result == true) {
+      await _fetchPatterns(forceReload: true);
     }
   }
 
@@ -100,34 +110,100 @@ class _ChartScreenState extends State<ChartScreen> {
     final body = isLoading
         ? const Center(child: CircularProgressIndicator())
         : ListView.builder(
-      itemCount: patterns.length,
+      controller: _scrollController,
+      itemCount: patterns.length + (isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
+        if (index >= patterns.length) {
+          return const Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
         final pattern = patterns[index];
+        return GestureDetector(
+          onTap: () => _openDetail(pattern),
+          child: Card(
+            margin: const EdgeInsets.all(12),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
+            elevation: 0,
+            color: const Color(0x4DD9D9D9),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 패턴 이름
+                  Text(
+                    pattern.patternName,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
 
-        return Card(
-          margin: const EdgeInsets.all(8),
-          color: Colors.white, // 카드 배경 흰색
-          child: ListTile(
-            // 카드 내부 여백(좌우/상하)
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  const SizedBox(height: 12),
 
-            // leading과 텍스트 사이 간격 → leading을 Padding으로 감싸기
-            leading: Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: SizedBox(
-                width: 100,
-                height: 100,
-                child: _buildPatternChart(pattern.points),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    child: SizedBox(
+                      height: 150,
+                      child: _buildPatternChart(pattern.points),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  const Text(
+                    "최근 백테스팅 결과",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  if (pattern.recentBacktestResults.isNotEmpty)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (final bt in pattern.recentBacktestResults.take(3))
+                          Container(
+                            margin: const EdgeInsets.symmetric(vertical: 4),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE6E6E6), // 결과 박스 회색
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "${bt.executedAt} | ${bt.stockName}",
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  "평균수익률: ${bt.averageReturn.toStringAsFixed(2)}%   "
+                                      "승률: ${bt.winRate.toStringAsFixed(1)}%   "
+                                      "매칭: ${bt.matchedCount}",
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    )
+                  else
+                    const Text("백테스트 결과 없음",
+                        style: TextStyle(color: Colors.grey)),
+                ],
               ),
             ),
-
-            // 전체 색상 통일
-            textColor: Colors.black,
-            iconColor: Colors.black,
-
-            title: Text(pattern.patternName),
-            subtitle: Text('오차 ${pattern.tolerance}, 기간 ${pattern.periodValue} ${pattern.periodUnit}'),
-            onTap: () => _openDetail(pattern),
           ),
         );
       },
@@ -135,31 +211,28 @@ class _ChartScreenState extends State<ChartScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(backgroundColor: Colors.white,title: const Text('서버 패턴 목록')),
-      body: body,
-
-      // [ADDED] 패턴 추가 버튼
-      floatingActionButton: FloatingActionButton(
-        onPressed: _navigateToCreatePattern,
-        child: const Icon(Icons.add),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        title: const Text('전략 패턴'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add, color: Colors.black),
+            onPressed: _navigateToCreatePattern,
+          ),
+        ],
       ),
+      body: body,
     );
   }
 }
 
-/// 패턴 포인트를 선 차트로 그려주는 위젯
-/// 패턴 포인트를 선 그래프로 그리는 위젯 (y축 반전)
+/// 패턴 차트 (직선 + 자동 격자)
 Widget _buildPatternChart(List<int> points) {
-  if (points.isEmpty) {
-    return const SizedBox.shrink();
-  }
+  if (points.isEmpty) return const SizedBox.shrink();
 
-  // 저장된 y의 최고값 (정규화가 0~100이면 double maxY = 100; 로 고정)
   final double maxY = points.reduce(math.max).toDouble();
-
   final spots = <FlSpot>[
     for (int i = 0; i < points.length; i++)
-    // y 반전: 화면좌표(아래로 클수록 큼) -> 그래프좌표(위로 클수록 큼)
       FlSpot(i.toDouble(), (maxY - points[i]).toDouble()),
   ];
 
@@ -170,15 +243,32 @@ Widget _buildPatternChart(List<int> points) {
       minY: 0,
       maxY: maxY,
       titlesData: FlTitlesData(show: false),
-      gridData: FlGridData(show: false),
-      borderData: FlBorderData(show: false),
+      gridData: FlGridData(
+        show: true,
+        drawHorizontalLine: true,
+        drawVerticalLine: true,
+        horizontalInterval: (maxY / 5).ceilToDouble(),
+        verticalInterval: (points.length / 6).ceilToDouble(),
+        getDrawingHorizontalLine: (value) => FlLine(
+          color: Colors.grey.withValues(alpha: 0.3),
+          strokeWidth: 1,
+        ),
+        getDrawingVerticalLine: (value) => FlLine(
+          color: Colors.grey.withValues(alpha: 0.3),
+          strokeWidth: 1,
+        ),
+      ),
+      borderData: FlBorderData(
+        show: true,
+        border: Border.all(color: Colors.black12),
+      ),
       lineBarsData: [
         LineChartBarData(
           spots: spots,
           isCurved: false,
-          color: Colors.blue,
+          color: Colors.amber,
           barWidth: 2,
-          dotData: FlDotData(show: false),
+          dotData: FlDotData(show: true),
         ),
       ],
     ),

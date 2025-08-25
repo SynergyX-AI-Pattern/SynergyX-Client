@@ -28,7 +28,7 @@ class PatternApi {
   }
 
   // 패턴 상세 조회 (GET /patterns/{id} -> 래퍼의 result 언래핑)
-  static Future<Pattern> getPatternDetail(int patternId) async {
+  static Future<PatternDetail> getPatternDetail(int patternId) async {
     final res = await _dio.get('/patterns/$patternId');
     if (res.data is! Map) {
       throw Exception('패턴 상세 응답이 Map이 아님: ${res.data}');
@@ -38,7 +38,7 @@ class PatternApi {
     if (result == null || result is! Map) {
       throw Exception('패턴 상세 result가 비었거나 형식이 아님: $result');
     }
-    return Pattern.fromJson(result as Map<String, dynamic>);
+    return PatternDetail.fromJson(result as Map<String, dynamic>);
   }
 
   // 패턴 생성
