@@ -397,24 +397,22 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                         await _fetchPatternDetail(); // 수정 후 새로고침
                         return _pattern!.toJson();
                       },
-
                     ),
-                    child: const Text("종목 바꾸기"),
                   )
-                ],
-              ),
+              );
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 16);
 
-              SizedBox(
-                height: 200,
-                child: InteractiveChart(
-                  candles: candles,
-                  style: const ChartStyle(
-                    priceGainColor: Colors.red,
-                    priceLossColor: Colors.blue,
-                  ),
-                );
+              // SizedBox(
+              //   height: 200,
+              //   child: InteractiveChart(
+              //     candles: candles,
+              //     style: const ChartStyle(
+              //       priceGainColor: Colors.red,
+              //       priceLossColor: Colors.blue,
+              //     ),
+              //   ),
+              // );
 
                 if (updated != null) {
                   setState(() => _pattern = PatternDetail.fromJson(updated));
