@@ -1,3 +1,4 @@
+// backtest_api.dart
 import 'package:dio/dio.dart';
 
 class BacktestService {
@@ -8,10 +9,13 @@ class BacktestService {
     ),
   );
 
-  /// 목록 조회
-  static Future<List<Map<String, dynamic>>> fetchBacktestList() async {
+  /// 목록 조회 (patternId가 있으면 해당 패턴만 조회)
+  static Future<List<Map<String, dynamic>>> fetchBacktestList({int? patternId}) async {
     try {
-      final res = await _dio.get('/backtests/results');
+      final res = await _dio.get(
+        '/backtests/results',
+        queryParameters: patternId == null ? null : {'patternId': patternId},
+      );
       final data = res.data;
       return List<Map<String, dynamic>>.from(data['result']['content']);
     } catch (e) {
@@ -57,5 +61,4 @@ class BacktestService {
       throw Exception('백테스트 실행 오류: $e');
     }
   }
-
 }

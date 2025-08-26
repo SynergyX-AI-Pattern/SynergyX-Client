@@ -2,20 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:stockapp/screens/backtest_result_screen.dart';
 import 'package:stockapp/data/backtest_api.dart';
 
+
 class BacktestListScreen extends StatefulWidget {
-  const BacktestListScreen({super.key});
+  final int? patternId; // 특정 패턴의 결과만 보고 싶을 때 사용
+
+  /// [patternId]가 주어지면 해당 패턴의 백테스트만 조회한다.
+  const BacktestListScreen({super.key, this.patternId});
 
   @override
   State<BacktestListScreen> createState() => _BacktestListScreenState();
 }
 
 class _BacktestListScreenState extends State<BacktestListScreen> {
-  late Future<List<Map<String, dynamic>>> _future;
+  late Future<List<Map<String, dynamic>>> _future; // API 호출 결과
 
   @override
   void initState() {
     super.initState();
-    _future = BacktestService.fetchBacktestList();
+    // 패턴 ID가 있으면 해당 패턴만 필터링, 없으면 전체 목록을 조회
+    _future = BacktestService.fetchBacktestList(patternId: widget.patternId);
   }
 
   @override

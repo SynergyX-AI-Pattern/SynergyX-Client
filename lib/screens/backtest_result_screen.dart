@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:interactive_chart/interactive_chart.dart';
 import 'package:stockapp/data/candle_api.dart';
+import 'package:stockapp/data/pattern_api.dart';
+import 'dart:math' as math;
 
 class BacktestResultScreen extends StatefulWidget {
   final Map<String, dynamic> result; // 하위호환: 루트/중첩 어디든 올 수 있음
@@ -14,13 +16,14 @@ class BacktestResultScreen extends StatefulWidget {
 class _BacktestResultScreenState extends State<BacktestResultScreen> {
   List<CandleData> _candles = [];
   bool _candleLoading = false;
+  List<int> _patternPoints = [];
+  int? _matchStart;
+  int? _matchEnd;
 
-  // ---------- 유틸: 응답 정규화 ----------
-  // 표준 {result:{...}} 이면 언래핑, 아니면 루트를 그대로 사용
   Map<String, dynamic> get _res {
     final root = widget.result;
     final r = root['result'];
-    return (r is Map) ? Map<String, dynamic>.from(r) : root; // 변경: 불필요 캐스트 제거
+    return (r is Map) ? Map<String, dynamic>.from(r) : root;
   }
 
   T? _asNum<T extends num>(dynamic v) {
@@ -36,11 +39,9 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
 
   String _fmtPercent(dynamic v, {int fraction = 2}) {
     final n = _asNum<double>(v) ?? 0.0;
-    // 서버가 0.12(=12%)인지 12(=12%)인지 모호할 수 있어 화면에서는 값 그대로 % 처리
     return '${n.toStringAsFixed(fraction)}%';
   }
 
-  // 변경: YYYY-MM-DD만 보이도록 간단 포매터 추가
   String _fmtDate(String? s) {
     if (s == null || s.isEmpty) return '-';
     return s.split('T').first; // ISO 형태면 'T' 앞부분만 사용
@@ -49,13 +50,19 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
   @override
   void initState() {
     super.initState();
+    final res = _res;
+    _matchStart = _asNum<int>(res['matchStartIndex'] ?? res['matchStart'] ?? res['startIndex']);
+    _matchEnd = _asNum<int>(res['matchEndIndex'] ?? res['matchEnd'] ?? res['endIndex']);
+
     _loadCandles();
+    _loadPatternPoints();
   }
+
 
   Future<void> _loadCandles() async {
     final res = _res;
 
-    // 여러 경로에서 stockId를 탐색 (호출부에서 루트에 주입했을 수도 있음)
+
     final dynamic stockIdDyn =
         res['stockId'] ?? widget.result['stockId'] ?? (res['stock'] is Map ? (res['stock'] as Map)['id'] : null);
     final String? stockId =
@@ -68,7 +75,6 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
 
     setState(() => _candleLoading = true);
     try {
-      // ✅ API 연동: 1D 고정 (필요 시 응답/설정에서 추출)
       final candles = await fetchCandles(stockId: stockId, interval: '1D');
       setState(() {
         _candles = candles;
@@ -83,16 +89,29 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
     }
   }
 
+  Future<void> _loadPatternPoints() async {
+    final res = _res;
+    final pid = _asNum<int>(res['patternId'] ?? widget.result['patternId']);
+    if (pid == null) return;
+    try {
+      final detail = await PatternApi.getPatternDetail(pid);
+      setState(() {
+        _patternPoints = detail.points;
+
+      });
+    } catch (e) {
+      debugPrint('⚠️ 패턴 로딩 실패: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final res = _res; // 정규화된 결과
     final stockName = (res['stockName'] ?? widget.result['stockName'] ?? '-').toString();
 
-    // 변경: 시작/종료일 둘 다 변수로 받아 UI에서 "기간: 시작 ~ 종료" 표기
     final String? startDate = res['startDate']?.toString() ?? widget.result['startDate']?.toString();
     final String? endDate   = res['endDate']?.toString()   ?? widget.result['endDate']?.toString();
 
-    // 사용자 입력(목표 수익률) 전달값
     final double? target = _asNum<double>(widget.result['targetReturn']);
 
     return Scaffold(
@@ -100,7 +119,8 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
       appBar: AppBar(
         title: const Text('백테스팅 결과', style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.white,
-        elevation: 0, // 변경: 상단 그림자 제거 (이미지 디자인 맞춤)
+        elevation: 0,
+
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
@@ -111,7 +131,7 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 변경: 상단 실행일/매칭횟수 요약
+
             Row(
               children: [
                 Text('실행일: ${res["executedAt"] ?? "-"}',
@@ -122,8 +142,7 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
               ],
             ),
             const SizedBox(height: 12),
-
-            // 변경: 종목 로고 + 종목명
+            
             Row(
               children: [
                 CircleAvatar(
@@ -147,18 +166,33 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
                   ? const Center(child: CircularProgressIndicator())
                   : _candles.isEmpty
                   ? const Center(child: Text('캔들 데이터 없음'))
-                  : InteractiveChart(
-                candles: _candles,
-                style: const ChartStyle(
-                  priceGainColor: Color(0xFFDF1525),
-                  priceLossColor: Color(0xFF1573FE),
-                  // 라벨 색상 등은 기본값 사용 (디자인에 맞게 최소화)
-                ),
+                  : Stack(
+                children: [
+                  InteractiveChart(
+                    candles: _candles,
+                    style: const ChartStyle(
+                      priceGainColor: Color(0xFFDF1525),
+                      priceLossColor: Color(0xFF1573FE),
+                    ),
+                  ),
+                  if (_matchStart != null &&
+                      _matchEnd != null &&
+                      _patternPoints.isNotEmpty)
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: _MatchOverlayPainter(
+                          start: _matchStart!,
+                          end: _matchEnd!,
+                          total: _candles.length,
+                          patternPoints: _patternPoints,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
             const SizedBox(height: 16),
 
-            // 변경: "기간: 시작 ~ 종료" + "수익률" 한 줄 카드
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -169,7 +203,7 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
               ),
               child: Row(
                 children: [
-                  Text('기간: ${_fmtDate(startDate)} ~ ${_fmtDate(endDate)}'), // 변경: 전체 기간 표기
+                  Text('기간: ${_fmtDate(startDate)} ~ ${_fmtDate(endDate)}'),
                   const Spacer(),
                   if (target != null) Text('수익률: ${target.toStringAsFixed(2)}%'),
                 ],
@@ -177,7 +211,6 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
             ),
             const SizedBox(height: 16),
 
-            // 변경: 주요 통계 카드 (이미지처럼 2행 구성)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -273,5 +306,79 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
         ),
       ),
     );
+  }
+}
+
+/// 캔들 차트 위에 매칭된 구간과 패턴을 그리는 페인터
+class _MatchOverlayPainter extends CustomPainter {
+  final int start;              // 매칭 시작 인덱스
+  final int end;                // 매칭 종료 인덱스
+  final int total;              // 전체 캔들 수
+  final List<int> patternPoints; // 패턴을 그리기 위한 점 목록
+
+  _MatchOverlayPainter({
+    required this.start,
+    required this.end,
+    required this.total,
+    required this.patternPoints,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (total <= 0 || end < start) return;
+
+    final candleWidth = size.width / total;
+    final rect = Rect.fromLTWH(
+      start * candleWidth,
+      0,
+      (end - start + 1) * candleWidth,
+      size.height,
+    );
+
+    // 매칭 영역 음영 처리
+    final fill = Paint()
+      ..color = Colors.amber.withValues(alpha: 0.2)
+      ..style = PaintingStyle.fill;
+    canvas.drawRect(rect, fill);
+
+    // 테두리
+    final border = Paint()
+      ..color = Colors.amber
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+    canvas.drawRect(rect, border);
+
+    // 패턴 모양 그리기
+    if (patternPoints.length >= 2) {
+      final minY = patternPoints.reduce(math.min).toDouble();
+      final maxY = patternPoints.reduce(math.max).toDouble();
+      final diffY = (maxY - minY == 0) ? 1 : maxY - minY;
+
+      final path = Path();
+      for (int i = 0; i < patternPoints.length; i++) {
+        final x = rect.left + (i / (patternPoints.length - 1)) * rect.width;
+        final normY = (patternPoints[i] - minY) / diffY;
+        final y = rect.bottom - normY * rect.height;
+        if (i == 0) {
+          path.moveTo(x, y);
+        } else {
+          path.lineTo(x, y);
+        }
+      }
+
+      final line = Paint()
+        ..color = Colors.black
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2;
+      canvas.drawPath(path, line);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _MatchOverlayPainter oldDelegate) {
+    return start != oldDelegate.start ||
+        end != oldDelegate.end ||
+        total != oldDelegate.total ||
+        patternPoints != oldDelegate.patternPoints;
   }
 }
