@@ -17,9 +17,18 @@ class PatternEmptyView extends StatelessWidget {
             children: [
               const Text('설정된 차트 패턴이 없습니다.'),
               const SizedBox(height: 10),
-              FilledButton(
+              ElevatedButton(
                 onPressed: () {/* 패턴 추가 화면 이동 */},
-                child: const Text('패턴 추가하기'),
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.black,
+                  textStyle: TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
+                  padding: EdgeInsets.all(12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text('패턴 추가하기'),
               ),
             ],
           ),

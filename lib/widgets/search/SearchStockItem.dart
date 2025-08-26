@@ -14,7 +14,14 @@ class SearchStockItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Image.network(stock.imageUrl, width: 30, height: 30),
+      leading: ClipOval(
+        child: Image.network(
+          stock.imageUrl, // 주식 이미지 url
+          width: 40,
+          height: 40,
+          fit: BoxFit.cover,
+        ),
+      ),
       title: Text(stock.name, style: TextStyle(fontWeight: FontWeight.w600),),
       onTap: onTap,
     );
