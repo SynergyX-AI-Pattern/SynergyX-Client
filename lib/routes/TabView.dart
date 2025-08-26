@@ -13,9 +13,9 @@ class Tabview extends StatefulWidget {
 }
 
 class _TabviewState extends State<Tabview> {
-  var _index = 0;
+  int _index = 0;
 
-  List<Widget> _pages = [
+  final _pages = <Widget>[
     MainScreen(),
     InterestScreen(),
     ChartScreen(),
@@ -26,52 +26,50 @@ class _TabviewState extends State<Tabview> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_index], // 현재 선택된 화면을 여기에 렌더링
-      bottomNavigationBar: SizedBox(
-        height: 70,
+      // 키보드가 올라오면 body를 올려서 가려지지 않게
+      resizeToAvoidBottomInset: true,
+
+      // (옵션) 페이지 상태 보존
+      body: IndexedStack(
+        index: _index,
+        children: _pages,
+      ),
+
+      bottomNavigationBar: SafeArea(
+        bottom: false, // 바텀만 보호
         child: BottomNavigationBar(
           currentIndex: _index,
-          backgroundColor: Colors.white,
-          // 또는 원하는 배경색
-          selectedItemColor: Colors.black,
-          // 선택된 아이템 색상
-          unselectedItemColor: Color(0xFFB3B3B3),
-          // 선택되지 않은 아이템 색상
-          selectedLabelStyle: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.normal,
-          ),
-          // 선택된 라벨 스타일
-          unselectedLabelStyle: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.normal,
-          ),
-          showUnselectedLabels: true,
           type: BottomNavigationBarType.fixed,
-          onTap: (value) {
-            setState(() {
-              _index = value;
-            });
-          },
-          items: [
+          backgroundColor: Colors.white,
+          selectedItemColor: Colors.black,
+          unselectedItemColor: const Color(0xFFB3B3B3),
+
+          // 줄바꿈/확대 대비: 폰트 크기를 명시
+          selectedFontSize: 12,
+          unselectedFontSize: 12,
+          showUnselectedLabels: true,
+
+          onTap: (value) => setState(() => _index = value),
+
+          items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.home_rounded, size: 29),
+              icon: Icon(Icons.home_rounded, size: 28),
               label: '홈',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.favorite_rounded, size: 29),
+              icon: Icon(Icons.favorite_rounded, size: 28),
               label: '관심종목',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.show_chart_outlined, size: 29),
+              icon: Icon(Icons.show_chart_outlined, size: 28),
               label: '패턴',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.sentiment_satisfied_alt, size: 29),
+              icon: Icon(Icons.sentiment_satisfied_alt, size: 28),
               label: '감정일기',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.person, size: 32),
+              icon: Icon(Icons.person, size: 30),
               label: 'My',
             ),
           ],

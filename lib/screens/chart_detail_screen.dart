@@ -7,13 +7,16 @@ import 'dart:ui';
 import 'package:stockapp/models/pattern.dart';
 import 'package:stockapp/screens/search_info_screen.dart';
 import 'package:stockapp/screens/backtest_result_screen.dart';
+import 'package:stockapp/screens/backtest_list_screen.dart';
+
 
 import 'chart_edit_screen.dart';
 import '../data/candle_api.dart';
 import '../data/pattern_api.dart';
+import '../data/backtest_api.dart';
 
-import '../widgets/common/InfoCardGroup.dart';
 import '../widgets/backtest/backtesting.dart';
+import '../widgets/backtest/recent_backtest_result_card.dart';
 
 
 class PatternDetailPage extends StatefulWidget {
@@ -58,6 +61,49 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _runBacktestForStock(int stockId, String symbol) async {
+    if (_pattern == null) return;
+
+    // 기존 백테스트의 시작일이 있으면 재사용, 없으면 1년 전으로 기본값 설정
+    final startStr = _pattern!.backtestResult?['startDate']?.toString();
+    final startDate = startStr != null
+        ? DateTime.tryParse(startStr) ?? DateTime.now().subtract(const Duration(days: 365))
+        : DateTime.now().subtract(const Duration(days: 365));
+
+    try {
+      final raw = await BacktestService.run(
+        patternId: _pattern!.patternId,
+        stockId: stockId,
+        startDate: startDate,
+        endDate: DateTime.now(),
+      );
+
+      // API 응답에서 result 래퍼가 있으면 벗겨낸다
+      final normalized = raw['result'] is Map
+          ? Map<String, dynamic>.from(raw['result'])
+          : Map<String, dynamic>.from(raw);
+
+      // 새로운 백테스트 결과로 상태 갱신
+      setState(() {
+        _pattern = PatternDetail(
+          patternId: _pattern!.patternId,
+          patternName: _pattern!.patternName,
+          points: _pattern!.points,
+          tolerance: _pattern!.tolerance,
+          periodValue: _pattern!.periodValue,
+          periodUnit: _pattern!.periodUnit,
+          appliedStockList: _pattern!.appliedStockList,
+          backtestResult: normalized,
+        );
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('백테스트 실행 실패: $e')),
+      );
     }
   }
 
@@ -216,6 +262,23 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
             Divider(color: const Color(0xFFD0CECE), thickness: 1),
             const SizedBox(height: 20),
             _buildBacktestCard(),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () {
+                  // 전체 백테스트 목록으로 이동 (현재 패턴 ID 필터)
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BacktestListScreen(patternId: _pattern!.patternId),
+                    ),
+                  );
+                },
+                style: TextButton.styleFrom(foregroundColor: Colors.black),
+                child: const Text('전체 백테스팅 보기'),
+              ),
+            ),
             const SizedBox(height: 20),
             Divider(color: const Color(0xFFD0CECE), thickness: 1),
             const SizedBox(height: 20),
@@ -406,125 +469,30 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
 
         final candles = snapshot.data ?? [];
 
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: _cardDecoration(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text("최근 백테스팅 결과",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              Row(
-                children: [
-                  Text("실행한 날짜: ${backtest["executedAt"]}",
-                      style: const TextStyle(fontSize: 13, color: Colors.grey)),
-                  const Spacer(),
-                  Text("매칭 횟수: ${backtest["matchedCount"]}",
-                      style: const TextStyle(fontSize: 13, color: Colors.grey)),
-                ],
+        return RecentBacktestResultCard(
+          backtest: backtest, // 백테스트 결과 데이터
+          candles: candles, // 차트에 표시할 캔들 목록
+          onChangeStock: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const StockSearchPage()),
+            );
+            if (result is Map<String, dynamic> && result['id'] is int) {
+              // 선택된 종목으로 즉시 백테스트 실행
+              await _runBacktestForStock(result['id'] as int, result['symbol']);
+            }
+          }, // 종목 바꾸기 처리
+          onTapDetail: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => BacktestResultScreen(result: backtest),
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundImage: NetworkImage(backtest["stockImage"] ?? ""),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(backtest["stockName"] ?? "",
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold)),
-                  const Spacer(),
-                  OutlinedButton(
-                    onPressed: () async {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const StockSearchPage(),
-                        ),
-                      );
-                      if (result is Map<String, dynamic> && result['symbol'] is String) {
-                        await _applyStockBySymbol(result['symbol']);
-                      }
-                    },
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.black,
-                      side: const BorderSide(color: Colors.black12),
-                    ),
-                    child: const Text("종목 바꾸기"),
-                  )
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              SizedBox(
-                height: 200,
-                child: InteractiveChart(
-                  candles: candles,
-                  style: const ChartStyle(
-                    priceGainColor: Colors.red,
-                    priceLossColor: Colors.blue,
-                  ),
-                ),
-              ),
-
-              Row(
-                children: [
-                  Text("시작 날짜: ${backtest["startDate"]}",
-                      style: const TextStyle(fontSize: 13, color: Colors.grey)),
-                  const SizedBox(width: 16),
-                  Text("수익률: ${formatPercent(backtest["averageReturn"])}",
-                      style: const TextStyle(fontSize: 13, color: Colors.grey)),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: () {
-                      // backtest_result_screen.dart 로 이동
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => BacktestResultScreen(result: backtest),
-                        ),
-                      );
-                    },                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.black,
-                    ),
-                    child: const Text("더보기"),
-                  ),
-                ],
-              ),
-
-              InfoCardGroup(
-                rows: [
-                  {'label': '승률', 'value': formatPercent(backtest["winRate"])},
-                  {
-                    'label': '평균 수익률',
-                    'value': formatPercent(backtest["averageReturn"], isRatio: true),
-                    'color': const Color(0xFF289BF6)
-                  },
-                  {
-                    'label': '최대 수익률',
-                    'value': formatPercent(backtest["maxReturn"]),
-                    'subValue': backtest["maxReturnDate"],
-                    'color': const Color(0xFF289BF6)
-                  },
-                ],
-              ),
-
-              Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    openBacktestPopup(context, _pattern!.toJson()); // ← 여기로 교체
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text("다시 돌리기"),
-                ),
-              ),
-            ],
-          ),
+            );
+          }, // 상세 결과 화면 이동
+          onRunBacktest: () {
+            openBacktestPopup(context, _pattern!.toJson());
+          }, // 다시 테스트 실행
         );
       },
     );
