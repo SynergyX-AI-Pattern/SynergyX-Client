@@ -15,7 +15,7 @@ import '../data/candle_api.dart';
 import '../data/pattern_api.dart';
 import '../data/backtest_api.dart';
 
-import '../widgets/backtest/backtesting.dart';
+import '../widgets/backtest/backtest_pop.dart';
 import '../widgets/backtest/recent_backtest_result_card.dart';
 
 
