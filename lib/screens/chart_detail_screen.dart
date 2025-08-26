@@ -1,42 +1,623 @@
-//chart_detail_screen
-
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:interactive_chart/interactive_chart.dart';
 import 'dart:math' as math;
+import 'dart:ui';
 
-import 'package:stockapp/screens/search_info_screen.dart';
-import 'package:stockapp/screens/chart_edit_screen.dart';
-import 'package:stockapp/screens/chart_backtest_screen.dart';
-import 'package:stockapp/data/pattern_api.dart';
 import 'package:stockapp/models/pattern.dart';
+import 'package:stockapp/screens/search_info_screen.dart';
+import 'package:stockapp/screens/backtest_result_screen.dart';
+
+import 'chart_edit_screen.dart';
+import '../data/candle_api.dart';
+import '../data/pattern_api.dart';
+
+import '../widgets/common/InfoCardGroup.dart';
+import '../widgets/backtest/backtesting.dart';
+
 
 class PatternDetailPage extends StatefulWidget {
-  final Pattern pattern;
+  final int patternId;
 
-  const PatternDetailPage({super.key, required this.pattern});
+  const PatternDetailPage({super.key, required this.patternId});
+
+
+  factory PatternDetailPage.fromPattern(Pattern pattern, {Key? key}) {
+    return PatternDetailPage(key: key, patternId: pattern.patternId);
+  }
 
   @override
   State<PatternDetailPage> createState() => _PatternDetailPageState();
 }
 
 class _PatternDetailPageState extends State<PatternDetailPage> {
-  late Map<String, dynamic> data;
-  late List<dynamic> appliedStockList;
-  late TextEditingController _titleController;
+  PatternDetail? _pattern;
+  bool _isLoading = true;
+  bool _edited = false;
 
-  /// 패턴 포인트를 선 그래프로 그리는 위젯
-  /// 패턴 포인트를 선 그래프로 그리는 위젯 (y축 반전)
-  Widget _buildPatternChart(List<int> points) {
-    if (points.isEmpty) {
-      return const SizedBox.shrink();
+  late final TextEditingController _titleController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPatternDetail();
+  }
+
+  Future<void> _fetchPatternDetail() async {
+    try {
+      final detail = await PatternApi.getPatternDetail(widget.patternId); // API 호출
+      if (!mounted) return;
+      setState(() {
+        _pattern = detail; // [정리] as 캐스팅 불필요
+        _titleController.text = detail.patternName;
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint("❌ 패턴 상세 불러오기 실패: $e");
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+
+  PatternRequest _buildRequestFromDetail(PatternDetail d) {
+    return PatternRequest(
+      patternId: d.patternId,
+      patternName: d.patternName,
+      points: d.points,
+      tolerance: d.tolerance,
+      periodValue: d.periodValue,
+      periodUnit: d.periodUnit,
+    );
+  }
+
+  Future<void> _saveTitle(String title) async {
+    if (_pattern == null) return;
+    final updated = PatternDetail(
+      patternId: _pattern!.patternId,
+      patternName: title,
+      points: _pattern!.points,
+      tolerance: _pattern!.tolerance,
+      periodValue: _pattern!.periodValue,
+      periodUnit: _pattern!.periodUnit,
+      appliedStockList: _pattern!.appliedStockList,
+      backtestResult: _pattern!.backtestResult,
+    );
+    try {
+      await PatternApi.updatePattern(updated.patternId, _buildRequestFromDetail(updated));
+      if (!mounted) return;
+      setState(() {
+        _pattern = updated;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ 제목이 저장되었습니다.')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ 제목 저장 실패: $e')));
+    }
+  }
+
+  Future<void> _applyStockBySymbol(String symbol) async {
+    if (_pattern == null) return;
+    final current = List<Map<String, dynamic>>.from(_pattern!.appliedStockList);
+    final already = current.any((e) => (e['symbol'] ?? e['name']) == symbol);
+    if (!already) {
+      current.add({'symbol': symbol, 'name': symbol});
+    }
+    final updated = PatternDetail(
+      patternId: _pattern!.patternId,
+      patternName: _pattern!.patternName,
+      points: _pattern!.points,
+      tolerance: _pattern!.tolerance,
+      periodValue: _pattern!.periodValue,
+      periodUnit: _pattern!.periodUnit,
+      appliedStockList: current,
+      backtestResult: _pattern!.backtestResult,
+    );
+    try {
+      await PatternApi.updatePattern(updated.patternId, _buildRequestFromDetail(updated));
+      if (!mounted) return;
+      setState(() { _pattern = updated; });
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ 종목이 적용되었습니다.')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ 종목 적용 실패: $e')));
+    }
+  }
+
+  Future<void> _removeAppliedStockAt(int index) async {
+    if (_pattern == null) return;
+    final current = List<Map<String, dynamic>>.from(_pattern!.appliedStockList);
+    if (index < 0 || index >= current.length) return;
+    current.removeAt(index);
+    final updated = PatternDetail(
+      patternId: _pattern!.patternId,
+      patternName: _pattern!.patternName,
+      points: _pattern!.points,
+      tolerance: _pattern!.tolerance,
+      periodValue: _pattern!.periodValue,
+      periodUnit: _pattern!.periodUnit,
+      appliedStockList: current,
+      backtestResult: _pattern!.backtestResult,
+    );
+    try {
+      await PatternApi.updatePattern(updated.patternId, _buildRequestFromDetail(updated));
+      if (!mounted) return;
+      setState(() { _pattern = updated; });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ 종목 삭제 실패: $e')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
 
-    // 저장된 y의 최고값 (정규화가 0~100이면 double maxY = 100; 로 고정)
-    final double maxY = points.reduce(math.max).toDouble();
+    if (_pattern == null) {
+      return const Scaffold(
+        body: Center(child: Text("❌ 패턴 데이터를 불러올 수 없습니다.")),
+      );
+    }
 
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context, _edited),
+        ),
+
+        title: TextField(
+          controller: _titleController,
+          decoration: const InputDecoration(
+            border: InputBorder.none,
+            hintText: '패턴 이름 입력',
+          ),
+          style: const TextStyle(color: Colors.black, fontSize: 18),
+          onSubmitted: _saveTitle,
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.save, color: Colors.black),
+            onPressed: () => _saveTitle(_titleController.text),
+          ),
+          IconButton(
+            icon: const Icon(Icons.play_arrow, color: Colors.black),
+            tooltip: '백테스트 실행',
+            onPressed: () {
+              openBacktestPopup(context, _pattern!.toJson()); // ← 여기로 교체
+            },
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              _pattern!.patternName,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _buildPatternCard(context),
+            const SizedBox(height: 20),
+            Divider(color: const Color(0xFFD0CECE), thickness: 1),
+            const SizedBox(height: 20),
+            _buildBacktestCard(),
+            const SizedBox(height: 20),
+            Divider(color: const Color(0xFFD0CECE), thickness: 1),
+            const SizedBox(height: 20),
+            _buildAppliedStocks(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 내 전략 패턴 카드
+  Widget _buildPatternCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0x4DD9D9D9),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 그래프 (흰색 칸)
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.all(12),
+            child: SizedBox(
+              height: 200,
+              child: _buildPatternChart(_pattern!.points),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // 옵션 태그
+          Row(
+            children: [
+              _buildTag("기간: ${_pattern!.periodValue} ${_pattern!.periodUnit}"),
+              const SizedBox(width: 8),
+              _buildTag("허용 오차: ${_pattern!.tolerance.toStringAsFixed(1)}"),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // 버튼
+          Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+            OutlinedButton(
+              onPressed: () async {
+                final ok = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => Theme(
+                    data: Theme.of(ctx).copyWith(
+                      dialogTheme: const DialogThemeData(
+                        backgroundColor: Colors.white, // ✅ 다이얼로그 흰색 배경
+                        surfaceTintColor: Colors.transparent, // ✅ Material3 불필요한 틴트 제거
+                      ),
+                    ),
+                    child: AlertDialog(
+                      title: const Text('전략 패턴을 삭제하시겠습니까?'),
+                      content: const Text('이 동작은 취소할 수 없으며 내 전략 차트가 삭제됩니다.'),
+                      actions: [
+                        TextButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.black,
+                          ),
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: const Text('취소'),
+                        ),
+                        FilledButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.black,
+                            foregroundColor: Colors.white,
+                          ),
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text('삭제'),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+
+
+                if (ok != true) return;
+
+                try {
+                  await PatternApi.deletePattern(widget.patternId); // ✅ 삭제 API
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('✅ 패턴이 삭제되었습니다.')),
+                  );
+                  Navigator.pop(context, true); // ✅ 이전 화면으로 이동
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('❌ 삭제 실패: $e')),
+                  );
+                }
+              },
+              style: OutlinedButton.styleFrom(foregroundColor: Colors.black),
+              child: const Text("삭제"),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton(
+              onPressed: () async {
+                final updated = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ChartEditPage(
+                      patternData: _pattern!.toJson(),
+                      onSaved: () async {
+                        await _fetchPatternDetail(); // 수정 후 새로고침
+                        return _pattern!.toJson();
+                      },
+                    ),
+                  ),
+                );
+
+                if (updated != null) {
+                  setState(() => _pattern = PatternDetail.fromJson(updated));
+                  _edited = true;
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text("패턴 수정"),
+            ),
+          ]),
+        ],
+      ),
+    );
+  }
+
+  /// 공통 카드 스타일
+  BoxDecoration _cardDecoration() {
+    return BoxDecoration(
+      color: Colors.white, // ✅ 흰색 배경
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: const [
+        BoxShadow(
+          color: Colors.black12,
+          blurRadius: 4,
+          offset: Offset(0, 2),
+        ),
+      ],
+    );
+  }
+
+  //// 최근 백테스팅 결과 카드
+  Widget _buildBacktestCard() {
+    final backtest = _pattern!.backtestResult;
+    if (backtest == null) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: _cardDecoration(),
+        child: const Text("백테스트 결과 없음", style: TextStyle(color: Colors.grey)),
+      );
+    }
+
+    String formatPercent(dynamic value, {bool isRatio = false}) {
+      if (value == null) return "0.00%";
+      final numVal = (value is num) ? value : num.tryParse(value.toString()) ?? 0;
+      final p = isRatio ? numVal * 100 : numVal;
+      return "${p.toStringAsFixed(2)}%";
+    }
+
+    return FutureBuilder<List<CandleData>>(
+      future: fetchCandles(
+        stockId: "1",
+        interval: "1D",
+      ),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: _cardDecoration(),
+            child: Text("캔들 데이터 불러오기 실패: ${snapshot.error}"),
+          );
+        }
+
+        final candles = snapshot.data ?? [];
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: _cardDecoration(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text("최근 백테스팅 결과",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              Row(
+                children: [
+                  Text("실행한 날짜: ${backtest["executedAt"]}",
+                      style: const TextStyle(fontSize: 13, color: Colors.grey)),
+                  const Spacer(),
+                  Text("매칭 횟수: ${backtest["matchedCount"]}",
+                      style: const TextStyle(fontSize: 13, color: Colors.grey)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundImage: NetworkImage(backtest["stockImage"] ?? ""),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(backtest["stockName"] ?? "",
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold)),
+                  const Spacer(),
+                  OutlinedButton(
+                    onPressed: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const StockSearchPage(),
+                        ),
+                      );
+                      if (result is Map<String, dynamic> && result['symbol'] is String) {
+                        await _applyStockBySymbol(result['symbol']);
+                      }
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.black,
+                      side: const BorderSide(color: Colors.black12),
+                    ),
+                    child: const Text("종목 바꾸기"),
+                  )
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              SizedBox(
+                height: 200,
+                child: InteractiveChart(
+                  candles: candles,
+                  style: const ChartStyle(
+                    priceGainColor: Colors.red,
+                    priceLossColor: Colors.blue,
+                  ),
+                ),
+              ),
+
+              Row(
+                children: [
+                  Text("시작 날짜: ${backtest["startDate"]}",
+                      style: const TextStyle(fontSize: 13, color: Colors.grey)),
+                  const SizedBox(width: 16),
+                  Text("수익률: ${formatPercent(backtest["averageReturn"])}",
+                      style: const TextStyle(fontSize: 13, color: Colors.grey)),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: () {
+                      // backtest_result_screen.dart 로 이동
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => BacktestResultScreen(result: backtest),
+                        ),
+                      );
+                    },                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.black,
+                    ),
+                    child: const Text("더보기"),
+                  ),
+                ],
+              ),
+
+              InfoCardGroup(
+                rows: [
+                  {'label': '승률', 'value': formatPercent(backtest["winRate"])},
+                  {
+                    'label': '평균 수익률',
+                    'value': formatPercent(backtest["averageReturn"], isRatio: true),
+                    'color': const Color(0xFF289BF6)
+                  },
+                  {
+                    'label': '최대 수익률',
+                    'value': formatPercent(backtest["maxReturn"]),
+                    'subValue': backtest["maxReturnDate"],
+                    'color': const Color(0xFF289BF6)
+                  },
+                ],
+              ),
+
+              Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    openBacktestPopup(context, _pattern!.toJson()); // ← 여기로 교체
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text("다시 돌리기"),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// 패턴 적용 종목 카드 (흰색 배경)
+  Widget _buildAppliedStocks() {
+    final stocks = _pattern!.appliedStockList;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("패턴 적용한 종목",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+
+          if (stocks.isEmpty)
+            const Text("적용된 종목 없음", style: TextStyle(color: Colors.grey))
+          else
+            Column(
+              children: [
+                for (int i = 0; i < stocks.length; i++) ...[
+                  ListTile(
+                    leading: CircleAvatar(
+                      backgroundImage: NetworkImage(stocks[i]["stockImage"] ?? ""),
+                    ),
+                    title: Text(stocks[i]["stockName"] ?? stocks[i]['name']?.toString() ?? ''),
+                    subtitle: Text("종목코드: ${stocks[i]["symbol"] ?? ''}"),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => _removeAppliedStockAt(i),
+                    ),
+                  ),
+                  const Divider(height: 1),
+                ]
+              ],
+            ),
+
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerRight,
+            child: OutlinedButton(
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const StockSearchPage(),
+                  ),
+                );
+                if (result is Map<String, dynamic> && result['symbol'] is String) {
+                  await _applyStockBySymbol(result['symbol']);
+                }
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.black,
+                side: const BorderSide(color: Colors.black12),
+              ),
+              child: const Text('종목 추가'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 태그 위젯
+  Widget _buildTag(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(text, style: const TextStyle(fontSize: 12)),
+    );
+  }
+
+  /// 패턴 그래프 (직선 + 자동 격자)
+  Widget _buildPatternChart(List<int> points) {
+    if (points.isEmpty) return const SizedBox.shrink();
+
+    final double maxY = points.reduce(math.max).toDouble();
     final spots = <FlSpot>[
       for (int i = 0; i < points.length; i++)
-      // y 반전: 화면좌표(아래로 클수록 큼) -> 그래프좌표(위로 클수록 큼)
         FlSpot(i.toDouble(), (maxY - points[i]).toDouble()),
     ];
 
@@ -47,334 +628,56 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
         minY: 0,
         maxY: maxY,
         titlesData: FlTitlesData(show: false),
-        gridData: FlGridData(show: false),
+        gridData: FlGridData(
+          show: true,
+          drawHorizontalLine: true,
+          drawVerticalLine: true,
+          horizontalInterval: (maxY / 5).ceilToDouble(),
+          verticalInterval: (points.length / 6).ceilToDouble(),
+          getDrawingHorizontalLine: (value) => const FlLine(
+            color: Color(0xFFD0CECE), // ✅ 중간선 #D0CECE
+            strokeWidth: 1,
+          ),
+          getDrawingVerticalLine: (value) => const FlLine(
+            color: Color(0xFFD0CECE), // ✅ 중간선 #D0CECE
+            strokeWidth: 1,
+          ),
+        ),
         borderData: FlBorderData(show: false),
         lineBarsData: [
           LineChartBarData(
             spots: spots,
             isCurved: false,
-            color: Colors.blue,
+            color: Colors.amber,
             barWidth: 2,
-            dotData: FlDotData(show: false),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildResultChart(List<dynamic>? curve) {
-    if (curve == null || curve.isEmpty) {
-      return const Center(child: Text('차트 데이터 없음'));
-    }
-
-    final spots = <FlSpot>[];
-    for (int i = 0; i < curve.length; i++) {
-      final point = curve[i];
-      final value = (point['value'] as num).toDouble();
-      spots.add(FlSpot(i.toDouble(), value));
-    }
-
-    return LineChart(
-      LineChartData(
-        titlesData: FlTitlesData(show: false),
-        gridData: FlGridData(show: false),
-        borderData: FlBorderData(show: false),
-        lineBarsData: [
-          LineChartBarData(
-            spots: spots,
-            isCurved: true,
-            color: Colors.blue,
-            barWidth: 2,
-            dotData: FlDotData(show: false),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    data = widget.pattern.toJson();
-    appliedStockList = List.from(data['appliedStockList'] ?? []);
-    _titleController = TextEditingController(text: widget.pattern.patternName);
-  }
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    super.dispose();
-  }
-
-  PatternRequest _buildPatternRequestFromData() {
-    // 기존 패턴 정보를 기반으로 서버에 보낼 요청 객체 생성
-    return PatternRequest(
-      patternId: data['id'] ?? DateTime.now().millisecondsSinceEpoch,
-      patternName: data['title'] ?? data['patternName'] ?? '이름없는 패턴',
-      points:
-      (data['points'] is List)
-          ? List<int>.from(
-        data['points'].map((e) => int.tryParse(e.toString()) ?? 0),
-      )
-          : [],
-      tolerance:
-      (data['tolerance'] is String)
-          ? double.tryParse(data['tolerance']) ?? 0.0
-          : (data['tolerance'] as num?)?.toDouble() ?? 0.0,
-      periodValue:
-      (data['periodValue'] is String)
-          ? int.tryParse(data['periodValue']) ?? 0
-          : (data['periodValue'] as num?)?.toInt() ?? 0,
-      periodUnit: data['periodUnit'] ?? 'HOUR',
-    );
-  }
-
-  Future<void> _saveTitle(String title) async {
-    data['title'] = title;
-    final rawId = data['id'];
-    final int id = (rawId is int) ? rawId : int.parse(rawId.toString());
-    await PatternApi.updatePattern(id, _buildPatternRequestFromData());
-    if (mounted) setState(() {});
-  }
-
-  Future<void> _deletePattern() async {
-    final rawId = data['id'];
-    final int id = (rawId is int) ? rawId : int.parse(rawId.toString());
-    await PatternApi.deletePattern(id);
-    if (!mounted) return;
-    Navigator.pop(context, true);
-  }
-
-  Future<void> _applyStock(String result) async {
-    final updatedData = Map<String, dynamic>.from(data);
-    if (updatedData['appliedStockList'] == null ||
-        updatedData['appliedStockList'] is! List) {
-      updatedData['appliedStockList'] = [];
-    }
-    final current = List<Map<String, dynamic>>.from(
-      updatedData['appliedStockList'],
-    );
-    final alreadyExists = current.any((item) => item['symbol'] == result);
-    if (!alreadyExists) {
-      current.add({'symbol': result, 'name': result});
-      updatedData['appliedStockList'] = current;
-      final id = updatedData['id'];
-      setState(() {
-        data = updatedData;
-        appliedStockList = current;
-      });
-      await PatternApi.updatePattern(id, _buildPatternRequestFromData());
-    }
-  }
-
-  void _handlePatternUpdate(Map<String, dynamic> updatedMap) {
-    final updatedPattern = Pattern.fromJson(updatedMap);
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => PatternDetailPage(pattern: updatedPattern),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final periodValue = widget.pattern.periodValue;
-    final periodUnit = widget.pattern.periodUnit;
-    final tolerance = widget.pattern.tolerance;
-    final backtest = data['backtestResult'];
-
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _titleController,
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  hintText: '패턴 이름 입력',
-                ),
-                style: const TextStyle(color: Colors.black, fontSize: 18),
-                onSubmitted: _saveTitle,
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.save),
-              onPressed: () => _saveTitle(_titleController.text),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.play_arrow),
-            tooltip: '백테스트 실행',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ChartBacktestScreen(patternData: data),
-                ),
-              );
-            },
-          ),
-          IconButton(icon: const Icon(Icons.delete), onPressed: _deletePattern),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.black,
-              side: const BorderSide(color: Colors.black12),
-            ),
-            onPressed: () async {
-              final updatedMap = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder:
-                      (_) => ChartEditPage(
-                    patternData: Map<String, dynamic>.from(data),
-                    onSaved: () async {
-                      final rawId = data['id'];
-                      final int id =
-                      (rawId is int)
-                          ? rawId
-                          : int.parse(rawId.toString());
-                      final pattern = await PatternApi.getPatternDetail(id);
-                      return pattern.toJson();
-                    },
-                  ),
-                ),
-              );
-
-              if (updatedMap is Map<String, dynamic>) {
-                _handlePatternUpdate(updatedMap);
-              }
-            },
-            child: const Text('패턴 수정'),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Card(
-                color: Colors.white,
-                elevation: 3, // 살짝 그림자
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(50.0), // 카드 안쪽 여백
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: _buildPatternChart(widget.pattern.points),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      '적용 종목:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black,
-                        side: const BorderSide(color: Colors.black12), // 테두리 살짝
-                      ),
-                      onPressed: () async {
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const StockSearchPage(),
-                          ),
-                        );
-                        if (result is Map<String, dynamic> &&
-                            result['symbol'] is String) {
-                          await _applyStock(result['symbol']);
-                        }
-                      },
-                      child: const Text('종목 변경'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                appliedStockList.isNotEmpty
-                    ? Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  children:
-                  appliedStockList.asMap().entries.map<Widget>((entry) {
-                    final index = entry.key;
-                    final stock = entry.value;
-                    return Chip(
-                      label: Text(stock['name'] ?? stock['symbol']),
-                      deleteIcon: const Icon(Icons.close),
-                      onDeleted: () async {
-                        appliedStockList.removeAt(index);
-                        data['appliedStockList'] = appliedStockList;
-                        final id = data['id'];
-                        setState(() {});
-                        await PatternApi.updatePattern(
-                          id,
-                          _buildPatternRequestFromData(),
-                        );
-                      },
-                    );
-                  }).toList(),
-                )
-                    : const Text('없음'),
-                const SizedBox(height: 16),
-                Text(
-                  '기간: $periodValue $periodUnit',
-                  style: const TextStyle(fontSize: 16),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '오차 범위: ${tolerance.toStringAsFixed(1)}%',
-                  style: const TextStyle(fontSize: 16),
-                ),
-                const SizedBox(height: 16),
-                if (backtest != null) ...[
-                  const Divider(),
-                  const Text(
-                    '백테스트 결과',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 200,
-                    child: _buildResultChart(
-                      backtest['equityCurve'] as List<dynamic>?,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text('종목: ${backtest['stockName']} (${backtest['symbol']})'),
-                  Text('매칭 횟수: ${backtest['matchedCount']}회'),
-                  Text('승률: ${backtest['winRate']}%'),
-                  Text('평균 수익률: ${backtest['averageReturn']}%'),
-                  Text(
-                    '최대 수익률: ${backtest['maxReturn']}% (${backtest['maxReturnDate']})',
-                  ),
-                  Text('기간: ${backtest['startDate']} ~ ${backtest['endDate']}'),
-                ],
-              ],
-            ),
+            dotData: FlDotData(show: true),
           ),
         ],
       ),
     );
   }
 }
+
+void openBacktestPopup(BuildContext context, Map<String, dynamic> patternData) {
+  showDialog(
+    context: context,
+    barrierDismissible: false,              // 바깥 터치로 닫히지 않게
+    barrierColor: Colors.transparent,       // 배리어 투명(블러만 보이게)
+    builder: (_) {
+      return Stack(
+        children: [
+          // 배경 블러 + 희미한 화이트 베일
+          Positioned.fill(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(color: Colors.white.withValues(alpha: 0.6)),
+            ),
+          ),
+          // 중앙 팝업
+          Center(child: BacktestPopup(patternData: patternData)),
+        ],
+      );
+    },
+  );
+}
+

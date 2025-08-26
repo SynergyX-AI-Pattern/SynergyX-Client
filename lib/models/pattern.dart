@@ -1,16 +1,116 @@
-//pattern.
+class BacktestResult {
+  final String stockName;
+  final double averageReturn;
+  final double winRate;
+  final int matchedCount;
+  final String executedAt;
 
+  BacktestResult({
+    required this.stockName,
+    required this.averageReturn,
+    required this.winRate,
+    required this.matchedCount,
+    required this.executedAt,
+  });
+
+  factory BacktestResult.fromJson(Map<String, dynamic> json) {
+    return BacktestResult(
+      stockName: (json['stockName'] ?? json['name'] ?? '').toString(),
+      averageReturn: (json['averageReturn'] as num?)?.toDouble() ?? 0,
+      winRate: (json['winRate'] as num?)?.toDouble() ?? 0,
+      matchedCount: (json['matchedCount'] as num?)?.toInt() ?? 0,
+      executedAt: (json['executedAt'] ?? json['createdAt'] ?? '').toString(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'stockName': stockName,
+      'averageReturn': averageReturn,
+      'winRate': winRate,
+      'matchedCount': matchedCount,
+      'executedAt': executedAt,
+    };
+  }
+}
+
+///  패턴 목록 (요약)
 class Pattern {
   final int patternId;
   final String patternName;
-  final List<int> points;       // 서버는 [6.0,2.0,...] 줄 수 있어도 앱 내부는 int로 사용
-  final double tolerance;       // 0.1 같은 소수
-  final int periodValue;        // 3,5,7...
-  final String periodUnit;      // 'DAY' | 'HOUR'
-  final List<Map<String, dynamic>> appliedStockList; // 적용 종목 목록
-  final dynamic backtestResult;        // null 허용
+  final List<int> points;
+  final List<BacktestResult> recentBacktestResults;
+
 
   Pattern({
+    required this.patternId,
+    required this.patternName,
+    required this.points,
+    required this.recentBacktestResults,
+  });
+
+
+  factory Pattern.fromJson(Map<String, dynamic> json) {
+    final pts = (json['points'] as List? ?? [])
+        .map((e) => (e as num).toInt())
+        .toList();
+
+    final List<BacktestResult> backtests;
+    final rawRecent = json['recentBacktestResults'];
+    if (rawRecent is List) {
+      backtests = rawRecent
+          .whereType<Map>()
+          .map((e) => BacktestResult.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+    } else if (json['backtestResult'] is Map) {
+      backtests = [
+        BacktestResult.fromJson(
+            Map<String, dynamic>.from(json['backtestResult'] as Map)),
+      ];
+// ↑ [하위호환] 기존 단일 값을 리스트 1개로 감싸 제공
+    } else {
+      backtests = const [];
+    }
+
+
+    return Pattern(
+      patternId: (json['patternId'] ?? json['id']) is num
+          ? ((json['patternId'] ?? json['id']) as num).toInt()
+          : int.tryParse((json['patternId'] ?? json['id'] ?? '0').toString()) ??
+          0,
+// ↑ [하위호환] id 별칭 지원 (기존 화면 코드가 data['id']를 쓸 수 있음)
+      patternName: (json['patternName'] ?? json['title'] ?? '').toString(),
+// ↑ [하위호환] title 별칭 지원 (수정 전 코드 호환)
+      points: pts,
+      recentBacktestResults: backtests,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'patternId': patternId,
+      'patternName': patternName,
+      'points': points,
+      'recentBacktestResults': recentBacktestResults.map((e) => e.toJson()).toList(),
+      'id': patternId,
+      'title': patternName,
+    };
+  }
+}
+
+/// 패턴 상세
+class PatternDetail {
+  final int patternId;
+  final String patternName;
+  final List<int> points;
+  final double tolerance;
+  final int periodValue;
+  final String periodUnit;
+  final List<Map<String, dynamic>> appliedStockList;
+  final Map<String, dynamic>? backtestResult;
+
+
+  PatternDetail({
     required this.patternId,
     required this.patternName,
     required this.points,
@@ -18,58 +118,62 @@ class Pattern {
     required this.periodValue,
     required this.periodUnit,
     required this.appliedStockList,
-    required this.backtestResult,
+    this.backtestResult,
   });
 
-  factory Pattern.fromJson(Map<String, dynamic> json) {
-    final pts = (json['points'] as List?)
-        ?.map((e) => (e as num).toInt())
-        .toList()
-        ?? const <int>[];
+  factory PatternDetail.fromJson(Map<String, dynamic> json) {
+    final pts = (json['points'] as List? ?? [])
+        .map((e) => (e as num).toInt())
+        .toList();
 
     final stocksRaw = json['appliedStockList'];
-    final stocks = <Map<String, dynamic>>[];
+    final List<Map<String, dynamic>> stocks = [];
     if (stocksRaw is List) {
       for (final e in stocksRaw) {
-        if (e is Map<String, dynamic>) {
-          final id = e['stockId'] ?? e['id'];
-          final name = e['name'] ?? e['symbol'] ?? '';
-          stocks.add({'stockId': id, 'name': name});
+        if (e is Map) {
+          final m = Map<String, dynamic>.from(e as Map);
+          final id = m['stockId'] ?? m['id'];
+          final name = m['name'] ?? m['symbol'] ?? m['stockName'];
+          stocks.add({
+            'stockId': id,
+            'name': name ?? '',
+          });
         } else {
-          // 문자열만 넘어올 경우 이름만 저장
           stocks.add({'stockId': null, 'name': e.toString()});
         }
       }
     }
 
-    return Pattern(
-      patternId: (json['patternId'] as num).toInt(),
-      patternName: (json['patternName'] as String?) ?? (json['title'] as String?) ?? '',
+    return PatternDetail(
+      patternId: (json['patternId'] ?? json['id']) is num
+          ? ((json['patternId'] ?? json['id']) as num).toInt()
+          : int.tryParse((json['patternId'] ?? json['id'] ?? '0').toString()) ?? 0,
+      patternName: (json['patternName'] ?? json['title'] ?? '').toString(),
       points: pts,
-      tolerance: (json['tolerance'] as num?)?.toDouble() ?? 0.1,
+      tolerance: (json['tolerance'] as num?)?.toDouble() ?? 0,
       periodValue: (json['periodValue'] as num?)?.toInt() ?? 0,
       periodUnit: (json['periodUnit'] as String?) ?? 'DAY',
       appliedStockList: stocks,
-      backtestResult: json['backtestResult'],
+      backtestResult: json['backtestResult'] as Map<String, dynamic>?,
     );
   }
 
+  /// 수정 페이지에 넘겨줄 때 쓰는 toJson
   Map<String, dynamic> toJson() {
     return {
-      // 서버 규격
+      'id': patternId,
+      'title': patternName,
+
       'patternId': patternId,
       'patternName': patternName,
-      'points': points,               // 서버는 double도 받지만 int 배열로 보내도 OK
+      'points': points,
       'tolerance': double.parse(tolerance.toStringAsFixed(2)),
       'periodValue': periodValue,
       'periodUnit': periodUnit,
-
-      'appliedStockList': appliedStockList, // 필요 시 서버 규격에 맞게 바꿔도 됨
+      'appliedStockList': appliedStockList,
       'backtestResult': backtestResult,
-
-      // 👇 화면 코드 호환용 alias (기존에 data['id'], data['title'] 사용)
-      'id': patternId,
-      'title': patternName,
     };
   }
 }
+
+
