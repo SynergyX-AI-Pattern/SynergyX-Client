@@ -11,6 +11,7 @@ import 'package:stockapp/models/backtest_result.dart'; // 상세 결과 모델
 
 
 
+
 class BacktestPopup extends StatefulWidget {
   final Map<String, dynamic> patternData;
   const BacktestPopup({super.key, required this.patternData});

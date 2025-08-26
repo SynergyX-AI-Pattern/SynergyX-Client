@@ -5,7 +5,7 @@ import 'package:stockapp/data/pattern_api.dart';
 import 'dart:math' as math;
 
 class BacktestResultScreen extends StatefulWidget {
-  final Map<String, dynamic> result;
+  final Map<String, dynamic> result; // 하위호환: 루트/중첩 어디든 올 수 있음
 
   const BacktestResultScreen({super.key, required this.result});
 
@@ -53,6 +53,7 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
     final res = _res;
     _matchStart = _asNum<int>(res['matchStartIndex'] ?? res['matchStart'] ?? res['startIndex']);
     _matchEnd = _asNum<int>(res['matchEndIndex'] ?? res['matchEnd'] ?? res['endIndex']);
+
     _loadCandles();
     _loadPatternPoints();
   }
@@ -60,6 +61,7 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
 
   Future<void> _loadCandles() async {
     final res = _res;
+
 
     final dynamic stockIdDyn =
         res['stockId'] ?? widget.result['stockId'] ?? (res['stock'] is Map ? (res['stock'] as Map)['id'] : null);
@@ -95,6 +97,7 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
       final detail = await PatternApi.getPatternDetail(pid);
       setState(() {
         _patternPoints = detail.points;
+
       });
     } catch (e) {
       debugPrint('⚠️ 패턴 로딩 실패: $e');
@@ -117,6 +120,7 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
         title: const Text('백테스팅 결과', style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.white,
         elevation: 0,
+
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
@@ -127,6 +131,7 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+
             Row(
               children: [
                 Text('실행일: ${res["executedAt"] ?? "-"}',
@@ -137,7 +142,7 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
               ],
             ),
             const SizedBox(height: 12),
-
+            
             Row(
               children: [
                 CircleAvatar(

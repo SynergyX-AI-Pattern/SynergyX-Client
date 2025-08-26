@@ -19,6 +19,7 @@ import '../widgets/backtest/backtest_pop.dart';
 import '../widgets/backtest/recent_backtest_result_card.dart';
 
 
+
 class PatternDetailPage extends StatefulWidget {
   final int patternId;
 
@@ -106,7 +107,6 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
       );
     }
   }
-
 
   PatternRequest _buildRequestFromDetail(PatternDetail d) {
     return PatternRequest(
@@ -279,6 +279,7 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                 child: const Text('전체 백테스팅 보기'),
               ),
             ),
+
             const SizedBox(height: 20),
             Divider(color: const Color(0xFFD0CECE), thickness: 1),
             const SizedBox(height: 20),
@@ -397,8 +398,21 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                         return _pattern!.toJson();
                       },
                     ),
-                  ),
-                );
+                  )
+              );
+
+              const SizedBox(height: 16);
+
+              // SizedBox(
+              //   height: 200,
+              //   child: InteractiveChart(
+              //     candles: candles,
+              //     style: const ChartStyle(
+              //       priceGainColor: Colors.red,
+              //       priceLossColor: Colors.blue,
+              //     ),
+              //   ),
+              // );
 
                 if (updated != null) {
                   setState(() => _pattern = PatternDetail.fromJson(updated));
@@ -535,6 +549,7 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                       onPressed: () => _removeAppliedStockAt(i),
                     ),
                   ),
+
                   const Divider(height: 1),
                 ]
               ],

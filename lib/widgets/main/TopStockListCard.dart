@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:stockapp/screens/stock_detail_screen.dart';
 import 'package:stockapp/screens/topStock_screen.dart';
@@ -32,7 +34,7 @@ class TopStockListCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('10시 기준', style: TextStyles.timeText),
+                  HourBasisText(style: TextStyles.timeText),
 
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 5),
@@ -96,6 +98,7 @@ class TopStockListCard extends StatelessWidget {
   }
 }
 
+//현재시간 업데이트
 class TextStyles {
   static const TextStyle timeText = TextStyle(
     fontSize: 14,
@@ -109,4 +112,49 @@ class TextStyles {
   );
 
   static const TextStyle buttonText = TextStyle(fontWeight: FontWeight.w700);
+}
+
+
+class HourBasisText extends StatefulWidget {
+  final TextStyle? style;
+  const HourBasisText({super.key, this.style});
+
+  @override
+  State<HourBasisText> createState() => _HourBasisTextState();
+}
+
+class _HourBasisTextState extends State<HourBasisText> {
+  Timer? _timer;
+  late String _label;
+
+  void _update() {
+    final now = DateTime.now();
+    _label = '${now.hour}시 기준'; // 8:56 -> 8시 기준, 16:45 -> 16시 기준
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _update();
+    // 다음 분 경계에 맞춰 1분마다 업데이트
+    final now = DateTime.now();
+    final toNextMinute = Duration(minutes: 1)
+        - Duration(seconds: now.second, milliseconds: now.millisecond);
+    _timer = Timer(toNextMinute, () {
+      _update();
+      _timer = Timer.periodic(const Duration(minutes: 1), (_) => _update());
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(_label, style: widget.style);
+  }
 }
