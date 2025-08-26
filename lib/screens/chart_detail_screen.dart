@@ -19,6 +19,7 @@ import '../widgets/backtest/backtesting.dart';
 import '../widgets/backtest/recent_backtest_result_card.dart';
 
 
+
 class PatternDetailPage extends StatefulWidget {
   final int patternId;
 
@@ -106,7 +107,6 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
       );
     }
   }
-
 
   PatternRequest _buildRequestFromDetail(PatternDetail d) {
     return PatternRequest(
@@ -279,6 +279,7 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                 child: const Text('전체 백테스팅 보기'),
               ),
             ),
+
             const SizedBox(height: 20),
             Divider(color: const Color(0xFFD0CECE), thickness: 1),
             const SizedBox(height: 20),
@@ -396,7 +397,22 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                         await _fetchPatternDetail(); // 수정 후 새로고침
                         return _pattern!.toJson();
                       },
+
                     ),
+                    child: const Text("종목 바꾸기"),
+                  )
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              SizedBox(
+                height: 200,
+                child: InteractiveChart(
+                  candles: candles,
+                  style: const ChartStyle(
+                    priceGainColor: Colors.red,
+                    priceLossColor: Colors.blue,
                   ),
                 );
 
@@ -535,6 +551,7 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                       onPressed: () => _removeAppliedStockAt(i),
                     ),
                   ),
+
                   const Divider(height: 1),
                 ]
               ],
