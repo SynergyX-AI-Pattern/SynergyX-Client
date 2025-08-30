@@ -1,9 +1,37 @@
+// backtest_result.dart
+
+class StockResult {
+  final int id;
+  final String name;
+  final String imageUrl;
+
+  StockResult({
+    required this.id,
+    required this.name,
+    required this.imageUrl,
+  });
+
+  factory StockResult.fromJson(Map<String, dynamic> json) {
+    return StockResult(
+      id: (json['id'] as num).toInt(),
+      name: (json['name'] ?? '').toString(),
+      imageUrl: (json['imageUrl'] ?? '').toString(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'imageUrl': imageUrl,
+    };
+  }
+}
+
 /// 백테스트 결과 모델
 class BacktestResult {
   final int? backtestId;
-  final int? stockId;
-  final String stockName;
-  final String stockImage;
+  final List<StockResult> stockResults; // ✅ lowerCamelCase
   final String executedAt;
   final String startDate;
   final String endDate;
@@ -21,9 +49,7 @@ class BacktestResult {
 
   BacktestResult({
     this.backtestId,
-    this.stockId,
-    required this.stockName,
-    required this.stockImage,
+    required this.stockResults, // ✅ lowerCamelCase
     required this.executedAt,
     required this.startDate,
     required this.endDate,
@@ -42,13 +68,33 @@ class BacktestResult {
 
   /// JSON -> 모델 변환
   factory BacktestResult.fromJson(Map<String, dynamic> json) {
-    final stock = json['stock'];
+    // 새 키(소문자) 우선, 구버전 대소문자 키 하위호환
+    final rawList = json['stockResults'] ?? json['StockResults'];
+    List<StockResult> stocks;
+    if (rawList is List) {
+      stocks = rawList
+          .whereType<Map>()
+          .map((e) => StockResult.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+    } else if (json['stockResult'] is Map) {
+      stocks = [
+        StockResult.fromJson(
+          Map<String, dynamic>.from(json['stockResult'] as Map),
+        ),
+      ];
+    } else if (json['StockResult'] is Map) {
+      // 구버전 단일 키도 지원
+      stocks = [
+        StockResult.fromJson(
+          Map<String, dynamic>.from(json['StockResult'] as Map),
+        ),
+      ];
+    } else {
+      stocks = const [];
+    }
+
     return BacktestResult(
       backtestId: (json['backtestId'] as num?)?.toInt(),
-      stockId: (json['stockId'] as num?)?.toInt() ??
-          (stock is Map ? (stock['id'] as num?)?.toInt() : null),
-      stockName: (json['stockName'] ?? json['name'] ?? '').toString(),
-      stockImage: (json['stockImage'] ?? '').toString(),
       executedAt: (json['executedAt'] ?? json['createdAt'] ?? '').toString(),
       startDate: (json['startDate'] ?? '').toString(),
       endDate: (json['endDate'] ?? '').toString(),
@@ -63,15 +109,13 @@ class BacktestResult {
       lastMatchedDate: (json['lastMatchedDate'] ?? '').toString(),
       lastMatchedReturn: (json['lastMatchedReturn'] as num?)?.toDouble() ?? 0,
       targetReturn: (json['targetReturn'] as num?)?.toDouble(),
+      stockResults: stocks, // ✅ 리스트를 그대로 대입 (중첩 X)
     );
   }
 
   /// 모델 -> JSON 변환
   Map<String, dynamic> toJson() => {
     'backtestId': backtestId,
-    'stockId': stockId,
-    'stockName': stockName,
-    'stockImage': stockImage,
     'executedAt': executedAt,
     'startDate': startDate,
     'endDate': endDate,
@@ -86,5 +130,6 @@ class BacktestResult {
     'lastMatchedDate': lastMatchedDate,
     'lastMatchedReturn': lastMatchedReturn,
     'targetReturn': targetReturn,
+    'stockResults': stockResults.map((e) => e.toJson()).toList(), // ✅ 소문자 키
   };
 }

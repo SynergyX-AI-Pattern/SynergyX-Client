@@ -496,12 +496,19 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
               await _runBacktestForStock(result['id'] as int, result['symbol']);
             }
           }, // 종목 바꾸기 처리
-          onTapDetail: () {
+          onTapDetail: () async {
+            final id = backtest['backtestId'];
+            Map<String, dynamic> detail = backtest;
+            if (id != null) {
+              // 필요한 정보를 다시 요청하여 상세 화면에 전달
+              detail = await BacktestService.fetchBacktestResult(id as int);
+            }
+            if (!context.mounted) return;
             Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => BacktestResultScreen(result: backtest),
-              ),
+                context,
+                MaterialPageRoute(
+                builder: (_) => BacktestResultScreen(result: detail)
+                ),
             );
           }, // 상세 결과 화면 이동
           onRunBacktest: () {
@@ -644,19 +651,17 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
 void openBacktestPopup(BuildContext context, Map<String, dynamic> patternData) {
   showDialog(
     context: context,
-    barrierDismissible: false,              // 바깥 터치로 닫히지 않게
-    barrierColor: Colors.transparent,       // 배리어 투명(블러만 보이게)
+    barrierDismissible: false,
+    barrierColor: Colors.transparent,
     builder: (_) {
       return Stack(
         children: [
-          // 배경 블러 + 희미한 화이트 베일
           Positioned.fill(
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(color: Colors.white.withValues(alpha: 0.6)),
             ),
           ),
-          // 중앙 팝업
           Center(child: BacktestPopup(patternData: patternData)),
         ],
       );

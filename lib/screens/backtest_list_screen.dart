@@ -124,7 +124,7 @@ class _BacktestResultCard extends StatelessWidget {
     final stockImage = summary['stockImage'] ?? '';
     final stockName = summary['stockName'] ?? '';
     final stockId =
-    (summary['stockId'] ?? summary['symbol'] ?? '').toString(); // 가능 키 대비
+    (summary['stockId'] ?? summary['symbol'] ?? '').toString();
     final startDate = summary['startDate'] ?? '';
     final avgReturn = summary['averageReturn'];
     final winRate = summary['winRate'];

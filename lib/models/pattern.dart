@@ -78,9 +78,7 @@ class Pattern {
           ? ((json['patternId'] ?? json['id']) as num).toInt()
           : int.tryParse((json['patternId'] ?? json['id'] ?? '0').toString()) ??
           0,
-// ↑ [하위호환] id 별칭 지원 (기존 화면 코드가 data['id']를 쓸 수 있음)
       patternName: (json['patternName'] ?? json['title'] ?? '').toString(),
-// ↑ [하위호환] title 별칭 지원 (수정 전 코드 호환)
       points: pts,
       recentBacktestResults: backtests,
     );
