@@ -24,22 +24,18 @@ class _ChartEditScreenState extends State<ChartEditPage> {
   late List<Offset> points;
   late String patternName;
 
-  // ✅ nullable 로 전환
   int? periodValue;
   String? periodUnit;
 
-  // tolerance는 드롭다운 옵션 중 가장 가까운 값으로 스냅
   late double tolerance;
 
   int? selectedIndex;
 
-  // ✅ 허용 옵션 정의
   static const List<int> _periodOptions = [3, 5, 7, 15, 30, 60];
   static const List<String> _unitOptions = ['HOUR', 'DAY'];
   static const List<double> _toleranceOptions = [0.1, 0.2, 0.5, 0.8, 1.0];
 
   double _snapTolerance(dynamic raw) {
-    // raw: num or String or null
     double x;
     if (raw is num) {
       x = raw.toDouble();
@@ -48,7 +44,6 @@ class _ChartEditScreenState extends State<ChartEditPage> {
     } else {
       x = 1.0;
     }
-    // 가장 가까운 허용값으로 스냅
     double best = _toleranceOptions.first;
     double bestDiff = (x - best).abs();
     for (final v in _toleranceOptions) {
@@ -75,31 +70,26 @@ class _ChartEditScreenState extends State<ChartEditPage> {
     final puRaw = (data['periodUnit'] ?? 'DAY').toString().toUpperCase();
     periodUnit = (puRaw == 'HOUR' || puRaw == 'DAY') ? puRaw : 'DAY';
 
-    // 🔥 여기! 0.0이 와도 허용값으로 스냅
     tolerance = _snapTolerance(data['tolerance']);
 
     final rawPoints = List<num>.from(data['points'] ?? []);
-    // 점의 개수에 따라 X 간격을 재계산하여 7x7 그리드 전체를 활용
-    final double xStep = rawPoints.length > 1
+   final double xStep = rawPoints.length > 1
         ? (spacing * (gridSize - 1)) / (rawPoints.length - 1)
         : spacing * (gridSize - 1);
     points = List.generate(
       rawPoints.length,
           (i) => Offset(
         i * xStep,
-        // 저장된 정수 포인트를 다시 스페이싱 값으로 변환
         (rawPoints[i].toDouble() * spacing),
       ),
     );
   }
 
   void _updatePattern() async {
-    // X축 순서대로 정렬 후 서버에 전송할 수치로 변환
     points.sort((a, b) => a.dx.compareTo(b.dx));
     final convertedPoints = points.map((p) => (p.dy ~/ spacing)).toList();
     final id = widget.patternData['id'];
 
-    // ✅ 서버로는 null이 안 가도록 기본값 보정
     final request = PatternRequest(
       patternId: id,
       patternName: patternName,
@@ -154,7 +144,6 @@ class _ChartEditScreenState extends State<ChartEditPage> {
                   children: [
                     const Text('기간: '),
                     const SizedBox(width: 12),
-                    // ✅ periodValue: nullable + hint
                     DropdownButton<int>(
                       isExpanded: false,
                       value: (_periodOptions.contains(periodValue)) ? periodValue : null,
@@ -168,7 +157,6 @@ class _ChartEditScreenState extends State<ChartEditPage> {
                       onChanged: (val) => setState(() => periodValue = val),
                     ),
                     const SizedBox(width: 12),
-                    // ✅ periodUnit: nullable + hint
                     DropdownButton<String>(
                       isExpanded: false,
                       value: (_unitOptions.contains(periodUnit)) ? periodUnit : null,

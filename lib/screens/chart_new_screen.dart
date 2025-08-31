@@ -183,27 +183,25 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 0, // 변경: 그림자 제거
+        elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
       ),
       body: GestureDetector(
         behavior: HitTestBehavior.translucent,
-        onTapDown: _handlePageTapDown, // ← 이미 추가했던: 캔버스 밖 탭 시 숨김
+        onTapDown: _handlePageTapDown,
         child: NotificationListener<ScrollStartNotification>(
           onNotification: (notification) {
-            // 스크롤이 시작되면 가이드/미니바 숨김 + 키보드 닫기
             if (_selectedCol != null) {
               setState(() => _selectedCol = null);
             }
             FocusScope.of(context).unfocus();
-            return false; // 스크롤 동작은 그대로 전달
+            return false;
           },
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 상단 이름 입력 (언더라인)
                 TextField(
                   controller: _nameController,
                   decoration: const InputDecoration(
@@ -214,25 +212,21 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
 
                 const SizedBox(height: 12),
 
-                // ===== 캔버스 컨테이너 (카드형) =====
                 Center(
                   child: Container(
                     key: _canvasKey,
 
                     width: canvasSize + 24,
                     height: canvasSize + 36,
-                    // 위쪽 미니 FAB 여유
                     padding: const EdgeInsets.fromLTRB(12, 24, 12, 12),
-                    // 위쪽 공간 확보
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.black12),
                     ),
                     child: Stack(
-                      clipBehavior: Clip.none, // 변경: FAB가 상단으로 살짝 나가도 보이게
+                      clipBehavior: Clip.none,
                       children: [
-                        // 캔버스(그리드/라인/점)
                         Positioned.fill(
                           child: GestureDetector(
                             behavior: HitTestBehavior.opaque,
@@ -278,7 +272,7 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
                                   );
                                   _selectedCol =
                                       (fixedX / spacing)
-                                          .round(); // 드래그 중인 열 강조 유지
+                                          .round();
                                 });
                               }
                             },
@@ -305,7 +299,6 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
                           ),
                         ),
 
-                        // ===== 선택 열에만 뜨는 미니 + / - FAB =====
                         if (_selectedCol != null && selectedX != null)
                           Positioned(
                             left: selectedX - 16,
@@ -332,7 +325,6 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
 
                 const SizedBox(height: 20),
 
-                // ===== 하단 폼 (기간 / 단위 / 오차 범위) =====
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -355,11 +347,11 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
                                         ? List.generate(
                                           23,
                                           (i) => i + 1,
-                                        ) // 1~23
+                                        )
                                         : List.generate(
                                           30,
                                           (i) => i + 1,
-                                        )) // 1~30
+                                        ))
                                     .map(
                                       (e) => DropdownMenuItem(
                                         value: e,
@@ -377,7 +369,6 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
                     ),
                     const SizedBox(width: 12),
 
-                    // 단위
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -398,7 +389,7 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
                             onChanged: (val) {
                               setState(() {
                                 periodUnit = val ?? periodUnit;
-                                periodValue = 1; // 단위 바꿀 때 기본값 리셋
+                                periodValue = 1;
                               });
                             },
                           ),
@@ -438,7 +429,6 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
 
                 const SizedBox(height: 16),
 
-                // 생성 버튼 (우측 정렬)
                 Align(
                   alignment: Alignment.centerRight,
                   child: SizedBox(

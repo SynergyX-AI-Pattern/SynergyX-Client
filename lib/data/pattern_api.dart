@@ -27,7 +27,7 @@ class PatternApi {
     return dataRaw.map<Pattern>((e) => Pattern.fromJson(e as Map<String, dynamic>)).toList();
   }
 
-  // 패턴 상세 조회 (GET /patterns/{id} -> 래퍼의 result 언래핑)
+  // 패턴 상세 조회
   static Future<PatternDetail> getPatternDetail(int patternId) async {
     final res = await _dio.get('/patterns/$patternId');
     if (res.data is! Map) {

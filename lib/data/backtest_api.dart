@@ -1,5 +1,6 @@
 // backtest_api.dart
 import 'package:dio/dio.dart';
+export 'package:stockapp/models/backtest_result.dart';
 
 class BacktestService {
   static final Dio _dio = Dio(
@@ -9,7 +10,6 @@ class BacktestService {
     ),
   );
 
-  /// 목록 조회 (patternId가 있으면 해당 패턴만 조회)
   static Future<List<Map<String, dynamic>>> fetchBacktestList({int? patternId}) async {
     try {
       final res = await _dio.get(
@@ -17,17 +17,34 @@ class BacktestService {
         queryParameters: patternId == null ? null : {'patternId': patternId},
       );
       final data = res.data;
-      return List<Map<String, dynamic>>.from(data['result']['content']);
+      final list = List<Map<String, dynamic>>.from(data['result']['content']);
+
+      for (final m in list) {
+        if (m['stockId'] == null && m['stock'] is Map && (m['stock']['id'] is num)) {
+          m['stockId'] = (m['stock']['id'] as num).toInt();
+        }
+      }
+      return list;
     } catch (e) {
       throw Exception('백테스트 목록 조회 실패: $e');
     }
   }
 
-  /// 상세 조회
-  static Future<Map<String, dynamic>> fetchBacktestResult(int backtestId) async {
+
+  static Future<Map<String, dynamic>> fetchBacktestResult(
+      int backtestId, {
+        int? stockId,
+      }) async {
     try {
       final res = await _dio.get('/backtests/results/$backtestId');
-      return Map<String, dynamic>.from(res.data);
+      final map = Map<String, dynamic>.from(res.data['result']);
+
+      if (map['stockId'] == null && map['stock'] is Map && (map['stock']['id'] is num)) {
+        map['stockId'] = (map['stock']['id'] as num).toInt();
+      }
+      map['stockId'] ??= stockId;
+
+      return map;
     } catch (e) {
       throw Exception('백테스트 상세 조회 실패: $e');
     }

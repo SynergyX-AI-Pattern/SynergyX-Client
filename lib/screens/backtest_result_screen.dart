@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:interactive_chart/interactive_chart.dart';
 import 'package:stockapp/data/candle_api.dart';
-import 'package:stockapp/data/pattern_api.dart';
+import 'package:stockapp/data/backtest_api.dart';
+import 'package:stockapp/data/stock_api.dart';
+
+
 import 'dart:math' as math;
 
 class BacktestResultScreen extends StatefulWidget {
-  final Map<String, dynamic> result; // 하위호환: 루트/중첩 어디든 올 수 있음
-
+  final Map<String, dynamic> result;
   const BacktestResultScreen({super.key, required this.result});
 
   @override
   State<BacktestResultScreen> createState() => _BacktestResultScreenState();
 }
+
+Map<String, dynamic>? _detail;
 
 class _BacktestResultScreenState extends State<BacktestResultScreen> {
   List<CandleData> _candles = [];
@@ -21,7 +25,7 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
   int? _matchEnd;
 
   Map<String, dynamic> get _res {
-    final root = widget.result;
+    final root = _detail ?? widget.result;
     final r = root['result'];
     return (r is Map) ? Map<String, dynamic>.from(r) : root;
   }
@@ -44,7 +48,7 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
 
   String _fmtDate(String? s) {
     if (s == null || s.isEmpty) return '-';
-    return s.split('T').first; // ISO 형태면 'T' 앞부분만 사용
+    return s.split('T').first;
   }
 
   @override
@@ -54,17 +58,36 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
     _matchStart = _asNum<int>(res['matchStartIndex'] ?? res['matchStart'] ?? res['startIndex']);
     _matchEnd = _asNum<int>(res['matchEndIndex'] ?? res['matchEnd'] ?? res['endIndex']);
 
-    _loadCandles();
-    _loadPatternPoints();
+    _loadDetail();
   }
 
+
+  Future<void> _loadDetail() async {
+    final id = _asNum<int>(_res['backtestId'] ?? widget.result['backtestId']);
+    if (id == null) return;
+    try {
+      final fetched = await BacktestService.fetchBacktestResult(id); // 백테스트 상세 호출
+      setState(() {
+        _detail = fetched;
+        _matchStart = _asNum<int>(fetched['matchStartIndex'] ?? fetched['matchStart'] ?? fetched['startIndex']);
+        _matchEnd = _asNum<int>(fetched['matchEndIndex'] ?? fetched['matchEnd'] ?? fetched['endIndex']);
+      });
+      _loadCandles();
+    } catch (e) {
+      debugPrint('⚠️ 상세 로딩 실패: $e');
+    }
+  }
 
   Future<void> _loadCandles() async {
     final res = _res;
 
 
     final dynamic stockIdDyn =
-        res['stockId'] ?? widget.result['stockId'] ?? (res['stock'] is Map ? (res['stock'] as Map)['id'] : null);
+    res['stockId'] ??
+        widget.result['stockId'] ??
+        (res['stock'] is Map ? (res['stock'] as Map)['id'] : null) ??
+        res['symbol'] ??
+        res['stockSymbol'];
     final String? stockId =
     (stockIdDyn == null) ? null : stockIdDyn.toString();
 
@@ -89,25 +112,15 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
     }
   }
 
-  Future<void> _loadPatternPoints() async {
-    final res = _res;
-    final pid = _asNum<int>(res['patternId'] ?? widget.result['patternId']);
-    if (pid == null) return;
-    try {
-      final detail = await PatternApi.getPatternDetail(pid);
-      setState(() {
-        _patternPoints = detail.points;
-
-      });
-    } catch (e) {
-      debugPrint('⚠️ 패턴 로딩 실패: $e');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final res = _res; // 정규화된 결과
-    final stockName = (res['stockName'] ?? widget.result['stockName'] ?? '-').toString();
+    final res = _res;
+    final stockName =
+    (res['stockName'] ??
+        (res['stock'] is Map ? res['stock']['name'] : null) ??
+        widget.result['stockName'] ??
+        '-')
+        .toString();
 
     final String? startDate = res['startDate']?.toString() ?? widget.result['startDate']?.toString();
     final String? endDate   = res['endDate']?.toString()   ?? widget.result['endDate']?.toString();
@@ -147,8 +160,15 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
               children: [
                 CircleAvatar(
                   radius: 20,
-                  backgroundImage: NetworkImage(res["stockImage"] ?? ""),
                   backgroundColor: Colors.grey.shade200,
+                  backgroundImage: (res["stockImage"] != null &&
+                      (res["stockImage"] as String).isNotEmpty)
+                      ? NetworkImage(res["stockImage"])
+                      : null,
+                  child: (res["stockImage"] == null ||
+                      (res["stockImage"] as String).isEmpty)
+                      ? const Icon(Icons.image_not_supported, color: Colors.grey, size: 18)
+                      : null,
                 ),
                 const SizedBox(width: 12),
                 Text(
@@ -266,7 +286,8 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
                           children: [
                             const Text("최대 손실률", style: TextStyle(color: Colors.grey)),
                             const SizedBox(height: 4),
-                            Text(_fmtPercent(res['maxLoss']),
+                            // ✅ 백엔드에서 최소 수익률(minReturn)을 최대 손실률로 사용
+                            Text(_fmtPercent(res['maxLoss'] ?? res['minReturn']),
                                 style: const TextStyle(
                                     fontSize: 14, fontWeight: FontWeight.bold, color: Colors.red)),
                           ],
@@ -277,7 +298,7 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
                           children: [
                             const Text("누적 수익률", style: TextStyle(color: Colors.grey)),
                             const SizedBox(height: 4),
-                            Text(_fmtPercent(res['cumulativeReturn']),
+                            Text(_fmtPercent(res['cumulativeReturn'] ?? res['totalReturn']),
                                 style: const TextStyle(
                                     fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF289BF6))),
                           ],
@@ -288,7 +309,7 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
                           children: [
                             const Text("마지막 수익률", style: TextStyle(color: Colors.grey)),
                             const SizedBox(height: 4),
-                            Text(_fmtPercent(res['lastReturn']),
+                            Text(_fmtPercent(res['lastReturn'] ?? res['lastMatchedReturn']),
                                 style: const TextStyle(
                                     fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF289BF6))),
                           ],
@@ -297,7 +318,7 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Text("마지막 매칭일: ${res["lastMatchDate"] ?? "-"}",
+                  Text("마지막 매칭일: ${res["lastMatchDate"] ?? res["lastMatchedDate"] ?? "-"}",
                       style: const TextStyle(color: Colors.grey)),
                 ],
               ),
@@ -309,12 +330,11 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
   }
 }
 
-/// 캔들 차트 위에 매칭된 구간과 패턴을 그리는 페인터
 class _MatchOverlayPainter extends CustomPainter {
-  final int start;              // 매칭 시작 인덱스
-  final int end;                // 매칭 종료 인덱스
-  final int total;              // 전체 캔들 수
-  final List<int> patternPoints; // 패턴을 그리기 위한 점 목록
+  final int start;
+  final int end;
+  final int total;
+  final List<int> patternPoints;
 
   _MatchOverlayPainter({
     required this.start,
