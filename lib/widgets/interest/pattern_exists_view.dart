@@ -1,6 +1,7 @@
 // lib/widgets/interest/pattern/pattern_exists_view.dart
 import 'package:flutter/material.dart';
 import 'package:stockapp/models/pattern_apply.dart';
+import 'package:stockapp/widgets/common/app_button.dart';
 import 'package:stockapp/widgets/interest/BacktestResultCard.dart';
 import 'package:stockapp/widgets/interest/pattern_alert_button.dart';
 import 'package:stockapp/widgets/interest/pattern_chart_card.dart';
@@ -78,11 +79,9 @@ class PatternExistsView extends StatelessWidget {
         else
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: OutlinedButton.icon(
-              onPressed: onRunBacktest,
-              icon: const Icon(Icons.play_arrow),
-              label: const Text('백테스팅 진행하기'),
-            ),
+            child: AppButton(
+                label: '백테스팅 진행하기',
+                onPressed: onRunBacktest),
           ),
         const SizedBox(height: 24),
       ],

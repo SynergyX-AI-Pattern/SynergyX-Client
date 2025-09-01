@@ -1,8 +1,9 @@
-// lib/screens/interest/interest_pattern_screen.dart
 import 'package:flutter/material.dart';
 import 'package:stockapp/data/interest_pattern_api.dart';
 import 'package:stockapp/data/pattern_apply_api.dart';
 import 'package:stockapp/models/pattern_apply.dart';
+import 'package:stockapp/screens/interest/pattern_library_screen.dart';
+import 'package:stockapp/widgets/common/app_confirm_dialog.dart';
 import 'package:stockapp/widgets/interest/pattern_empty_view.dart';
 import 'package:stockapp/widgets/interest/pattern_exists_view.dart';
 import 'package:stockapp/widgets/interest/pattern_stock_header.dart';
@@ -34,18 +35,13 @@ class _InterestPatternScreenState extends State<InterestPatternScreen> {
   }
 
   Future<void> _confirmAndDelete(int patternApplyId) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('전략 패턴을 삭제하시겠습니까?'),
-        content: const Text('이 동작은 취소할 수 없으며 내 전략 차트가 삭제됩니다.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('취소')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('삭제')),
-        ],
-      ),
+    final ok = await showAppConfirmDialog(
+      context,
+      title: "전략 패턴을 삭제하시겠습니까?",
+      content: "이 동작은 취소할 수 없으며 내 전략 차트가 삭제됩니다.",
+      cancelText: '취소',
+      confirmText: '삭제'
     );
-
     if (ok != true) return;
 
     try {
@@ -126,7 +122,26 @@ class _InterestPatternScreenState extends State<InterestPatternScreen> {
                     onEdit: () {/* TODO */},
                     onRunBacktest: () {/* TODO */},
                   )
-                      : const PatternEmptyView(),
+                      : PatternEmptyView(
+                    onAdd: () async {
+                      final applied = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PatternLibraryScreen(
+                            stockId: widget.stockId,
+                            stockName: title,
+                          ),
+                        ),
+                      );
+
+                      if (applied == true) {
+                        // 즉시 '있음' 화면으로 전환 후 서버 동기화
+                        setState(() => _future = Future.value(null));
+                        await Future.delayed(const Duration(milliseconds: 120));
+                        _reload();
+                      }
+                    },
+                  ),
                 ),
               ],
             ),

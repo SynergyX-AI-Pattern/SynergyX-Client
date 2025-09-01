@@ -1,6 +1,7 @@
 // screens/watchlist/widgets/watchlist_item.dart
 import 'package:flutter/material.dart';
-import 'package:stockapp/screens/interest_pattern_screen.dart';
+import 'package:stockapp/screens/interest/interest_pattern_screen.dart';
+import 'package:stockapp/widgets/common/app_button.dart';
 import 'package:stockapp/widgets/interest/pattern_alert_button.dart';
 import '../../../models/stock.dart';
 
@@ -99,41 +100,23 @@ class WatchlistItem extends StatelessWidget {
             // 4) 패턴 버튼
             Padding(
               padding: const EdgeInsets.only(left: 8),
-              child: OutlinedButton(
+              child: AppButton(
+                label: '패턴',
                 onPressed: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => InterestPatternScreen(
+                      builder:
+                          (_) => InterestPatternScreen(
                             /*넘겨줄 값*/
-                        stockId: stock.id,       // 모델에 맞게 전달
-                        stockName: stock.name,
-                      ),
+                            stockId: stock.id, // 모델에 맞게 전달
+                            stockName: stock.name,
+                          ),
                     ),
                   );
                 },
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 15,
-                    vertical: 9,
-                  ),
-                  // 내부 여백 축소
-                  minimumSize: const Size(0, 0),
-                  // 기본 최소 크기 없애기
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  // 터치 타겟 축소 허용
-                  backgroundColor: const Color(0xFF000000),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text(
-                  '패턴',
-                  style: TextStyle(fontSize: 14, color: Colors.white),
-                ),
               ),
             ),
-
-           ]
+          ],
         ),
       ),
     );
