@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:stockapp/models/pattern.dart';
+import 'package:stockapp/widgets/common/app_button.dart';
 import 'package:stockapp/widgets/common/pattern_line_chart.dart';
 
 class PatternPickCard extends StatelessWidget {
@@ -29,18 +30,12 @@ class PatternPickCard extends StatelessWidget {
               pattern.patternName,
               style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 20),
             ),
-            const SizedBox(height: 8),
-            PatternLineChart(points: pattern.points),
-            const SizedBox(height: 8),
-            FilledButton.tonal(
-              onPressed: onApply,
-              child: applying
-                  ? const SizedBox(
-                width: 16, height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-                  : const Text('적용'),
+            Container(
+                color: Colors.white,
+                child: PatternLineChart(points: pattern.points)
             ),
+            const SizedBox(height: 12),
+            AppButton(label: '적용', onPressed: onApply)
           ],
         ),
       ),

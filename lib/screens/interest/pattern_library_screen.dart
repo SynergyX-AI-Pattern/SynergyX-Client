@@ -3,6 +3,7 @@ import 'package:stockapp/data/pattern_api.dart';
 import 'package:stockapp/data/pattern_apply_api.dart';
 import 'package:stockapp/models/pattern.dart';
 import 'package:stockapp/screens/interest/interest_pattern_screen.dart';
+import 'package:stockapp/widgets/common/app_confirm_dialog.dart';
 import 'package:stockapp/widgets/interest/pattern_no_pattern_view.dart';
 import 'package:stockapp/widgets/interest/pattern_pick_card.dart';
 
@@ -33,17 +34,14 @@ class _PatternLibraryScreenState extends State<PatternLibraryScreen> {
 
   Future<void> _onApplyPressed(Pattern p) async {
     if (_applying) return;
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('‘${p.patternName}’ 적용할까요?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('취소')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('적용')),
-        ],
-      ),
+    final ok = await showAppConfirmDialog(
+      context,
+      title: "'${p.patternName}' 패턴을 적용할까요?",
     );
-    if (ok == true) await _apply(p);
+
+    if (ok == true) {
+      await _apply(p);
+    }
   }
 
   Future<void> _apply(Pattern p) async {
@@ -83,7 +81,7 @@ class _PatternLibraryScreenState extends State<PatternLibraryScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(widget.stockName ?? '전략 패턴'),
+        title: Text(style: TextStyle(fontWeight: FontWeight.w700), widget.stockName ?? '전략 패턴'),
         backgroundColor: Colors.white,
       ),
       body: FutureBuilder<List<Pattern>>(
