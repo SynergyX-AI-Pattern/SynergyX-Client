@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:stockapp/data/dio_client.dart';
 
 class PatternApplyApi {
   final dio = Dio(
@@ -7,7 +6,6 @@ class PatternApplyApi {
       baseUrl: 'http://pattern-catcher.net:8080',
       connectTimeout: const Duration(seconds: 8),
       receiveTimeout: const Duration(seconds: 8),
-      // 4xx도 우리가 직접 분기해서 처리
       validateStatus: (s) => s != null && s < 500,
     ),
   )..interceptors.add(LogInterceptor(
@@ -24,15 +22,10 @@ class PatternApplyApi {
     throw Exception('HTTP ${res.statusCode}');
   }
 
-  /// 성공 시: true/false (서버가 상태를 반환한 경우)
-  /// 성공하지만 상태 미반환 시: null
-  /// 실패 시: 예외
+  /// 패턴 알림 토글
+  /// 성공 시: true/false (서버가 상태를 반환하면), 상태 미반환 시 null
   Future<bool?> toggleNotification(int patternApplyId) async {
     final res = await dio.patch('/pattern-applies/$patternApplyId/notification');
-
-    // 디버깅 시에 켜두세요
-    // print('toggleNotification status=${res.statusCode} data=${res.data}');
-
     if (res.statusCode == 200 && res.data is Map<String, dynamic>) {
       final data = res.data as Map<String, dynamic>;
       if (data['isSuccess'] == true) {
@@ -40,12 +33,47 @@ class PatternApplyApi {
         if (result is Map && result['isAlertEnabled'] is bool) {
           return result['isAlertEnabled'] as bool;
         }
-        // 성공이지만 상태필드가 없으면 null 반환 (UI는 낙관적 토글 유지)
         return null;
       }
-      // 서버가 성공이 아닌 이유 전달
       throw Exception(data['message'] ?? '알림 토글 실패');
     }
     throw Exception('HTTP ${res.statusCode}');
+  }
+
+  /// ★ 패턴 적용 (POST /pattern-applies)
+  /// body: { patternId, stockId, entryAt(ISO8601 UTC), minValidReturn }
+  /// 성공 시 생성된 patternApplyId 반환
+  Future<int> applySimple({
+    required int patternId,
+    required int stockId,
+    DateTime? entryAt,
+    num minValidReturn = 0,
+  }) async {
+    final body = {
+      'patternId': patternId,
+      'stockId': stockId,
+      'entryAt': (entryAt ?? DateTime.now()).toUtc().toIso8601String(),
+      'minValidReturn': minValidReturn,
+    };
+
+    final res = await dio.post(
+      '/pattern-applies',
+      data: body,
+      options: Options(validateStatus: (s) => s != null && s < 500),
+    );
+
+    if (res.statusCode == 200 && res.data is Map<String, dynamic>) {
+      final data = res.data as Map<String, dynamic>;
+      if (data['isSuccess'] == true) {
+        final result = data['result'];
+        final id = (result is Map)
+            ? (result['patternApplyId'] ?? result['id'])
+            : null;
+        if (id is num) return id.toInt();
+        throw Exception('응답에 patternApplyId가 없습니다: ${res.data}');
+      }
+      throw Exception(data['message'] ?? '패턴 적용 실패');
+    }
+    throw Exception('HTTP ${res.statusCode}: ${res.data}');
   }
 }

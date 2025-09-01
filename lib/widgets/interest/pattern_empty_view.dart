@@ -1,9 +1,10 @@
-// lib/widgets/interest/pattern/pattern_empty_view.dart
 import 'package:flutter/material.dart';
 import 'package:stockapp/widgets/interest/pattern_section_header.dart';
 
 class PatternEmptyView extends StatelessWidget {
-  const PatternEmptyView({super.key});
+  final VoidCallback? onAdd;
+
+  const PatternEmptyView({super.key, this.onAdd});
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +19,7 @@ class PatternEmptyView extends StatelessWidget {
               const Text('설정된 차트 패턴이 없습니다.'),
               const SizedBox(height: 10),
               ElevatedButton(
-                onPressed: () {/* 패턴 추가 화면 이동 */},
+                onPressed: onAdd,
                 style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.white,
                   backgroundColor: Colors.black,

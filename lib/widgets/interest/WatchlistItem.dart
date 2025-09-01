@@ -1,6 +1,6 @@
 // screens/watchlist/widgets/watchlist_item.dart
 import 'package:flutter/material.dart';
-import 'package:stockapp/screens/interest_pattern_screen.dart';
+import 'package:stockapp/screens/interest/interest_pattern_screen.dart';
 import 'package:stockapp/widgets/interest/pattern_alert_button.dart';
 import '../../../models/stock.dart';
 

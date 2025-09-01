@@ -1,8 +1,8 @@
-// lib/screens/interest/interest_pattern_screen.dart
 import 'package:flutter/material.dart';
 import 'package:stockapp/data/interest_pattern_api.dart';
 import 'package:stockapp/data/pattern_apply_api.dart';
 import 'package:stockapp/models/pattern_apply.dart';
+import 'package:stockapp/screens/interest/pattern_library_screen.dart';
 import 'package:stockapp/widgets/interest/pattern_empty_view.dart';
 import 'package:stockapp/widgets/interest/pattern_exists_view.dart';
 import 'package:stockapp/widgets/interest/pattern_stock_header.dart';
@@ -126,7 +126,26 @@ class _InterestPatternScreenState extends State<InterestPatternScreen> {
                     onEdit: () {/* TODO */},
                     onRunBacktest: () {/* TODO */},
                   )
-                      : const PatternEmptyView(),
+                      : PatternEmptyView(
+                    onAdd: () async {
+                      final applied = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PatternLibraryScreen(
+                            stockId: widget.stockId,
+                            stockName: title,
+                          ),
+                        ),
+                      );
+
+                      if (applied == true) {
+                        // 즉시 '있음' 화면으로 전환 후 서버 동기화
+                        setState(() => _future = Future.value(null));
+                        await Future.delayed(const Duration(milliseconds: 120));
+                        _reload();
+                      }
+                    },
+                  ),
                 ),
               ],
             ),
