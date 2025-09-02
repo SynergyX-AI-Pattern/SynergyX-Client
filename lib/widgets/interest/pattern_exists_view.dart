@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:stockapp/models/pattern_apply.dart';
 import 'package:stockapp/widgets/common/app_button.dart';
+import 'package:stockapp/widgets/common/pattern_line_chart.dart';
 import 'package:stockapp/widgets/interest/BacktestResultCard.dart';
 import 'package:stockapp/widgets/interest/pattern_alert_button.dart';
 import 'package:stockapp/widgets/interest/pattern_chart_card.dart';
@@ -56,7 +57,10 @@ class PatternExistsView extends StatelessWidget {
         // 차트
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: PatternChartCard(points: patt.points),
+          child: Container(
+              color: Colors.white,
+              child: PatternLineChart(points: patt.points)
+          ),
         ),
         const SizedBox(height: 12),
 

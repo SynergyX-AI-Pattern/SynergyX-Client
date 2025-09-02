@@ -22,6 +22,29 @@ class PatternApplyApi {
     throw Exception('HTTP ${res.statusCode}');
   }
 
+  /// 패턴 수정
+  // Future<void> updateApply({
+  //   required int patternApplyId,
+  //   DateTime? entryAt,
+  //   num? minValidReturn,
+  //   int? patternId, // 서버가 허용하면 같이 보냄
+  // }) async {
+  //   final body = <String, dynamic>{
+  //     if (entryAt != null) 'entryAt': entryAt.toUtc().toIso8601String(),
+  //     if (minValidReturn != null) 'minValidReturn': minValidReturn,
+  //     if (patternId != null) 'patternId': patternId,
+  //   };
+  //
+  //   final res = await dio.patch('/pattern-applies/$patternApplyId', data: body);
+  //
+  //   if (res.statusCode == 200 && res.data is Map<String, dynamic>) {
+  //     final data = res.data as Map<String, dynamic>;
+  //     if (data['isSuccess'] == true) return;
+  //     throw Exception(data['message'] ?? '패턴 수정 실패');
+  //   }
+  //   throw Exception('HTTP ${res.statusCode}: ${res.data}');
+  // }
+
   /// 패턴 알림 토글
   /// 성공 시: true/false (서버가 상태를 반환하면), 상태 미반환 시 null
   Future<bool?> toggleNotification(int patternApplyId) async {
