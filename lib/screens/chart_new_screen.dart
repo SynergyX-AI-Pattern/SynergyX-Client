@@ -383,7 +383,7 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
                             decoration: _inputDecoration(),
                             dropdownColor: Colors.white,
                             items: const [
-                              DropdownMenuItem(value: "HOUR", child: Text("분")),
+                              DropdownMenuItem(value: "HOUR", child: Text("시")),
                               DropdownMenuItem(value: "DAY", child: Text("일")),
                             ],
                             onChanged: (val) {
