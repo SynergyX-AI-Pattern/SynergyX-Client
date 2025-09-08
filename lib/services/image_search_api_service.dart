@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
+import 'package:mime/mime.dart';
 import '../models/image_search_result.dart';
 
 class ImageSearchApiService {
@@ -39,11 +40,16 @@ class ImageSearchApiService {
   }) async {
     final filename = imageFile.path.split('/').last;
 
+    final mimeType = lookupMimeType(imageFile.path) ?? 'image/jpeg';
+    final typeSplit = mimeType.split('/');
+
+    print('[UPLOAD] filename=$filename, mimeType=$mimeType, path=${imageFile.path}');
+
     final formData = FormData.fromMap({
       'image': await MultipartFile.fromFile(
         imageFile.path,
         filename: filename,
-        contentType: MediaType('image', 'jpeg'),
+        contentType: MediaType(typeSplit[0], typeSplit[1]),
       ),
     });
 

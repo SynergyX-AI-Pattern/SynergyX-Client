@@ -116,8 +116,8 @@ class _StockSearchPageState extends State<StockSearchPage> {
                                 ),
                               IconButton(
                                 icon: const Icon(
-                                  Icons.image_search,
-                                  color: Color(0xFF767676),
+                                  Icons.photo_camera,
+                                  color: Colors.black,
                                   size: 26,
                                 ),
                                 onPressed: () {
