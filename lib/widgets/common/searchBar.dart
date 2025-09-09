@@ -34,7 +34,7 @@ class StockSerachBar extends StatelessWidget {
               ],
             ),
             IconButton(
-              icon: const Icon(Icons.image_search, color: Color(0xFF767676), size: 26),
+              icon: const Icon(Icons.photo_camera, color: Colors.black, size: 26),
               onPressed: () {
                 Navigator.push(
                   context,
