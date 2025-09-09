@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
       title: 'My App',
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        fontFamily: 'Pretendard' //폰트 추가
+        fontFamily: 'Pretendard', //폰트 추가
       ),
       home: const LoginScreen(),  // MainScreen 호출
     );

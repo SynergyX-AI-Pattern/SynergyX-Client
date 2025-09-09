@@ -9,7 +9,6 @@ import 'package:stockapp/screens/search_info_screen.dart';
 import 'package:stockapp/screens/backtest_result_screen.dart';
 import 'package:stockapp/screens/backtest_list_screen.dart';
 
-
 import 'chart_edit_screen.dart';
 import '../data/candle_api.dart';
 import '../data/pattern_api.dart';
@@ -18,7 +17,8 @@ import '../data/backtest_api.dart';
 import '../widgets/backtest/backtest_pop.dart';
 import '../widgets/backtest/recent_backtest_result_card.dart';
 
-
+import 'package:stockapp/models/StockItemModel.dart';
+import 'package:stockapp/screens/stock_detail_screen.dart';
 
 class PatternDetailPage extends StatefulWidget {
   final int patternId;
@@ -144,13 +144,21 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
     }
   }
 
-  Future<void> _applyStockBySymbol(String symbol) async {
+  Future<void> _applyStockBySymbol(String symbol, {int? stockId}) async {
     if (_pattern == null) return;
+
     final current = List<Map<String, dynamic>>.from(_pattern!.appliedStockList);
-    final already = current.any((e) => (e['symbol'] ?? e['name']) == symbol);
+    final already = current.any((e) => (e['symbol'] ?? e['stockName'] ?? e['name']) == symbol);
+
+
     if (!already) {
-      current.add({'symbol': symbol, 'name': symbol});
+      current.add({
+        'symbol': symbol,
+        'stockName': symbol,
+        'stockId': stockId,
+      });
     }
+
     final updated = PatternDetail(
       patternId: _pattern!.patternId,
       patternName: _pattern!.patternName,
@@ -501,7 +509,10 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
             Map<String, dynamic> detail = backtest;
             if (id != null) {
               // 필요한 정보를 다시 요청하여 상세 화면에 전달
-              detail = await BacktestService.fetchBacktestResult(id as int);
+              detail = await BacktestService.fetchBacktestResult(
+                id as int,
+                stockId: backtest['stockId'], // 차트 생성을 위해 종목 ID 사용
+              );
             }
             if (!context.mounted) return;
             Navigator.push(
@@ -545,19 +556,79 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
             Column(
               children: [
                 for (int i = 0; i < stocks.length; i++) ...[
-                  ListTile(
-                    leading: CircleAvatar(
-                      backgroundImage: NetworkImage(stocks[i]["stockImage"] ?? ""),
-                    ),
-                    title: Text(stocks[i]["stockName"] ?? stocks[i]['name']?.toString() ?? ''),
-                    subtitle: Text("종목코드: ${stocks[i]["symbol"] ?? ''}"),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => _removeAppliedStockAt(i),
+                  // 피그마 디자인에 맞춘 커스텀 리스트 아이템
+                  InkWell(
+                    onTap: () {
+                      // 텍스트를 탭하면 종목 상세로 이동
+                      final dynamic id = stocks[i]['stockId'];
+                      if (id == null) return; // ID 없으면 이동 중지
+                      final int parsedId =
+                      id is int ? id : int.tryParse(id.toString()) ?? 0;
+                      final stockItem = StockItem(
+                        rank: 0,
+                        stockId: parsedId,
+                        name: stocks[i]["stockName"] ?? '',
+                        price: 0,
+                        changeRate: 0,
+                        imageUrl: stocks[i]["stockImage"] ?? '',
+                      );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => DetailScreen(stock: stockItem)),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 8, horizontal: 12),
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF7F7F7),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          // 종목 이미지
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: Image.network(
+                              stocks[i]["stockImage"] ?? '',
+                              width: 40,
+                              height: 40,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          // 종목명과 종목코드
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  stocks[i]["stockName"] ??
+                                      stocks[i]['name']?.toString() ?? '',
+                                  style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  stocks[i]["symbol"] ?? '',
+                                  style: const TextStyle(
+                                      fontSize: 12, color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // 삭제 버튼
+                          IconButton(
+                            icon: const Icon(Icons.close, size: 18),
+                            onPressed: () => _removeAppliedStockAt(i),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-
-                  const Divider(height: 1),
                 ]
               ],
             ),
@@ -574,8 +645,15 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                   ),
                 );
                 if (result is Map<String, dynamic> && result['symbol'] is String) {
-                  await _applyStockBySymbol(result['symbol']);
+
+                  await _applyStockBySymbol(
+                    result['symbol'],
+                    stockId: result['id'] is int
+                        ? result['id']
+                        : int.tryParse(result['id']?.toString() ?? ''),
+                  );  
                 }
+
               },
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.black,
@@ -588,6 +666,7 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
       ),
     );
   }
+
 
   /// 태그 위젯
   Widget _buildTag(String text) {
@@ -625,11 +704,11 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
           horizontalInterval: (maxY / 5).ceilToDouble(),
           verticalInterval: (points.length / 6).ceilToDouble(),
           getDrawingHorizontalLine: (value) => const FlLine(
-            color: Color(0xFFD0CECE), // ✅ 중간선 #D0CECE
+            color: Color(0xFFD0CECE), 
             strokeWidth: 1,
           ),
           getDrawingVerticalLine: (value) => const FlLine(
-            color: Color(0xFFD0CECE), // ✅ 중간선 #D0CECE
+            color: Color(0xFFD0CECE),
             strokeWidth: 1,
           ),
         ),
