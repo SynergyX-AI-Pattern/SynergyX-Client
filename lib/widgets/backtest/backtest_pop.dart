@@ -27,9 +27,13 @@ class _BacktestPopupState extends State<BacktestPopup> {
   int? _selectedStockId;
   String? _selectedSymbol;
 
-  // 시작일(종료일은 오늘)
+  // 시작일 선택
   DateTime? _startDate;
   final _startDateController = TextEditingController();
+
+  // 종료일 선택
+  DateTime? _endDate;
+  final _endDateController = TextEditingController();
 
   // 목표 수익률(선택)
   final _profitController = TextEditingController();
@@ -37,6 +41,7 @@ class _BacktestPopupState extends State<BacktestPopup> {
   @override
   void dispose() {
     _startDateController.dispose();
+    _endDateController.dispose();
     _profitController.dispose();
     super.dispose();
   }
@@ -89,6 +94,19 @@ class _BacktestPopupState extends State<BacktestPopup> {
       endDate: endDate,
     );
 
+    if (_endDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('종료일을 선택하세요.')),
+      );
+      return;
+    }
+    if (_startDate!.isAfter(_endDate!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('시작일이 종료일보다 늦습니다.')),
+      );
+      return;
+    }
+
     setState(() => _loading = false);
     final normalized = _normalizeResponse(raw);
 
@@ -102,7 +120,7 @@ class _BacktestPopupState extends State<BacktestPopup> {
         'stockId': _selectedStockId,
         'symbol': _selectedSymbol,
         'startDate': _startDate!.toIso8601String(),
-        'endDate': endDate.toIso8601String(),
+        'endDate': _endDate!.toIso8601String(),
         'result': normalized,
       }));
     } catch (_) {}
@@ -115,8 +133,7 @@ class _BacktestPopupState extends State<BacktestPopup> {
       'stockName': normalized['stockName'] ?? _selectedSymbol,
       'patternId': normalized['patternId'] ?? patternId,
       'startDate': normalized['startDate'] ?? _startDate!.toIso8601String().split('T').first,
-      'endDate': normalized['endDate'] ?? endDate.toIso8601String().split('T').first,
-      'targetReturn': double.tryParse(_profitController.text),
+      'endDate': normalized['endDate'] ?? _endDate!.toIso8601String().split('T').first,      'targetReturn': double.tryParse(_profitController.text),
     };
 
     // 팝업 닫고 결과 화면으로
@@ -241,12 +258,67 @@ class _BacktestPopupState extends State<BacktestPopup> {
                     setState(() {
                       _startDate = picked;
                       _startDateController.text = picked.toIso8601String().split('T').first;
+
+                      // 시작일이 종료일보다 늦지 않도록 조정
+                      if (_endDate != null && _endDate!.isBefore(picked)) {
+                        _endDate = picked;
+                        _endDateController.text = picked.toIso8601String().split('T').first;
+                      }
                     });
                   }
                 },
               ),
 
               const SizedBox(height: 12),
+
+              // 종료일
+              TextField(
+                controller: _endDateController,
+                readOnly: true,
+                decoration: const InputDecoration(
+                  labelText: '백테스팅 종료 날짜 설정',
+                  suffixIcon: Icon(Icons.calendar_today),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: _endDate ?? _startDate ?? DateTime.now(),
+                    firstDate: _startDate ?? DateTime(2000),
+                    lastDate: DateTime.now(),
+                    builder: (context, child) {
+                      final base = Theme.of(context);
+                      return Theme(
+                        data: base.copyWith(
+                          dialogTheme: const DialogThemeData(
+                            backgroundColor: Colors.white,
+                          ),
+                          colorScheme: const ColorScheme.light(
+                            primary: Colors.black,
+                            onPrimary: Colors.white,
+                            surface: Colors.white,
+                            onSurface: Colors.black,
+                          ),
+                          datePickerTheme: const DatePickerThemeData(
+                            backgroundColor: Colors.white,
+                          ),
+                        ),
+                        child: child!,
+                      );
+                    },
+                  );
+                  if (picked != null) {
+                    setState(() {
+                      _endDate = picked;
+                      _endDateController.text = picked.toIso8601String().split('T').first;
+                    });
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
 
               // 목표 수익률
               TextField(
@@ -261,7 +333,6 @@ class _BacktestPopupState extends State<BacktestPopup> {
                   isDense: true,
                 ),
               ),
-
               const SizedBox(height: 16),
 
               // 버튼들

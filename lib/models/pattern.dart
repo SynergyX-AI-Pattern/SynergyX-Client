@@ -124,6 +124,9 @@ class PatternDetail {
         .map((e) => (e as num).toInt())
         .toList();
 
+    // 서버에서 내려온 패턴 적용 종목 정보를 파싱한다.
+    // 기존에는 name 정도만 사용했지만, 상세 화면 이동을 위해
+    // stockId, symbol, stockName, stockImage 까지 모두 보존한다.
     final stocksRaw = json['appliedStockList'];
     final List<Map<String, dynamic>> stocks = [];
     if (stocksRaw is List) {
@@ -131,13 +134,27 @@ class PatternDetail {
         if (e is Map) {
           final m = Map<String, dynamic>.from(e as Map);
           final id = m['stockId'] ?? m['id'];
-          final name = m['name'] ?? m['symbol'] ?? m['stockName'];
+          final symbol = m['symbol']?.toString() ?? '';
+          final stockName =
+              m['stockName'] ?? m['name'] ?? symbol; // 이름 정보 우선순위
+          final stockImage = m['stockImage'] ?? m['imageUrl'] ?? '';
+
           stocks.add({
             'stockId': id,
-            'name': name ?? '',
+            'symbol': symbol,
+            'stockName': stockName,
+            'stockImage': stockImage,
+            'name': stockName, // 기존 코드 호환을 위해 name 도 유지
           });
         } else {
-          stocks.add({'stockId': null, 'name': e.toString()});
+          // Map 이 아닌 경우 대비: 문자열만 들어오면 기본 구조로 저장
+          stocks.add({
+            'stockId': null,
+            'symbol': e.toString(),
+            'stockName': e.toString(),
+            'stockImage': '',
+            'name': e.toString(),
+          });
         }
       }
     }

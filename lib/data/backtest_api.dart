@@ -10,6 +10,23 @@ class BacktestService {
     ),
   );
 
+  /// periodUnit → interval 매핑 유틸
+  /// 서버가 "HOUR"/"DAY" 등을 주면 캔들 조회 interval로 변환해 사용할 수 있음.
+  static String intervalFromPeriodUnit(String? periodUnit) {
+    switch ((periodUnit ?? '').toUpperCase()) {
+      case 'MINUTE':
+      case 'MIN':
+        return '1m';
+      case 'HOUR':
+      case 'H':
+        return '1H';
+      case 'DAY':
+      case 'D':
+      default:
+        return '1D';
+    }
+  }
+
   static Future<List<Map<String, dynamic>>> fetchBacktestList({int? patternId}) async {
     try {
       final res = await _dio.get(
@@ -19,9 +36,19 @@ class BacktestService {
       final data = res.data;
       final list = List<Map<String, dynamic>>.from(data['result']['content']);
 
+      // 편의 필드 보정
       for (final m in list) {
-        if (m['stockId'] == null && m['stock'] is Map && (m['stock']['id'] is num)) {
-          m['stockId'] = (m['stock']['id'] as num).toInt();
+        final stock = m['stock'];
+        if (stock is Map) {
+          if (m['stockId'] == null && stock['id'] is num) {
+            m['stockId'] = (stock['id'] as num).toInt();
+          }
+          if (m['stockName'] == null && stock['name'] != null) {
+            m['stockName'] = stock['name'].toString();
+          }
+          if (m['stockImage'] == null && stock['imageUrl'] != null) {
+            m['stockImage'] = stock['imageUrl'].toString();
+          }
         }
       }
       return list;
@@ -30,20 +57,30 @@ class BacktestService {
     }
   }
 
-
   static Future<Map<String, dynamic>> fetchBacktestResult(
       int backtestId, {
         int? stockId,
       }) async {
     try {
-      final res = await _dio.get('/backtests/results/$backtestId');
+      final res = await _dio.get(
+        '/backtests/results/$backtestId',
+        queryParameters: stockId == null ? null : {'stockId': stockId},
+      );
       final map = Map<String, dynamic>.from(res.data['result']);
 
+      // stock 정보에서 파생 필드 보정
       if (map['stockId'] == null && map['stock'] is Map && (map['stock']['id'] is num)) {
         map['stockId'] = (map['stock']['id'] as num).toInt();
       }
       map['stockId'] ??= stockId;
+      if (map['stockName'] == null && map['stock'] is Map && map['stock']['name'] != null) {
+        map['stockName'] = map['stock']['name'].toString();
+      }
+      if (map['stockImage'] == null && map['stock'] is Map && map['stock']['imageUrl'] != null) {
+        map['stockImage'] = map['stock']['imageUrl'].toString();
+      }
 
+      // highlightRange/periodUnit는 그대로 전달(모델에서 파싱)
       return map;
     } catch (e) {
       throw Exception('백테스트 상세 조회 실패: $e');
