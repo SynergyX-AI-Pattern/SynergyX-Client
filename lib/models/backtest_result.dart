@@ -15,7 +15,7 @@ class StockResult {
     return StockResult(
       id: (json['id'] as num).toInt(),
       name: (json['name'] ?? '').toString(),
-      imageUrl: (json['imageUrl'] ?? '').toString(),
+      imageUrl: (json['imageUrl'] ?? json['stockImage'] ?? '').toString(),
     );
   }
 
@@ -28,10 +28,36 @@ class StockResult {
   }
 }
 
+/// 하이라이트 범위 모델
+class HighlightRange {
+  final DateTime? fromDate;
+  final DateTime? toDate;
+
+  const HighlightRange({this.fromDate, this.toDate});
+
+  factory HighlightRange.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return const HighlightRange();
+    DateTime? parse(String? s) {
+      if (s == null || s.isEmpty) return null;
+      return DateTime.tryParse(s);
+    }
+
+    return HighlightRange(
+      fromDate: parse(json['fromDate']?.toString()),
+      toDate: parse(json['toDate']?.toString()),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'fromDate': fromDate?.toIso8601String(),
+    'toDate': toDate?.toIso8601String(),
+  };
+}
+
 /// 백테스트 결과 모델
 class BacktestResult {
   final int? backtestId;
-  final List<StockResult> stockResults; // ✅ lowerCamelCase
+  final List<StockResult> stockResults;
   final String executedAt;
   final String startDate;
   final String endDate;
@@ -46,10 +72,12 @@ class BacktestResult {
   final String lastMatchedDate;
   final double lastMatchedReturn;
   final double? targetReturn;
+  final HighlightRange? highlightRange;
+  final String? periodUnit;
 
   BacktestResult({
     this.backtestId,
-    required this.stockResults, // ✅ lowerCamelCase
+    required this.stockResults,
     required this.executedAt,
     required this.startDate,
     required this.endDate,
@@ -64,11 +92,13 @@ class BacktestResult {
     required this.lastMatchedDate,
     required this.lastMatchedReturn,
     this.targetReturn,
+    this.highlightRange,
+    this.periodUnit,
   });
 
-  /// JSON -> 모델 변환
+  /// JSON -> 모델 변환 (신/구 키 혼용 대응)
   factory BacktestResult.fromJson(Map<String, dynamic> json) {
-    // 새 키(소문자) 우선, 구버전 대소문자 키 하위호환
+    // stockResults 배열(신규) 또는 단일 객체(구버전) 대응
     final rawList = json['stockResults'] ?? json['StockResults'];
     List<StockResult> stocks;
     if (rawList is List) {
@@ -83,33 +113,51 @@ class BacktestResult {
         ),
       ];
     } else if (json['StockResult'] is Map) {
-      // 구버전 단일 키도 지원
       stocks = [
         StockResult.fromJson(
           Map<String, dynamic>.from(json['StockResult'] as Map),
         ),
       ];
+    } else if (json['stock'] is Map) {
+      final m = Map<String, dynamic>.from(json['stock'] as Map);
+      stocks = [
+        StockResult.fromJson({
+          'id': m['id'],
+          'name': m['name'],
+          'imageUrl': m['imageUrl'] ?? m['stockImage'],
+        })
+      ];
     } else {
       stocks = const [];
     }
+
+    // 숫자 안전 파싱
+    double d(dynamic v) => (v is num) ? v.toDouble() : double.tryParse('$v') ?? 0.0;
+    int i(dynamic v) => (v is num) ? v.toInt() : int.tryParse('$v') ?? 0;
 
     return BacktestResult(
       backtestId: (json['backtestId'] as num?)?.toInt(),
       executedAt: (json['executedAt'] ?? json['createdAt'] ?? '').toString(),
       startDate: (json['startDate'] ?? '').toString(),
       endDate: (json['endDate'] ?? '').toString(),
-      matchedCount: (json['matchedCount'] as num?)?.toInt() ?? 0,
-      winRate: (json['winRate'] as num?)?.toDouble() ?? 0,
-      averageReturn: (json['averageReturn'] as num?)?.toDouble() ?? 0,
-      maxReturn: (json['maxReturn'] as num?)?.toDouble() ?? 0,
+      matchedCount: i(json['matchedCount']),
+      winRate: d(json['winRate']),
+      averageReturn: d(json['averageReturn']),
+      maxReturn: d(json['maxReturn']),
       maxReturnDate: (json['maxReturnDate'] ?? '').toString(),
-      minReturn: (json['minReturn'] as num?)?.toDouble() ?? 0,
+      minReturn: d(json['minReturn']),
       minReturnDate: (json['minReturnDate'] ?? '').toString(),
-      totalReturn: (json['totalReturn'] as num?)?.toDouble() ?? 0,
+      totalReturn: d(json['totalReturn']),
       lastMatchedDate: (json['lastMatchedDate'] ?? '').toString(),
-      lastMatchedReturn: (json['lastMatchedReturn'] as num?)?.toDouble() ?? 0,
-      targetReturn: (json['targetReturn'] as num?)?.toDouble(),
-      stockResults: stocks, // ✅ 리스트를 그대로 대입 (중첩 X)
+      lastMatchedReturn: d(json['lastMatchedReturn']),
+      targetReturn: (json['targetReturn'] is num)
+          ? (json['targetReturn'] as num).toDouble()
+          : double.tryParse('${json['targetReturn']}'),
+      stockResults: stocks,
+      highlightRange: HighlightRange.fromJson(
+        (json['highlightRange'] is Map) ? Map<String, dynamic>.from(json['highlightRange']) : null,
+      ),
+      periodUnit: (json['periodUnit'] ?? json['PeriodUnit'])?.toString(),
     );
   }
 
@@ -130,6 +178,8 @@ class BacktestResult {
     'lastMatchedDate': lastMatchedDate,
     'lastMatchedReturn': lastMatchedReturn,
     'targetReturn': targetReturn,
-    'stockResults': stockResults.map((e) => e.toJson()).toList(), // ✅ 소문자 키
+    'stockResults': stockResults.map((e) => e.toJson()).toList(),
+    'highlightRange': highlightRange?.toJson(),
+    'periodUnit': periodUnit,
   };
 }
