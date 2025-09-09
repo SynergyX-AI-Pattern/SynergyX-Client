@@ -84,14 +84,26 @@ class _BacktestPopupState extends State<BacktestPopup> {
       return;
     }
 
+    if (_endDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('종료일을 선택하세요.')),
+      );
+      return;
+    }
+    if (_startDate!.isAfter(_endDate!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('시작일이 종료일보다 늦습니다.')),
+      );
+      return;
+    }
+
     setState(() => _loading = true);
-    final endDate = DateTime.now();
 
     final raw = await BacktestService.run(
       patternId: patternId,
       stockId: _selectedStockId!,
       startDate: _startDate!,
-      endDate: endDate,
+      endDate: _endDate!,
     );
 
     if (_endDate == null) {
@@ -133,7 +145,9 @@ class _BacktestPopupState extends State<BacktestPopup> {
       'stockName': normalized['stockName'] ?? _selectedSymbol,
       'patternId': normalized['patternId'] ?? patternId,
       'startDate': normalized['startDate'] ?? _startDate!.toIso8601String().split('T').first,
-      'endDate': normalized['endDate'] ?? _endDate!.toIso8601String().split('T').first,      'targetReturn': double.tryParse(_profitController.text),
+      'endDate': normalized['endDate'] ?? _endDate!.toIso8601String().split('T').first,
+      'targetReturn': double.tryParse(_profitController.text),
+
     };
 
     // 팝업 닫고 결과 화면으로
@@ -318,7 +332,9 @@ class _BacktestPopupState extends State<BacktestPopup> {
                   }
                 },
               ),
-              const SizedBox(height: 16),
+
+              const SizedBox(height: 12),
+
 
               // 목표 수익률
               TextField(

@@ -9,7 +9,6 @@ import 'package:stockapp/screens/search_info_screen.dart';
 import 'package:stockapp/screens/backtest_result_screen.dart';
 import 'package:stockapp/screens/backtest_list_screen.dart';
 
-
 import 'chart_edit_screen.dart';
 import '../data/candle_api.dart';
 import '../data/pattern_api.dart';
@@ -148,13 +147,10 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
   Future<void> _applyStockBySymbol(String symbol, {int? stockId}) async {
     if (_pattern == null) return;
 
-    // 현재 적용 종목 리스트 복사
     final current = List<Map<String, dynamic>>.from(_pattern!.appliedStockList);
-
-    // 이미 추가된 종목인지 확인 (symbol 기준)
     final already = current.any((e) => (e['symbol'] ?? e['stockName'] ?? e['name']) == symbol);
 
-    // 새 종목이면 리스트에 추가
+
     if (!already) {
       current.add({
         'symbol': symbol,
@@ -162,6 +158,7 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
         'stockId': stockId,
       });
     }
+
     final updated = PatternDetail(
       patternId: _pattern!.patternId,
       patternName: _pattern!.patternName,
@@ -648,14 +645,15 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                   ),
                 );
                 if (result is Map<String, dynamic> && result['symbol'] is String) {
-                  // 검색 결과에서 ID 도 함께 전달받아 적용한다.
+
                   await _applyStockBySymbol(
                     result['symbol'],
                     stockId: result['id'] is int
                         ? result['id']
                         : int.tryParse(result['id']?.toString() ?? ''),
-                  );
+                  );  
                 }
+
               },
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.black,
@@ -706,11 +704,11 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
           horizontalInterval: (maxY / 5).ceilToDouble(),
           verticalInterval: (points.length / 6).ceilToDouble(),
           getDrawingHorizontalLine: (value) => const FlLine(
-            color: Color(0xFFD0CECE), // ✅ 중간선 #D0CECE
+            color: Color(0xFFD0CECE), 
             strokeWidth: 1,
           ),
           getDrawingVerticalLine: (value) => const FlLine(
-            color: Color(0xFFD0CECE), // ✅ 중간선 #D0CECE
+            color: Color(0xFFD0CECE),
             strokeWidth: 1,
           ),
         ),

@@ -1,7 +1,8 @@
 // backtest_result_screen.dart
 import 'package:flutter/material.dart';
 import 'package:interactive_chart/interactive_chart.dart';
-import 'package:stockapp/data/back_candle_api.dart'; // ✅ 파일명 확인
+import 'package:stockapp/data/backtest_candle_api.dart'; 
+
 import 'package:stockapp/data/backtest_api.dart';
 import 'dart:math' as math;
 
@@ -15,19 +16,17 @@ class BacktestResultScreen extends StatefulWidget {
 }
 
 class _BacktestResultScreenState extends State<BacktestResultScreen> {
-  // 상세 데이터 (API 재호출 결과) — 화면별 캐시
   Map<String, dynamic>? _detail;
 
-  // 차트 데이터
   List<CandleData> _candles = [];
   bool _candleLoading = false;
 
-  // 하이라이트(매칭) 관련
-  List<int> _patternPoints = []; // 서버가 별도로 줄 경우만 사용(없으면 빈 리스트)
-  int? _matchStart; // 화면에 그릴 때 사용할 인덱스 기반 시작
-  int? _matchEnd;   // 화면에 그릴 때 사용할 인덱스 기반 끝
-  DateTime? _hlFrom; // 서버 highlightRange.fromDate
-  DateTime? _hlTo;   // 서버 highlightRange.toDate
+  List<int> _patternPoints = [];
+  int? _matchStart;
+  int? _matchEnd;
+  DateTime? _hlFrom;
+  DateTime? _hlTo;
+
 
   Map<String, dynamic> get _res {
     final root = _detail ?? widget.result;
@@ -78,15 +77,12 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
     }
   }
 
-
-  /// 서버에서 전달된 데이터에서 하이라이트 날짜 범위를 파싱하고,
-  /// (하위호환) 기존 인덱스 기반 매칭 키들도 지원한다.
+  // 하이라이트 적용
   void _applyBestMatch(Map<String, dynamic> data) {
-    // 1) highlightRange 우선
     final hr = data['highlightRange'];
     final hasHR = hr is Map && (hr['fromDate'] != null && hr['toDate'] != null);
 
-    // 2) 패턴 포인트(있으면)만 먼저 뽑아둔다.
+
     List<int> pts = [];
     final dynamic matchesRaw = data['matches'] ?? data['matchResults'];
     if (matchesRaw is List && matchesRaw.isNotEmpty) {
@@ -144,24 +140,6 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
     });
   }
 
-  // 앞 뒤 범위 설정
-  Duration _paddingForUnit(String? unit) {
-    switch ((unit ?? '').toUpperCase()) {
-      case 'MIN':
-      case 'MINUTE':
-        return const Duration(hours: 12);  // 앞뒤 6시간
-      case 'H':
-      case 'HOUR':
-        return const Duration(days: 10);   // 앞뒤 5일
-      case 'D':
-      case 'DAY':
-      default:
-        return const Duration(days: 60);  // 앞뒤 45일
-    }
-  }
-
-  /// _hlFrom/_hlTo가 있고 캔들이 채워졌다면, 해당 날짜를 포함하는
-  /// 봉 인덱스 범위를 계산하여 _matchStart/_matchEnd로 설정한다.
   void _applyHighlightFromDates() {
     if (_hlFrom == null || _hlTo == null || _candles.isEmpty) return;
 
@@ -185,13 +163,11 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
     setState(() { _matchStart = startIdx; _matchEnd = endIdx; });
   }
 
-  // 생명주기 & 로딩
   @override
   void initState() {
     super.initState();
-    _applyBestMatch(_res); // 초기 데이터에서 하이라이트 후보 설정
-    _loadDetail();         // 상세 재조회 → 최신 데이터로 보정
-  }
+    _applyBestMatch(_res);
+    _loadDetail();
 
   Future<void> _loadDetail() async {
     final id = _asNum<int>(_res['backtestId'] ?? widget.result['backtestId']);
@@ -208,10 +184,9 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
         _detail = fetched;
       });
 
-      // 상세 데이터 기준으로 하이라이트 범위/패턴 재적용
       _applyBestMatch(fetched);
 
-      // 캔들 전체 로딩
+
       await _loadCandles();
     } catch (e) {
       debugPrint('⚠️ 상세 로딩 실패: $e');
@@ -221,32 +196,25 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
   Future<void> _loadCandles() async {
     final res = _res;
 
-    final stockId = (res['stockId'] ?? widget.result['stockId'] ??
-        (res['stock'] is Map ? (res['stock'] as Map)['id'] : null)).toString();
-    final backtestId = _asNum<int>(res['backtestId'] ?? widget.result['backtestId']);
-    if (stockId == 'null' || backtestId == null) return;
+    final dynamic stockIdDyn =
+        res['stockId'] ??
+            widget.result['stockId'] ??
+            (res['stock'] is Map ? (res['stock'] as Map)['id'] : null) ??
+            res['symbol'] ??
+            res['stockSymbol'];
+    final String? stockId = (stockIdDyn == null) ? null : stockIdDyn.toString();
 
-    final periodUnit = (res['periodUnit'] ?? res['PeriodUnit'])?.toString();
-    final interval = _intervalFromPeriodUnit(periodUnit);
+    final int? backtestId =
+    _asNum<int>(res['backtestId'] ?? widget.result['backtestId']);
 
-    // 백테스트 전체 기간
-    final btStart = _parseDate(res['startDate']);
-    final btEnd   = _parseDate(res['endDate']);
+    if (stockId == null || backtestId == null) {
+      debugPrint('⚠️ stockId 또는 backtestId가 없어 캔들 요청을 생략합니다.');
+      return;
 
-    // 하이라이트가 있으면 앞뒤로 패딩을 줘서 조회 범위 확장
-    final pad = _paddingForUnit(periodUnit);
-    DateTime? qStart, qEnd;
-    if (_hlFrom != null && _hlTo != null) {
-      qStart = _hlFrom!.subtract(pad);
-      qEnd   = _hlTo!.add(pad);
-      // 백테스트 범위를 벗어나지 않게 클램프
-      if (btStart != null && qStart.isBefore(btStart)) qStart = btStart;
-      if (btEnd != null && qEnd.isAfter(btEnd))       qEnd   = btEnd;
-    } else {
-      // 하이라이트가 없으면 백테스트 전체 기간 사용
-      qStart = btStart;
-      qEnd   = btEnd;
     }
+
+    final String? periodUnit = (res['periodUnit'] ?? res['PeriodUnit'])?.toString();
+    final interval = _intervalFromPeriodUnit(periodUnit);
 
     setState(() => _candleLoading = true);
     try {
@@ -254,17 +222,18 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
         backtestId: backtestId,
         stockId: stockId,
         interval: interval,
-        // 서버가 날짜 문자열(yyyy-MM-dd) 받는다면 이렇게 전달
-        startDate: qStart?.toIso8601String().split('T').first,
-        endDate:   qEnd?.toIso8601String().split('T').first,
+        startDate: res['startDate']?.toString().split('T').first,
+        endDate: res['endDate']?.toString().split('T').first,
+
       );
 
       setState(() {
-        _candles = candles;          // ✅ 더 많은 캔들 보유
+        _candles = candles;          
         _candleLoading = false;
       });
 
-      _applyHighlightFromDates();     // 날짜→인덱스 다시 계산
+      _applyHighlightFromDates();
+
     } catch (e) {
       setState(() {
         _candleLoading = false;
@@ -468,7 +437,6 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
                             const Text("최대 손실률",
                                 style: TextStyle(color: Colors.grey)),
                             const SizedBox(height: 4),
-                            // ✅ 서버: minReturn = 최대 손실률 (백워드 호환: maxLoss)
                             Text(
                                 _fmtPercent(
                                     res['maxLoss'] ?? res['minReturn']),
@@ -555,7 +523,8 @@ class _MatchOverlayPainter extends CustomPainter {
 
     // 매칭 영역 음영
     final fill = Paint()
-      ..color = Colors.amber.withValues(alpha: 0.2) // ✅ withOpacity로 호환성↑
+      ..color = Colors.amber.withValues(alpha:0.2)
+
       ..style = PaintingStyle.fill;
     canvas.drawRect(rect, fill);
 

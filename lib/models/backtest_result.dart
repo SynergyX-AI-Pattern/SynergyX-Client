@@ -39,7 +39,7 @@ class HighlightRange {
     if (json == null) return const HighlightRange();
     DateTime? parse(String? s) {
       if (s == null || s.isEmpty) return null;
-      // ISO-8601(yyyy-MM-dd or yyyy-MM-ddTHH:mm:ss) 모두 대응
+
       return DateTime.tryParse(s);
     }
 
@@ -74,7 +74,8 @@ class BacktestResult {
   final double lastMatchedReturn;
   final double? targetReturn;
   final HighlightRange? highlightRange;
-  final String? periodUnit; // "HOUR" | "DAY" | "MINUTE" 등 서버 스펙
+  final String? periodUnit;
+
 
   BacktestResult({
     this.backtestId,
@@ -120,7 +121,7 @@ class BacktestResult {
         ),
       ];
     } else if (json['stock'] is Map) {
-      // 서버가 stock 단일 객체만 주는 경우도 일부 고려
+
       final m = Map<String, dynamic>.from(json['stock'] as Map);
       stocks = [
         StockResult.fromJson({
