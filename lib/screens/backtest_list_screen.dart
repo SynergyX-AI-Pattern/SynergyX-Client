@@ -59,7 +59,10 @@ class _BacktestListScreenState extends State<BacktestListScreen> {
                 summary: item,
                 onMore: () async {
                   final detail =
-                  await BacktestService.fetchBacktestResult(item['backtestId']);
+                  await BacktestService.fetchBacktestResult(
+                    item['backtestId'],
+                    stockId: item['stockId'], // 차트/이미지 조회를 위해 종목 ID 전달
+                  );
                   if (!context.mounted) return;
                   Navigator.push(
                     context,

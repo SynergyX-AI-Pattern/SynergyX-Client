@@ -106,6 +106,19 @@ class _BacktestPopupState extends State<BacktestPopup> {
       endDate: _endDate!,
     );
 
+    if (_endDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('종료일을 선택하세요.')),
+      );
+      return;
+    }
+    if (_startDate!.isAfter(_endDate!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('시작일이 종료일보다 늦습니다.')),
+      );
+      return;
+    }
+
     setState(() => _loading = false);
     final normalized = _normalizeResponse(raw);
 
@@ -134,6 +147,7 @@ class _BacktestPopupState extends State<BacktestPopup> {
       'startDate': normalized['startDate'] ?? _startDate!.toIso8601String().split('T').first,
       'endDate': normalized['endDate'] ?? _endDate!.toIso8601String().split('T').first,
       'targetReturn': double.tryParse(_profitController.text),
+
     };
 
     // 팝업 닫고 결과 화면으로
@@ -319,8 +333,8 @@ class _BacktestPopupState extends State<BacktestPopup> {
                 },
               ),
 
-
               const SizedBox(height: 12),
+
 
               // 목표 수익률
               TextField(
@@ -335,7 +349,6 @@ class _BacktestPopupState extends State<BacktestPopup> {
                   isDense: true,
                 ),
               ),
-
               const SizedBox(height: 16),
 
               // 버튼들

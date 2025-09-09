@@ -124,6 +124,9 @@ class PatternDetail {
         .map((e) => (e as num).toInt())
         .toList();
 
+    // 서버에서 내려온 패턴 적용 종목 정보를 파싱한다.
+    // 기존에는 name 정도만 사용했지만, 상세 화면 이동을 위해
+    // stockId, symbol, stockName, stockImage 까지 모두 보존한다.
     final stocksRaw = json['appliedStockList'];
     final List<Map<String, dynamic>> stocks = [];
     if (stocksRaw is List) {

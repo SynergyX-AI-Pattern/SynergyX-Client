@@ -39,6 +39,7 @@ class HighlightRange {
     if (json == null) return const HighlightRange();
     DateTime? parse(String? s) {
       if (s == null || s.isEmpty) return null;
+
       return DateTime.tryParse(s);
     }
 
@@ -74,6 +75,7 @@ class BacktestResult {
   final double? targetReturn;
   final HighlightRange? highlightRange;
   final String? periodUnit;
+
 
   BacktestResult({
     this.backtestId,
@@ -119,6 +121,7 @@ class BacktestResult {
         ),
       ];
     } else if (json['stock'] is Map) {
+
       final m = Map<String, dynamic>.from(json['stock'] as Map);
       stocks = [
         StockResult.fromJson({

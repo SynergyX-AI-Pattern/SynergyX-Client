@@ -1,7 +1,8 @@
 // backtest_result_screen.dart
 import 'package:flutter/material.dart';
 import 'package:interactive_chart/interactive_chart.dart';
-import 'package:stockapp/data/backtest_candle_api.dart'; // ✅ 파일명 확인
+import 'package:stockapp/data/backtest_candle_api.dart'; 
+
 import 'package:stockapp/data/backtest_api.dart';
 import 'dart:math' as math;
 
@@ -25,6 +26,7 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
   int? _matchEnd;
   DateTime? _hlFrom;
   DateTime? _hlTo;
+
 
   Map<String, dynamic> get _res {
     final root = _detail ?? widget.result;
@@ -79,6 +81,7 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
   void _applyBestMatch(Map<String, dynamic> data) {
     final hr = data['highlightRange'];
     final hasHR = hr is Map && (hr['fromDate'] != null && hr['toDate'] != null);
+
 
     List<int> pts = [];
     final dynamic matchesRaw = data['matches'] ?? data['matchResults'];
@@ -165,7 +168,6 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
     super.initState();
     _applyBestMatch(_res);
     _loadDetail();
-  }
 
   Future<void> _loadDetail() async {
     final id = _asNum<int>(_res['backtestId'] ?? widget.result['backtestId']);
@@ -183,6 +185,7 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
       });
 
       _applyBestMatch(fetched);
+
 
       await _loadCandles();
     } catch (e) {
@@ -207,6 +210,7 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
     if (stockId == null || backtestId == null) {
       debugPrint('⚠️ stockId 또는 backtestId가 없어 캔들 요청을 생략합니다.');
       return;
+
     }
 
     final String? periodUnit = (res['periodUnit'] ?? res['PeriodUnit'])?.toString();
@@ -220,16 +224,17 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
         interval: interval,
         startDate: res['startDate']?.toString().split('T').first,
         endDate: res['endDate']?.toString().split('T').first,
+
       );
 
       setState(() {
-        _candles = candles;
+        _candles = candles;          
         _candleLoading = false;
       });
 
       _applyHighlightFromDates();
+
     } catch (e) {
-      debugPrint('⚠️ 캔들 로딩 실패: $e');
       setState(() {
         _candleLoading = false;
         _candles = [];
@@ -237,6 +242,9 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
     }
   }
 
+  // =========================
+  // UI
+  // =========================
   @override
   Widget build(BuildContext context) {
     final res = _res;
@@ -429,7 +437,6 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
                             const Text("최대 손실률",
                                 style: TextStyle(color: Colors.grey)),
                             const SizedBox(height: 4),
-                            // ✅ 서버: minReturn = 최대 손실률 (백워드 호환: maxLoss)
                             Text(
                                 _fmtPercent(
                                     res['maxLoss'] ?? res['minReturn']),
@@ -517,6 +524,7 @@ class _MatchOverlayPainter extends CustomPainter {
     // 매칭 영역 음영
     final fill = Paint()
       ..color = Colors.amber.withValues(alpha:0.2)
+
       ..style = PaintingStyle.fill;
     canvas.drawRect(rect, fill);
 

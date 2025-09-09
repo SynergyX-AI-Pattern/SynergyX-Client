@@ -20,8 +20,6 @@ import '../widgets/backtest/recent_backtest_result_card.dart';
 import 'package:stockapp/models/StockItemModel.dart';
 import 'package:stockapp/screens/stock_detail_screen.dart';
 
-
-
 class PatternDetailPage extends StatefulWidget {
   final int patternId;
 
@@ -151,6 +149,7 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
 
     final current = List<Map<String, dynamic>>.from(_pattern!.appliedStockList);
     final already = current.any((e) => (e['symbol'] ?? e['stockName'] ?? e['name']) == symbol);
+
 
     if (!already) {
       current.add({
@@ -510,7 +509,10 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
             Map<String, dynamic> detail = backtest;
             if (id != null) {
               // 필요한 정보를 다시 요청하여 상세 화면에 전달
-              detail = await BacktestService.fetchBacktestResult(id as int);
+              detail = await BacktestService.fetchBacktestResult(
+                id as int,
+                stockId: backtest['stockId'], // 차트 생성을 위해 종목 ID 사용
+              );
             }
             if (!context.mounted) return;
             Navigator.push(
@@ -643,12 +645,15 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                   ),
                 );
                 if (result is Map<String, dynamic> && result['symbol'] is String) {
+
                   await _applyStockBySymbol(
                     result['symbol'],
                     stockId: result['id'] is int
                         ? result['id']
                         : int.tryParse(result['id']?.toString() ?? ''),
-                  );                }
+                  );  
+                }
+
               },
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.black,
@@ -661,6 +666,7 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
       ),
     );
   }
+
 
   /// 태그 위젯
   Widget _buildTag(String text) {
@@ -698,11 +704,11 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
           horizontalInterval: (maxY / 5).ceilToDouble(),
           verticalInterval: (points.length / 6).ceilToDouble(),
           getDrawingHorizontalLine: (value) => const FlLine(
-            color: Color(0xFFD0CECE), // ✅ 중간선 #D0CECE
+            color: Color(0xFFD0CECE), 
             strokeWidth: 1,
           ),
           getDrawingVerticalLine: (value) => const FlLine(
-            color: Color(0xFFD0CECE), // ✅ 중간선 #D0CECE
+            color: Color(0xFFD0CECE),
             strokeWidth: 1,
           ),
         ),

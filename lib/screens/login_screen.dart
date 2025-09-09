@@ -92,6 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('회원가입이 완료되었습니다')),
       );
+
     }
   }
 
@@ -221,6 +222,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
+
           ),
         ),
       ),
