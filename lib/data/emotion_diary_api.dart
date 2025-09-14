@@ -1,12 +1,8 @@
 import 'package:dio/dio.dart';
+import 'package:stockapp/services/api_client.dart';
 
 class EmotionDiaryApi {
-  final Dio _dio = Dio(
-    BaseOptions(
-      baseUrl: 'http://pattern-catcher.net:8080', // ✅ 실제 baseURL
-      headers: {'Content-Type': 'application/json'},
-    ),
-  );
+  final Dio _dio = ApiClient.dio;
 
   /// 요청
   Future<Map<String, dynamic>> postDiary(String content) async {

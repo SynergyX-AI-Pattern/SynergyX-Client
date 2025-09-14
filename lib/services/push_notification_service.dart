@@ -8,22 +8,27 @@ class PushNotificationService {
   static final FlutterLocalNotificationsPlugin _localNotifications =
   FlutterLocalNotificationsPlugin();
 
+  static bool _initialized = false;
+
   static Future<void> initialize() async {
-    await Firebase.initializeApp(); // ✅ 초기화
+    if (_initialized) return;
+    _initialized = true;
+
+    await Firebase.initializeApp();
 
     // iOS 권한 요청
     await _messaging.requestPermission();
 
     // FCM 토큰 로그 출력
-    String? token = await _messaging.getToken();
+    final token = await _messaging.getToken();
     debugPrint("🔥 FCM Token: $token");
 
     // 토큰 갱신 감지
-    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
+    _messaging.onTokenRefresh.listen((newToken) {
       debugPrint("🆕 New FCM Token: $newToken");
     });
 
-    // 알림 채널 설정
+    // 알림 채널 설정 (Android)
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
       'high_importance_channel',
       'High Importance Notifications',
@@ -38,16 +43,17 @@ class PushNotificationService {
 
     // 포그라운드 알림 수신
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      if (message.notification != null) {
+      final n = message.notification;
+      if (n != null) {
         _localNotifications.show(
           message.hashCode,
-          message.notification!.title,
-          message.notification!.body,
-          NotificationDetails(
+          n.title,
+          n.body,
+          const NotificationDetails(
             android: AndroidNotificationDetails(
-              channel.id,
-              channel.name,
-              channelDescription: channel.description,
+              'high_importance_channel',
+              'High Importance Notifications',
+              channelDescription: '중요한 알림을 위한 채널입니다.',
               icon: '@mipmap/ic_launcher',
             ),
           ),
@@ -60,9 +66,10 @@ class PushNotificationService {
       debugPrint("📲 알림 클릭됨: ${message.data}");
     });
   }
+}
 
-  static Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-    await Firebase.initializeApp();
-    debugPrint("📦 백그라운드 메시지: ${message.messageId}");
-  }
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  debugPrint("📦 백그라운드 메시지: ${message.messageId}");
 }

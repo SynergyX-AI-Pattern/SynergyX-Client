@@ -2,47 +2,11 @@ import 'package:dio/dio.dart';
 import '../models/auth_response.dart';
 // 인증 상태를 관리하는 전역 싱글턴 클래스
 import 'package:stockapp/services/auth_state.dart';
+import 'package:stockapp/services/api_client.dart';
 
 /// 인증 관련 API 호출을 담당하는 서비스
 class AuthService {
-  /// Dio 인스턴스. baseUrl은 서버의 공통 주소만 설정하고
-  /// 각 API 경로는 요청 시에 직접 지정합니다.
-  final Dio _dio = Dio(
-    BaseOptions(
-      // 기본 서버 주소
-      baseUrl: const String.fromEnvironment(
-        'API_BASE_URL',
-        defaultValue: 'http://52.79.115.136:8080',
-      ),
-      // 모든 요청은 JSON 바디를 사용
-      contentType: Headers.jsonContentType,
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 20),
-    ),
-  )
-    ..interceptors.add(
-      // 모든 요청에 저장된 토큰을 자동으로 헤더에 추가
-      InterceptorsWrapper(
-        onRequest: (options, handler) {
-          final token = AuthState.accessToken;
-          if (token != null) {
-            options.headers['Authorization'] = 'Bearer ' + token;
-          }
-          return handler.next(options);
-        },
-      ),
-    )
-    ..interceptors.add(
-      // 요청/응답 로깅 인터셉터
-      LogInterceptor(
-        request: true,
-        requestHeader: false,
-        requestBody: true,
-        responseHeader: false,
-        responseBody: true,
-        error: true,
-      ),
-    );
+  final Dio _dio = ApiClient.dio;
 
   /// 로그인 요청
   /// POST /auth/login

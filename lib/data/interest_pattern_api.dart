@@ -1,16 +1,9 @@
 import 'package:dio/dio.dart';
 import '../models/pattern_apply.dart';
+import 'package:stockapp/services/api_client.dart';
 
 class PatternApi {
-  final Dio _dio = Dio(
-    BaseOptions(
-      baseUrl: 'http://pattern-catcher.net:8080',
-      // ★ 4xx도 응답은 받게 하고 우리가 직접 분기
-      validateStatus: (s) => s != null && s >= 200 && s < 500,
-      connectTimeout: const Duration(seconds: 8),
-      receiveTimeout: const Duration(seconds: 8),
-    ),
-  );
+  final Dio _dio = ApiClient.dio;
 
   /// 패턴이 없으면 null 반환
   Future<PatternApply?> fetchPatternApply(int stockId) async {

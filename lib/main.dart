@@ -10,15 +10,13 @@ import 'package:stockapp/services/push_notification_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  FirebaseMessaging.onBackgroundMessage( //얘가 앞에 있는게 좋다고 해서 수정
-    PushNotificationService.firebaseMessagingBackgroundHandler,
-  );
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   await PushNotificationService.initialize();
 
   await initializeDateFormatting('ko', null);
-  // 저장된 토큰/유저 정보를 불러와 자동 로그인 여부 확인
   await AuthState.loadFromPrefs();
+
   runApp(const MyApp());
 }
 

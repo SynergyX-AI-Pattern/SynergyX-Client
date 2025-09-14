@@ -1,9 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:stockapp/data/dio_client.dart';
 import 'package:stockapp/models/StockItemModel.dart';
+import 'package:stockapp/services/api_client.dart';
 
 class StockApiService {
-  final Dio _dio = dio;
+  final Dio _dio = ApiClient.dio;
 
   Future<List<StockItem>> fetchTopStocks() async {
     try {

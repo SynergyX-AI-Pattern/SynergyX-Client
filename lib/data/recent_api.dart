@@ -1,15 +1,9 @@
 import 'package:dio/dio.dart';
 import '../models/stock_brief.dart';
+import 'package:stockapp/services/api_client.dart';
 
 class RecentApi {
-  final Dio _dio = Dio(
-    BaseOptions(
-      baseUrl: 'http://pattern-catcher.net:8080',
-      connectTimeout: const Duration(seconds: 8),
-      receiveTimeout: const Duration(seconds: 8),
-      headers: {'Content-Type': 'application/json'},
-    ),
-  );
+  final Dio _dio = ApiClient.dio;
 
   Future<List<StockBrief>> fetchRecent() async {
     final res = await _dio.get('/stocks/recent');
