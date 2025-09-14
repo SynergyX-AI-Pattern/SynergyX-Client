@@ -1,40 +1,45 @@
 import 'package:flutter/material.dart';
 
 import 'package:stockapp/screens/login_screen.dart';
-import 'package:stockapp/screens/profile_edit_screen.dart';
 import 'package:stockapp/screens/notification_settings_screen.dart';
-import 'package:stockapp/screens/faq_screen.dart';
 import 'package:stockapp/screens/interest/interest_screen.dart';
+import 'package:stockapp/services/auth_service.dart';
+import 'package:stockapp/services/auth_state.dart';
 
 
 class MypageScreen extends StatelessWidget {
-  const MypageScreen({
-    super.key,
-    this.userName = '김덕성',
-    this.email = '19200419-@duksung.ac.kr',
-  });
+  const MypageScreen({super.key});
 
-  final String userName;
-  final String email;
 
-  void _logout(BuildContext context) {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-    );
+  Future<void> _logout(BuildContext context) async {
+    // 토큰이 없으면 바로 로그인 화면으로 이동
+    if (AuthState.accessToken == null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+      return;
+    }
+    final res = await AuthService().logout();
+    if (!context.mounted) return;
+    if (res.isSuccess) {
+      await AuthState.clear();
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+            (_) => false,
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(res.message ?? '로그아웃에 실패했습니다')),
+      );
+    }
   }
 
   void _goToInterestEdit(BuildContext context) {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const InterestScreen()),
-    );
-  }
-
-  void _goToProfileEdit(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const ProfileEditScreen()),
     );
   }
 
@@ -45,14 +50,7 @@ class MypageScreen extends StatelessWidget {
     );
   }
 
-  void _goToFaq(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const FaqScreen()),
-    );
-  }
-
-  void _withdraw(BuildContext context) async {
+  Future<void> _withdraw(BuildContext context) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
@@ -64,12 +62,26 @@ class MypageScreen extends StatelessWidget {
         ],
       ),
     );
-    if (ok == true && context.mounted) {
-      // 탈퇴 등록
+    if (ok != true) return;
+    if (AuthState.accessToken == null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+      return;
+    }
+    final res = await AuthService().withdraw();
+    if (!context.mounted) return;
+    if (res.isSuccess) {
+      await AuthState.clear();
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const LoginScreen()),
             (_) => false,
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(res.message ?? '탈퇴에 실패했습니다')),
       );
     }
   }
@@ -79,9 +91,13 @@ class MypageScreen extends StatelessWidget {
     color: const Color(0xFFF1F2F4), // 디자인의 연한 회색 구분 바
   );
 
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final userName = AuthState.username ?? '';
+    final email = AuthState.email ?? '';
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -131,7 +147,6 @@ class MypageScreen extends StatelessWidget {
             _MenuTile(
               icon: Icons.person_outline,
               title: '프로필수정',
-              onTap: () => _goToProfileEdit(context),
             ),
             _divider(),
             _MenuTile(
@@ -149,7 +164,6 @@ class MypageScreen extends StatelessWidget {
             _MenuTile(
               icon: Icons.help_outline,
               title: 'FAQ',
-              onTap: () => _goToFaq(context),
             ),
 
             _sectionSpacer(),

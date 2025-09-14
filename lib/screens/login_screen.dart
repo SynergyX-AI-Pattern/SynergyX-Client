@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:stockapp/routes/TabView.dart';
 import 'package:stockapp/screens/signup_screen.dart';
 import 'package:stockapp/services/auth_service.dart';
+import 'package:stockapp/models/auth_response.dart';
+import 'package:stockapp/services/auth_state.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -62,28 +64,32 @@ class _LoginScreenState extends State<LoginScreen> {
     final valid = _formKey.currentState?.validate() ?? false;
     if (!valid) return;
 
-    final success = await _authService.login(
+    // 서버에 로그인 요청
+    final LoginResponse res = await _authService.login(
       _emailController.text.trim(),
       _passwordController.text.trim(),
     );
 
     if (!mounted) return;
 
-    if (success) {
+    if (res.isSuccess) {
+      // 로그인 성공 시 전역 상태에 토큰/사용자 정보를 저장
+      await AuthState.updateFromLogin(res, _emailController.text.trim());
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const Tabview()),
       );
     } else {
-      // 서버 로그인 실패 메시지
+      // 서버에서 받은 에러 메시지를 표시
       setState(() {
-        _serverError = '존재하지 않는 아이디거나 옳지 않은 패스워드 입니다.';
+        _serverError = res.message ?? '로그인에 실패했습니다';
       });
     }
   }
 
   Future<void> _goToSignup() async {
-    final result = await Navigator.push<bool>(
+    // 회원가입 화면으로 이동 후 결과(bool)를 반환받음
+    final bool? result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(builder: (_) => const SignUpScreen()),
     );
@@ -92,7 +98,6 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('회원가입이 완료되었습니다')),
       );
-
     }
   }
 

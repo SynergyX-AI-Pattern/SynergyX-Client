@@ -5,8 +5,8 @@ import 'dart:math' as math;
 import 'package:stockapp/data/pattern_api.dart';
 import 'package:stockapp/models/pattern.dart';
 
-import 'package:stockapp/screens/chart_detail_screen.dart';
-import 'package:stockapp/screens/chart_new_screen.dart';
+import 'package:stockapp/screens/chart/chart_detail_screen.dart';
+import 'package:stockapp/screens/chart/chart_new_screen.dart';
 
 class ChartScreen extends StatefulWidget {
   const ChartScreen({super.key});
