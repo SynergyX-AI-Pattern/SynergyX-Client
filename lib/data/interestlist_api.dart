@@ -1,16 +1,10 @@
 // lib/data/watchlist_api.dart
 import 'package:dio/dio.dart';
 import '../models/stock_brief.dart';
+import 'package:stockapp/services/api_client.dart';
 
 class InterestlistApi {
-  final Dio _dio = Dio(
-    BaseOptions(
-      baseUrl: 'http://pattern-catcher.net:8080',
-      connectTimeout: const Duration(seconds: 8),
-      receiveTimeout: const Duration(seconds: 8),
-      headers: {'Content-Type': 'application/json'},
-    ),
-  );
+  final Dio _dio = ApiClient.dio;
 
   Future<List<StockBrief>> fetchWatchlist() async {
     final res = await _dio.get('/watchlist');

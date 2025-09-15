@@ -6,16 +6,16 @@ import 'dart:ui';
 
 import 'package:stockapp/models/pattern.dart';
 import 'package:stockapp/screens/search_info_screen.dart';
-import 'package:stockapp/screens/backtest_result_screen.dart';
-import 'package:stockapp/screens/backtest_list_screen.dart';
+import 'package:stockapp/screens/backtest/backtest_result_screen.dart';
+import 'package:stockapp/screens/backtest/backtest_list_screen.dart';
 
 import 'chart_edit_screen.dart';
-import '../data/candle_api.dart';
-import '../data/pattern_api.dart';
-import '../data/backtest_api.dart';
+import '../../data/candle_api.dart';
+import '../../data/pattern_api.dart';
+import '../../data/backtest_api.dart';
 
-import '../widgets/backtest/backtest_pop.dart';
-import '../widgets/backtest/recent_backtest_result_card.dart';
+import '../../widgets/backtest/backtest_pop.dart';
+import '../../widgets/backtest/recent_backtest_result_card.dart';
 
 import 'package:stockapp/models/StockItemModel.dart';
 import 'package:stockapp/screens/stock_detail_screen.dart';

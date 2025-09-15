@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:stockapp/services/auth_service.dart';
+import 'package:stockapp/models/auth_response.dart';
 
 /// 회원가입 화면
 class SignUpScreen extends StatefulWidget {
@@ -17,6 +18,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   final _authService = AuthService();
   bool _isSubmitting = false;
+  bool _marketingAgree = false; // 마케팅 활용 동의 여부
+  bool _eventAgree = false; // 이벤트 알림 수신 여부
 
   /// 회원가입 처리 함수
   Future<void> _handleSignup() async {
@@ -26,18 +29,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
       return;
     }
     setState(() => _isSubmitting = true);
-    final success = await _authService.signup(
+
+    final SimpleResponse res = await _authService.signup(
       _nameController.text,
       _emailController.text,
       _passwordController.text,
+      _marketingAgree,
+      _eventAgree,
     );
+
     setState(() => _isSubmitting = false);
     if (!mounted) return;
-    if (success) {
+
+    if (res.isSuccess) {
       Navigator.pop(context, true);
     } else {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('회원가입에 실패했습니다')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(res.message ?? '회원가입에 실패했습니다')),
+      );
     }
   }
 
@@ -85,6 +94,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 obscureText: true,
               ),
               const SizedBox(height: 24),
+              // 이용 약관 동의 체크박스들
+              CheckboxListTile(
+                value: _marketingAgree,
+                onChanged: (v) => setState(() => _marketingAgree = v ?? false),
+                title: const Text('마케팅 정보 수신 동의'),
+              ),
+              CheckboxListTile(
+                value: _eventAgree,
+                onChanged: (v) => setState(() => _eventAgree = v ?? false),
+                title: const Text('이벤트 알림 수신 동의'),
+              ),
+              const SizedBox(height: 12),
               SizedBox(
                 height: 48,
                 child: ElevatedButton(

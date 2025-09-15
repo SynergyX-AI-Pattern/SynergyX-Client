@@ -2,17 +2,10 @@ import 'package:dio/dio.dart';
 import 'package:stockapp/models/pattern.dart';
 import 'package:stockapp/models/pattern_request.dart';
 export 'package:stockapp/models/pattern_request.dart';
+import 'package:stockapp/services/api_client.dart';
 
 class PatternApi {
-  static final Dio _dio = Dio(
-    BaseOptions(
-      baseUrl: 'http://52.79.115.136:8080',
-      headers: {'Content-Type': 'application/json'},
-      connectTimeout: Duration(seconds: 10),
-      receiveTimeout: Duration(seconds: 10),
-    ),
-  )..interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
-
+  static final Dio _dio = ApiClient.dio;
   // 패턴 목록 조회 (GET)
   static Future<List<Pattern>> getPatterns() async {
     final res = await _dio.get('/patterns');

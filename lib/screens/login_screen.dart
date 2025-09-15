@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:stockapp/routes/TabView.dart';
 import 'package:stockapp/screens/signup_screen.dart';
 import 'package:stockapp/services/auth_service.dart';
+import 'package:stockapp/models/auth_response.dart';
+import 'package:stockapp/services/auth_state.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,8 +17,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   final _authService = AuthService();
 
-  bool _showErrors = false;        // 버튼 클릭 후 에러 노출 트리거
-  String? _serverError;            // 서버 로그인 실패 메시지
+  bool _showErrors = false;
+  String? _serverError;
 
   bool get _bothFilled =>
       _emailController.text.trim().isNotEmpty &&
@@ -25,7 +27,6 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    // 입력 변화에 따라 버튼 색/서버 에러 초기화
     _emailController.addListener(() => setState(() => _serverError = null));
     _passwordController.addListener(() => setState(() => _serverError = null));
   }
@@ -52,38 +53,36 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
-    // 에러 보여주기 시작
     setState(() {
       _showErrors = true;
       _serverError = null;
     });
 
-    // 폼 검증(미입력 시 빨간 문구 노출)
     final valid = _formKey.currentState?.validate() ?? false;
     if (!valid) return;
 
-    final success = await _authService.login(
+    final LoginResponse res = await _authService.login(
       _emailController.text.trim(),
       _passwordController.text.trim(),
     );
 
     if (!mounted) return;
 
-    if (success) {
+    if (res.isSuccess) {
+      await AuthState.updateFromLogin(res, _emailController.text.trim());
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const Tabview()),
       );
     } else {
-      // 서버 로그인 실패 메시지
       setState(() {
-        _serverError = '존재하지 않는 아이디거나 옳지 않은 패스워드 입니다.';
+        _serverError = res.message ?? '로그인에 실패했습니다';
       });
     }
   }
 
   Future<void> _goToSignup() async {
-    final result = await Navigator.push<bool>(
+    final bool? result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(builder: (_) => const SignUpScreen()),
     );
@@ -92,7 +91,6 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('회원가입이 완료되었습니다')),
       );
-
     }
   }
 
@@ -102,6 +100,8 @@ class _LoginScreenState extends State<LoginScreen> {
     final blackBtnColor = Colors.black;
 
     return Scaffold(
+      backgroundColor: Colors.white,
+
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -160,11 +160,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 28),
 
-                    // 로그인 버튼: 입력 모두 있으면 검정, 아니면 회색
                     SizedBox(
                       height: 48,
                       child: ElevatedButton(
-                        onPressed: _handleLogin, // 비어있어도 눌려서 에러 노출
+                        onPressed: _handleLogin,
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
                           _bothFilled ? blackBtnColor : grayBtnColor,
