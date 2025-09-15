@@ -275,11 +275,14 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: () {
-                  // 전체 백테스트 목록으로 이동 (현재 패턴 ID 필터)
+                  final backtestId = _pattern!.backtestResult?['backtestId'] as int?;
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => BacktestListScreen(patternId: _pattern!.patternId),
+                      builder: (_) => BacktestListScreen(
+                        patternId: _pattern!.patternId,
+                        backtestId: backtestId,
+                      ),
                     ),
                   );
                 },
@@ -346,8 +349,8 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                   builder: (ctx) => Theme(
                     data: Theme.of(ctx).copyWith(
                       dialogTheme: const DialogThemeData(
-                        backgroundColor: Colors.white, // ✅ 다이얼로그 흰색 배경
-                        surfaceTintColor: Colors.transparent, // ✅ Material3 불필요한 틴트 제거
+                        backgroundColor: Colors.white,
+                        surfaceTintColor: Colors.transparent,
                       ),
                     ),
                     child: AlertDialog(
@@ -379,12 +382,12 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                 if (ok != true) return;
 
                 try {
-                  await PatternApi.deletePattern(widget.patternId); // ✅ 삭제 API
+                  await PatternApi.deletePattern(widget.patternId);
                   if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('✅ 패턴이 삭제되었습니다.')),
                   );
-                  Navigator.pop(context, true); // ✅ 이전 화면으로 이동
+                  Navigator.pop(context, true);
                 } catch (e) {
                   if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -404,7 +407,7 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                     builder: (_) => ChartEditPage(
                       patternData: _pattern!.toJson(),
                       onSaved: () async {
-                        await _fetchPatternDetail(); // 수정 후 새로고침
+                        await _fetchPatternDetail();
                         return _pattern!.toJson();
                       },
                     ),
@@ -433,7 +436,7 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
   /// 공통 카드 스타일
   BoxDecoration _cardDecoration() {
     return BoxDecoration(
-      color: Colors.white, // ✅ 흰색 배경
+      color: Colors.white,
       borderRadius: BorderRadius.circular(12),
       boxShadow: const [
         BoxShadow(
@@ -476,15 +479,14 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
         final candles = snapshot.data ?? [];
 
         return RecentBacktestResultCard(
-          backtest: backtest, // 백테스트 결과 데이터
-          candles: candles, // 차트에 표시할 캔들 목록
+          backtest: backtest,
+          candles: candles,
           onChangeStock: () async {
             final result = await Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const StockSearchPage()),
             );
             if (result is Map<String, dynamic> && result['id'] is int) {
-              // 선택된 종목으로 즉시 백테스트 실행
               await _runBacktestForStock(result['id'] as int, result['symbol']);
             }
           }, // 종목 바꾸기 처리
@@ -492,10 +494,9 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
             final id = backtest['backtestId'];
             Map<String, dynamic> detail = backtest;
             if (id != null) {
-              // 필요한 정보를 다시 요청하여 상세 화면에 전달
               detail = await BacktestService.fetchBacktestResult(
                 id as int,
-                stockId: backtest['stockId'], // 차트 생성을 위해 종목 ID 사용
+                stockId: backtest['stockId'],
               );
             }
             if (!context.mounted) return;
@@ -540,10 +541,8 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
             Column(
               children: [
                 for (int i = 0; i < stocks.length; i++) ...[
-                  // 피그마 디자인에 맞춘 커스텀 리스트 아이템
                   InkWell(
                     onTap: () {
-                      // 텍스트를 탭하면 종목 상세로 이동
                       final dynamic id = stocks[i]['stockId'];
                       if (id == null) return; // ID 없으면 이동 중지
                       final int parsedId =
@@ -572,13 +571,11 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                       ),
                       child: Row(
                         children: [
-                          // 종목 이미지 - URL이 없으면 기본 아이콘 표시
                           ClipRRect(
                             borderRadius: BorderRadius.circular(4),
                             child: _buildStockImage(stocks[i]["stockImage"] as String?),
                           ),
                           const SizedBox(width: 12),
-                          // 종목명과 종목코드
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -587,7 +584,7 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                                   stocks[i]["stockName"] ??
                                       stocks[i]['name']?.toString() ?? '',
                                   maxLines: 1,
-                                  overflow: TextOverflow.ellipsis, // 텍스트 넘침 방지
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w500),
@@ -596,14 +593,13 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                                 Text(
                                   stocks[i]["symbol"] ?? '',
                                   maxLines: 1,
-                                  overflow: TextOverflow.ellipsis, // 텍스트 넘침 방지
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                       fontSize: 12, color: Colors.grey),
                                 ),
                               ],
                             ),
                           ),
-                          // 삭제 버튼 - 여백을 제거하여 오버플로우 방지
                           IconButton(
                             icon: const Icon(Icons.close, size: 18),
                             padding: EdgeInsets.zero,
@@ -662,7 +658,6 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
         fit: BoxFit.cover,
       );
     }
-    // URL이 비어있는 경우 회색 박스와 아이콘으로 대체
     return Container(
       width: 40,
       height: 40,

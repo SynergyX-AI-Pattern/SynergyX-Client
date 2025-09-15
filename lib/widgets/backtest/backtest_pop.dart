@@ -251,7 +251,7 @@ class _BacktestPopupState extends State<BacktestPopup> {
                       final base = Theme.of(context);
                       return Theme(
                         data: base.copyWith(
-                          dialogTheme: const DialogThemeData(      // ✅ DialogThemeData 로 수정
+                          dialogTheme: const DialogThemeData(
                             backgroundColor: Colors.white,
                           ),
                           colorScheme: const ColorScheme.light(
@@ -261,7 +261,7 @@ class _BacktestPopupState extends State<BacktestPopup> {
                             onSurface: Colors.black,
                           ),
                           datePickerTheme: const DatePickerThemeData(
-                            backgroundColor: Colors.white,         // ✅ DatePicker 자체 배경
+                            backgroundColor: Colors.white,
                           ),
                         ),
                         child: child!,

@@ -23,18 +23,40 @@ class BacktestService {
     }
   }
 
-  static Future<List<Map<String, dynamic>>> fetchBacktestList({int? patternId}) async {
+  static Future<List<Map<String, dynamic>>> fetchBacktestList({
+    int? patternId,
+    int? backtestId,
+  }) async {
     try {
+      if (backtestId != null) {
+        final detail = await fetchBacktestResult(backtestId);
+        final map = <String, dynamic>{
+          'backtestId': detail['backtestId'] ?? backtestId,
+          'executedAt': detail['executedAt'],
+          'matchedCount': detail['matchedCount'],
+          'stockImage': detail['stockImage'],
+          'stockName': detail['stockName'],
+          'stockId': (detail['stockId'] is num)
+              ? (detail['stockId'] as num).toInt()
+              : detail['stockId'],
+          'symbol': detail['symbol'],
+          'startDate': detail['startDate'],
+          'averageReturn': detail['averageReturn'],
+          'winRate': detail['winRate'],
+          'maxReturn': detail['maxReturn'],
+          'maxReturnDate': detail['maxReturnDate'],
+        };
+        return [map];
+      }
+
       final res = await _dio.get(
         '/backtests/results',
         queryParameters: patternId == null ? null : {'patternId': patternId},
       );
       final data = res.data;
-      // 응답의 data.content 배열에서 요약 리스트를 추출한다.
-      final listRaw =
-          (data['data'] ?? const {})['content'] as List? ?? const [];
+      final listRaw = (data['data'] ?? const {})['content'] as List? ?? const [];
       final list = List<Map<String, dynamic>>.from(listRaw);
-      // 편의 필드 보정
+
       for (final m in list) {
         final stock = m['stock'];
         if (stock is Map) {
@@ -66,7 +88,6 @@ class BacktestService {
       );
       final map = Map<String, dynamic>.from(res.data['result']);
 
-      // stock 정보에서 파생 필드 보정
       if (map['stockId'] == null && map['stock'] is Map && (map['stock']['id'] is num)) {
         map['stockId'] = (map['stock']['id'] as num).toInt();
       }
@@ -78,7 +99,6 @@ class BacktestService {
         map['stockImage'] = map['stock']['imageUrl'].toString();
       }
 
-      // highlightRange/periodUnit는 그대로 전달(모델에서 파싱)
       return map;
     } catch (e) {
       throw Exception('백테스트 상세 조회 실패: $e');
