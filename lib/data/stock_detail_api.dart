@@ -1,14 +1,14 @@
 import 'package:dio/dio.dart';
-import 'package:stockapp/data/dio_client.dart';
 import 'package:stockapp/models/stock_detail_model.dart';
 import 'package:stockapp/services/api_client.dart';
 
 class StockDetailApiService {
+  // 공용 Dio 인스턴스를 사용해 중복 생성을 방지한다.
   final Dio _dio = ApiClient.dio;
   Future<StockDetailResponse> fetchStockDetail(String stockId) async {
     try {
       final response = await _dio.get(
-        '/$stockId/detail',
+        '/stocks/$stockId/detail',
         options: Options(
           validateStatus: (status) => status != null && status < 600,
         ),

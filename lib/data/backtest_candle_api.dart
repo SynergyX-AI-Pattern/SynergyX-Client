@@ -9,26 +9,18 @@ final Dio _dio = ApiClient.dio;
 /// 백테스트 결과에 대한 캔들 데이터를 조회하기 위한 별도 API
 /// 기존 캔들 API를 수정할 수 없는 경우 사용한다.
 
+/// 백테스트 결과에 대한 캔들 데이터를 조회한다.
+/// [margin]은 하이라이트 구간 앞뒤로 가져올 캔들 개수이며 기본값은 20이다.
 Future<List<CandleData>> fetchBacktestCandles({
   required int backtestId,
-  required String stockId,
-  String interval = '1D',
-  String? startDate,
-  String? endDate,
+  int margin = 20,
 }) async {
-  // 백테스트 차트 구간을 지정하기 위한 쿼리 파라미터 구성
-  final query = {
-    'stockId': stockId,
-    'interval': interval,
-    if (startDate != null && startDate.isNotEmpty) 'startDate': startDate,
-    if (endDate != null && endDate.isNotEmpty) 'endDate': endDate,
-  };
-  final params = query.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&');
-  final url = 'http://52.79.115.136:8080/backtests/results/$backtestId/candles?$params';
-
   try {
-    final response = await _dio.get(url);
-
+    // API 명세에 따라 margin 파라미터만 전달한다.
+    final response = await _dio.get(
+      '/backtests/results/$backtestId/candles',
+      queryParameters: {'margin': margin},
+    );
     if (response.statusCode == 200) {
       final data = response.data;
       final List result = (data['result'] as List? ?? const []);

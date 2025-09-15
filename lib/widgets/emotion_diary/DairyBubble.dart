@@ -10,7 +10,7 @@ class DiaryBubble extends StatelessWidget {
     return Align(
       alignment: Alignment.centerRight,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 224), // ✅ 최대 너비 제한
+        constraints: const BoxConstraints(maxWidth: 224),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(

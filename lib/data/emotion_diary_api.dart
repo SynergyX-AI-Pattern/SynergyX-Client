@@ -11,7 +11,7 @@ class EmotionDiaryApi {
         'content': content,
       });
 
-      return response.data['result']; // ✅ 감정 분석 결과 리턴
+      return response.data['result'];
     } catch (e) {
       print('❌ 요청 실패: $e');
       rethrow;

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:stockapp/data/emotion_diary_api.dart';
 
 class EmotionInputBar extends StatefulWidget {
-  final Function(Map<String, dynamic>) onSubmit; // ✅ 추가: 결과 전달 콜백
+  final Function(Map<String, dynamic>) onSubmit;
 
   const EmotionInputBar({super.key, required this.onSubmit});
 

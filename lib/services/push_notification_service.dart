@@ -3,6 +3,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/foundation.dart';
 
+import 'package:stockapp/services/user_service.dart';
+
 class PushNotificationService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   static final FlutterLocalNotificationsPlugin _localNotifications =
@@ -19,13 +21,25 @@ class PushNotificationService {
     // iOS 권한 요청
     await _messaging.requestPermission();
 
-    // FCM 토큰 로그 출력
+    // FCM 토큰을 얻은 뒤 서버에 저장
     final token = await _messaging.getToken();
     debugPrint("🔥 FCM Token: $token");
+    if (token != null) {
+      try {
+        await UserService().saveFcmToken(token);
+      } catch (e) {
+        debugPrint("⚠️ FCM 토큰 저장 실패: $e");
+      }
+    }
 
     // 토큰 갱신 감지
-    _messaging.onTokenRefresh.listen((newToken) {
+    _messaging.onTokenRefresh.listen((newToken) async {
       debugPrint("🆕 New FCM Token: $newToken");
+      try {
+        await UserService().saveFcmToken(newToken);
+      } catch (e) {
+        debugPrint("⚠️ 갱신된 FCM 토큰 저장 실패: $e");
+      }
     });
 
     // 알림 채널 설정 (Android)
