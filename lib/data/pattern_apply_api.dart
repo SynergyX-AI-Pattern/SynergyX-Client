@@ -22,28 +22,34 @@ class PatternApplyApi {
     throw Exception('HTTP ${res.statusCode}');
   }
 
-  /// 패턴 수정
-  // Future<void> updateApply({
-  //   required int patternApplyId,
-  //   DateTime? entryAt,
-  //   num? minValidReturn,
-  //   int? patternId, // 서버가 허용하면 같이 보냄
-  // }) async {
-  //   final body = <String, dynamic>{
-  //     if (entryAt != null) 'entryAt': entryAt.toUtc().toIso8601String(),
-  //     if (minValidReturn != null) 'minValidReturn': minValidReturn,
-  //     if (patternId != null) 'patternId': patternId,
-  //   };
-  //
-  //   final res = await dio.patch('/pattern-applies/$patternApplyId', data: body);
-  //
-  //   if (res.statusCode == 200 && res.data is Map<String, dynamic>) {
-  //     final data = res.data as Map<String, dynamic>;
-  //     if (data['isSuccess'] == true) return;
-  //     throw Exception(data['message'] ?? '패턴 수정 실패');
-  //   }
-  //   throw Exception('HTTP ${res.statusCode}: ${res.data}');
-  // }
+  /// 패턴 교체: 삭제 후 재적용
+  Future<void> replacePattern({
+    required int patternApplyId,
+    required int stockId,
+    required int newPatternId,
+    DateTime? entryAt,
+    num minValidReturn = 0,
+  }) async {
+    // 1) 삭제
+    final del = await dio.delete('/pattern-applies/$patternApplyId');
+    if (del.statusCode != 200 || del.data is! Map || (del.data['isSuccess'] != true)) {
+      final msg = (del.data is Map ? del.data['message'] : null) ?? '패턴 해제 실패';
+      throw Exception('DELETE 실패: $msg (HTTP ${del.statusCode})');
+    }
+
+    // 2) 재적용
+    final body = {
+      'patternId': newPatternId,
+      'stockId': stockId,
+      'entryAt': (entryAt ?? DateTime.now()).toUtc().toIso8601String(),
+      'minValidReturn': minValidReturn,
+    };
+    final post = await dio.post('/pattern-applies', data: body);
+    if (post.statusCode != 200 || post.data is! Map || (post.data['isSuccess'] != true)) {
+      final msg = (post.data is Map ? post.data['message'] : null) ?? '패턴 재적용 실패';
+      throw Exception('POST 실패: $msg (HTTP ${post.statusCode})');
+    }
+  }
 
   /// 패턴 알림 토글
   /// 성공 시: true/false (서버가 상태를 반환하면), 상태 미반환 시 null

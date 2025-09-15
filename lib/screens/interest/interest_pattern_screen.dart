@@ -122,7 +122,18 @@ class _InterestPatternScreenState extends State<InterestPatternScreen> {
                       }
                       _confirmAndDelete(id);
                     },
-                    onEdit: () {/* TODO */},
+                    onEdit: () {final id = data.patternApplyId; // PatternApply 모델의 id
+                    if (id == null) return;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PatternLibraryScreen(
+                          stockId: widget.stockId,
+                          stockName: widget.stockName,
+                          patternApplyId: id, // ← 여기!
+                        ),
+                      ),
+                    );},
                     onRunBacktest: () {/* TODO */},
                   )
                       : PatternEmptyView(
