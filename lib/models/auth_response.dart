@@ -1,7 +1,3 @@
-/// 인증 관련 공통 응답 모델들
-/// API 명세에 맞춘 필드 구조를 정의합니다.
-
-/// 기본 응답 모델
 class SimpleResponse {
   final bool isSuccess; // 요청 성공 여부
   final String? code; // 응답 코드
@@ -28,10 +24,10 @@ class SimpleResponse {
 
 /// 로그인 시 반환되는 결과 모델
 class LoginResponse extends SimpleResponse {
-  final String? accessToken; // 발급된 JWT
-  final int? expiresIn; // 토큰 만료 시간(초)
-  final String? username; // 사용자 이름
-  final bool? isNewUser; // 신규 사용자 여부
+  final String? accessToken;
+  final int? expiresIn;
+  final String? username;
+  final bool? isNewUser;
 
   const LoginResponse({
     required bool isSuccess,
@@ -49,7 +45,6 @@ class LoginResponse extends SimpleResponse {
     result: result,
   );
 
-  /// JSON으로부터 LoginResponse 인스턴스를 생성합니다.
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
     final result = (json['result'] as Map?) ?? {};
     final userInfo = (result['userInfo'] as Map?) ?? {};

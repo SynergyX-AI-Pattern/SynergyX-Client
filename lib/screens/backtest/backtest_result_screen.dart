@@ -242,10 +242,6 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
       });
     }
   }
-
-  // =========================
-  // UI
-  // =========================
   @override
   Widget build(BuildContext context) {
     final res = _res;
