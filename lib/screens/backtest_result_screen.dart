@@ -168,7 +168,7 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
     super.initState();
     _applyBestMatch(_res);
     _loadDetail();
-
+  }
   Future<void> _loadDetail() async {
     final id = _asNum<int>(_res['backtestId'] ?? widget.result['backtestId']);
     if (id == null) return;
