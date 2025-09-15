@@ -5,12 +5,62 @@ import 'package:stockapp/screens/notification_settings_screen.dart';
 import 'package:stockapp/screens/interest/interest_screen.dart';
 import 'package:stockapp/services/auth_service.dart';
 import 'package:stockapp/services/auth_state.dart';
+import 'package:stockapp/services/user_service.dart';
 
 
-class MypageScreen extends StatelessWidget {
+// 마이페이지 화면: 사용자 정보 표시 및 다양한 설정 항목 제공
+class MypageScreen extends StatefulWidget {
   const MypageScreen({super.key});
 
+  @override
+  State<MypageScreen> createState() => _MypageScreenState();
+}
 
+class _MypageScreenState extends State<MypageScreen> {
+  // 화면에 표시할 사용자명과 이메일을 상태로 관리
+  String _userName = AuthState.username ?? '';
+  final String _email = AuthState.email ?? '';
+
+  /// 프로필(이름) 수정 다이얼로그를 띄우고 서버에 저장
+  Future<void> _editProfile(BuildContext context) async {
+    final controller = TextEditingController(text: _userName);
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('이름 수정'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(labelText: '새 이름'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('취소')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: const Text('저장'),
+          ),
+        ],
+      ),
+    );
+
+    if (newName == null || newName.isEmpty) return;
+
+    final res = await UserService().updateProfile(newName);
+    if (!mounted) return;
+    if (res.isSuccess) {
+      // 상태와 AuthState에 새로운 이름을 반영
+      setState(() => _userName = newName);
+      AuthState.username = newName;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('프로필이 수정되었습니다.')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(res.message ?? '프로필 수정에 실패했습니다')),
+      );
+    }
+  }
+
+  /// 로그아웃 처리
   Future<void> _logout(BuildContext context) async {
     // 토큰이 없으면 바로 로그인 화면으로 이동
     if (AuthState.accessToken == null) {
@@ -95,8 +145,6 @@ class MypageScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final userName = AuthState.username ?? '';
-    final email = AuthState.email ?? '';
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -119,7 +167,7 @@ class MypageScreen extends StatelessWidget {
                     radius: 28,
                     backgroundColor: const Color(0xFF2E2E2E),
                     child: Text(
-                      userName.isNotEmpty ? userName.characters.first : ' ',
+                      _userName.isNotEmpty ? _userName.characters.first : ' ',
                       style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -128,10 +176,10 @@ class MypageScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(userName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                        Text(_userName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                         const SizedBox(height: 4),
                         Text(
-                          email,
+                          _email,
                           style: TextStyle(fontSize: 13, color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6)),
                         ),
                       ],
@@ -147,6 +195,7 @@ class MypageScreen extends StatelessWidget {
             _MenuTile(
               icon: Icons.person_outline,
               title: '프로필수정',
+              onTap: () => _editProfile(context),
             ),
             _divider(),
             _MenuTile(

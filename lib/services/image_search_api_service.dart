@@ -3,35 +3,13 @@ import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import '../models/image_search_result.dart';
+import 'api_client.dart';
 
 class ImageSearchApiService {
   final Dio _dio;
 
-  ImageSearchApiService({Dio? dio})
-    : _dio =
-          dio ??
-          Dio(
-            BaseOptions(
-              baseUrl: const String.fromEnvironment(
-                'API_BASE_URL',
-                defaultValue: 'http://pattern-catcher.net:8080',
-              ),
-              connectTimeout: const Duration(seconds: 10),
-              receiveTimeout: const Duration(seconds: 20),
-            ),
-          ) {
-    // 생성자 body에서 인터셉터 추가
-    _dio.interceptors.add(
-      LogInterceptor(
-        request: true,
-        requestHeader: false,
-        requestBody: true,
-        responseHeader: false,
-        responseBody: true,
-        error: true,
-      ),
-    );
-  }
+  ImageSearchApiService({Dio? dio}) : _dio = dio ?? ApiClient.dio;
+
 
   Future<ImageSearchResult> searchStockByImage({
     required File imageFile,

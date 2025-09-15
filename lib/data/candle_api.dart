@@ -10,11 +10,11 @@ Future<List<CandleData>> fetchCandles({
   required String stockId,
   required String interval,
 }) async {
-  final url =
-      'http://52.79.115.136:8080/stocks/stocks/$stockId/candles?interval=$interval';
-
   try {
-    final response = await _dio.get(url);
+    final response = await _dio.get(
+      '/stocks/stocks/$stockId/candles',
+      queryParameters: {'interval': interval},
+    );
 
     if (response.statusCode == 200) {
       final data = response.data;

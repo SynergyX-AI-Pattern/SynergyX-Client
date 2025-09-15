@@ -1,19 +1,16 @@
 import 'package:dio/dio.dart';
+import 'package:stockapp/services/api_client.dart';
 
 class PatternApplyApi {
-  final dio = Dio(
-    BaseOptions(
-      baseUrl: 'http://pattern-catcher.net:8080',
-      connectTimeout: const Duration(seconds: 8),
-      receiveTimeout: const Duration(seconds: 8),
-      validateStatus: (s) => s != null && s < 500,
-    ),
-  )..interceptors.add(LogInterceptor(
-      requestBody: true, responseBody: true, requestHeader: false, responseHeader: false));
+  // ApiClient의 Dio를 사용하여 중복 인스턴스를 없앤다.
+  final Dio _dio = ApiClient.dio;
 
   /// 적용 패턴 삭제
   Future<void> delete(int patternApplyId) async {
-    final res = await dio.delete('/pattern-applies/$patternApplyId');
+    final res = await _dio.delete(
+      '/pattern-applies/$patternApplyId',
+      options: Options(validateStatus: (s) => s != null && s < 500),
+    );
     if (res.statusCode == 200 && res.data is Map<String, dynamic>) {
       final data = res.data as Map<String, dynamic>;
       if (data['isSuccess'] == true) return;
@@ -31,7 +28,7 @@ class PatternApplyApi {
     num minValidReturn = 0,
   }) async {
     // 1) 삭제
-    final del = await dio.delete('/pattern-applies/$patternApplyId');
+    final del = await _dio.delete('/pattern-applies/$patternApplyId');
     if (del.statusCode != 200 || del.data is! Map || (del.data['isSuccess'] != true)) {
       final msg = (del.data is Map ? del.data['message'] : null) ?? '패턴 해제 실패';
       throw Exception('DELETE 실패: $msg (HTTP ${del.statusCode})');
@@ -44,7 +41,7 @@ class PatternApplyApi {
       'entryAt': (entryAt ?? DateTime.now()).toUtc().toIso8601String(),
       'minValidReturn': minValidReturn,
     };
-    final post = await dio.post('/pattern-applies', data: body);
+    final post = await _dio.post('/pattern-applies', data: body);
     if (post.statusCode != 200 || post.data is! Map || (post.data['isSuccess'] != true)) {
       final msg = (post.data is Map ? post.data['message'] : null) ?? '패턴 재적용 실패';
       throw Exception('POST 실패: $msg (HTTP ${post.statusCode})');
@@ -54,7 +51,10 @@ class PatternApplyApi {
   /// 패턴 알림 토글
   /// 성공 시: true/false (서버가 상태를 반환하면), 상태 미반환 시 null
   Future<bool?> toggleNotification(int patternApplyId) async {
-    final res = await dio.patch('/pattern-applies/$patternApplyId/notification');
+    final res = await _dio.patch(
+      '/pattern-applies/$patternApplyId/notification',
+      options: Options(validateStatus: (s) => s != null && s < 500),
+    );
     if (res.statusCode == 200 && res.data is Map<String, dynamic>) {
       final data = res.data as Map<String, dynamic>;
       if (data['isSuccess'] == true) {
@@ -85,7 +85,7 @@ class PatternApplyApi {
       'minValidReturn': minValidReturn,
     };
 
-    final res = await dio.post(
+    final res = await _dio.post(
       '/pattern-applies',
       data: body,
       options: Options(validateStatus: (s) => s != null && s < 500),
