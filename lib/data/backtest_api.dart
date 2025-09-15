@@ -1,14 +1,10 @@
 // backtest_api.dart
 import 'package:dio/dio.dart';
 export 'package:stockapp/models/backtest_result.dart';
+import 'package:stockapp/services/api_client.dart';
 
 class BacktestService {
-  static final Dio _dio = Dio(
-    BaseOptions(
-      baseUrl: 'http://52.79.115.136:8080',
-      headers: {'Content-Type': 'application/json'},
-    ),
-  );
+  static final Dio _dio = ApiClient.dio;
 
   /// periodUnit → interval 매핑 유틸
   /// 서버가 "HOUR"/"DAY" 등을 주면 캔들 조회 interval로 변환해 사용할 수 있음.

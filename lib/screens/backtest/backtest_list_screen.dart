@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:interactive_chart/interactive_chart.dart';
-import 'package:stockapp/screens/backtest_result_screen.dart';
+import 'package:stockapp/screens/backtest/backtest_result_screen.dart';
 import 'package:stockapp/data/backtest_api.dart';
 
 import 'package:stockapp/data/candle_api.dart';

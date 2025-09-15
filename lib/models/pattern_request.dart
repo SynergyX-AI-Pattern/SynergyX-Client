@@ -4,7 +4,7 @@ class PatternRequest {
   final List<int> points;
   final double tolerance;
   final int periodValue;
-  final String periodUnit;      // "HOUR" | "DAY"
+  final String periodUnit;
 
   PatternRequest({
     required this.patternId,
@@ -25,7 +25,6 @@ class PatternRequest {
   };
 
   factory PatternRequest.fromJson(Map<String, dynamic> json) {
-    // 문자열 형태로 들어오는 숫자 값에 대비
     final rawTolerance = json['tolerance'];
     final rawPeriod = json['periodValue'];
 

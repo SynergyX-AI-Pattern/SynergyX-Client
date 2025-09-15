@@ -6,7 +6,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:stockapp/screens/search_info_screen.dart';
 import 'package:stockapp/data/backtest_api.dart';
-import 'package:stockapp/screens/backtest_result_screen.dart';
+import 'package:stockapp/screens/backtest/backtest_result_screen.dart';
 import 'package:stockapp/models/backtest_result.dart'; // 상세 결과 모델
 
 

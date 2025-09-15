@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:stockapp/screens/chart_screen.dart';
+import 'package:stockapp/screens/chart/chart_screen.dart';
 import 'package:stockapp/screens/diary_screen.dart';
 import 'package:stockapp/screens/interest/interest_screen.dart';
 import 'package:stockapp/screens/main_screen.dart';

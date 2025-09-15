@@ -1,39 +1,68 @@
 import 'package:dio/dio.dart';
+import '../models/auth_response.dart';
+import 'package:stockapp/services/api_client.dart';
 
-/// 인증 관련 API 호출을 담당하는 서비스
 class AuthService {
-  final Dio _dio = Dio(
-    BaseOptions(
-      baseUrl: 'https://example.com', // TODO: 서버 주소로 변경
-    ),
-  );
+  final Dio _dio = ApiClient.dio;
 
-  /// 로그인 요청
-  Future<bool> login(String email, String password) async {
-    // TODO: 서버 연동 후 목데이터 로직 제거
-    if (email == 'example@email.com' && password == '12345') {
-      return true;
+  Future<LoginResponse> login(String email, String password) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/auth/login',
+      data: {'email': email, 'password': password},
+      options: Options(validateStatus: (s) => s != null && s < 500),
+    );
+    if (res.data == null) {
+      throw Exception('서버 응답이 비어있습니다.');
     }
-    return false;
-
-    // 실제 서버
-    // try {
-    //   final response = await _dio.post('/auth/login',
-    //       data: {'email': email, 'password': password});
-    //   return response.statusCode == 200;
-    // } catch (_) {
-    //   return false;
-    // }
+    return LoginResponse.fromJson(res.data!);
   }
 
-  /// 회원가입 요청
-  Future<bool> signup(String name, String email, String password) async {
-    try {
-      final response = await _dio.post('/auth/signup',
-          data: {'name': name, 'email': email, 'password': password});
-      return response.statusCode == 200;
-    } catch (_) {
-      return false;
+
+  Future<SimpleResponse> signup(
+      String name,
+      String email,
+      String password,
+      bool marketing,
+      bool event,
+      ) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/auth/signup',
+      data: {
+        'name': name,
+        'email': email,
+        'password': password,
+        'marketing': marketing,
+        'event': event,
+      },
+      options: Options(validateStatus: (s) => s != null && s < 500),
+    );
+    if (res.data == null) {
+      throw Exception('서버 응답이 비어있습니다.');
     }
+    return SimpleResponse.fromJson(res.data!);
+  }
+
+
+  Future<SimpleResponse> logout() async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/auth/logout',
+      options: Options(validateStatus: (s) => s != null && s < 500),
+    );
+    if (res.data == null) {
+      throw Exception('서버 응답이 비어있습니다.');
+    }
+    return SimpleResponse.fromJson(res.data!);
+  }
+
+
+  Future<SimpleResponse> withdraw() async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/auth/withdraw',
+      options: Options(validateStatus: (s) => s != null && s < 500),
+    );
+    if (res.data == null) {
+      throw Exception('서버 응답이 비어있습니다.');
+    }
+    return SimpleResponse.fromJson(res.data!);
   }
 }

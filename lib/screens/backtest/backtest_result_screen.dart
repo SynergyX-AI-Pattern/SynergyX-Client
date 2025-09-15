@@ -1,7 +1,7 @@
 // backtest_result_screen.dart
 import 'package:flutter/material.dart';
 import 'package:interactive_chart/interactive_chart.dart';
-import 'package:stockapp/data/backtest_candle_api.dart'; 
+import 'package:stockapp/data/backtest_candle_api.dart';
 
 import 'package:stockapp/data/backtest_api.dart';
 import 'dart:math' as math;
@@ -169,6 +169,7 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
     _applyBestMatch(_res);
     _loadDetail();
   }
+
   Future<void> _loadDetail() async {
     final id = _asNum<int>(_res['backtestId'] ?? widget.result['backtestId']);
     if (id == null) return;
@@ -228,7 +229,7 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
       );
 
       setState(() {
-        _candles = candles;          
+        _candles = candles;
         _candleLoading = false;
       });
 
@@ -241,10 +242,6 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
       });
     }
   }
-
-  // =========================
-  // UI
-  // =========================
   @override
   Widget build(BuildContext context) {
     final res = _res;

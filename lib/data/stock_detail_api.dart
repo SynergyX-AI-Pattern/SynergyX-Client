@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:stockapp/data/dio_client.dart';
 import 'package:stockapp/models/stock_detail_model.dart';
+import 'package:stockapp/services/api_client.dart';
 
 class StockDetailApiService {
-  final Dio _dio = dio;
-
+  final Dio _dio = ApiClient.dio;
   Future<StockDetailResponse> fetchStockDetail(String stockId) async {
     try {
       final response = await _dio.get(

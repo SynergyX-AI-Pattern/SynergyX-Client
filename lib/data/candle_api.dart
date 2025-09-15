@@ -2,7 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:interactive_chart/interactive_chart.dart';
 import '../models/CandelChartModel.dart';
 
-final Dio _dio = Dio();
+import 'package:stockapp/services/api_client.dart';
+
+final Dio _dio = ApiClient.dio;
 
 Future<List<CandleData>> fetchCandles({
   required String stockId,

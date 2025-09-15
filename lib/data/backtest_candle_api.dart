@@ -2,16 +2,13 @@
 import 'package:dio/dio.dart';
 import 'package:interactive_chart/interactive_chart.dart';
 import '../models/CandelChartModel.dart';
+import 'package:stockapp/services/api_client.dart';
 
-final Dio _dio = Dio();
+final Dio _dio = ApiClient.dio;
 
 /// 백테스트 결과에 대한 캔들 데이터를 조회하기 위한 별도 API
 /// 기존 캔들 API를 수정할 수 없는 경우 사용한다.
-///
-/// interval 예시:
-/// - '1m' : 분봉(분 단위)
-/// - '1H' : 시봉(시간 단위)
-/// - '1D' : 일봉
+
 Future<List<CandleData>> fetchBacktestCandles({
   required int backtestId,
   required String stockId,
