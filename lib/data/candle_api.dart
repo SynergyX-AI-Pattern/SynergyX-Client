@@ -4,17 +4,19 @@ import '../models/CandelChartModel.dart';
 
 import 'package:stockapp/services/api_client.dart';
 
+// ApiClient의 공용 Dio 인스턴스를 사용해 요청을 보낸다.
 final Dio _dio = ApiClient.dio;
 
 Future<List<CandleData>> fetchCandles({
   required String stockId,
   required String interval,
 }) async {
-  final url =
-      'http://52.79.115.136:8080/stocks/stocks/$stockId/candles?interval=$interval';
-
   try {
-    final response = await _dio.get(url);
+    // baseUrl을 활용해 상대 경로와 쿼리 파라미터만 전달한다.
+    final response = await _dio.get(
+      '/stocks/stocks/$stockId/candles',
+      queryParameters: {'interval': interval},
+    );
 
     if (response.statusCode == 200) {
       final data = response.data;

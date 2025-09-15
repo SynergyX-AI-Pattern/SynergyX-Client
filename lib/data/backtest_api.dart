@@ -30,8 +30,10 @@ class BacktestService {
         queryParameters: patternId == null ? null : {'patternId': patternId},
       );
       final data = res.data;
-      final list = List<Map<String, dynamic>>.from(data['result']['content']);
-
+      // 응답의 data.content 배열에서 요약 리스트를 추출한다.
+      final listRaw =
+          (data['data'] ?? const {})['content'] as List? ?? const [];
+      final list = List<Map<String, dynamic>>.from(listRaw);
       // 편의 필드 보정
       for (final m in list) {
         final stock = m['stock'];

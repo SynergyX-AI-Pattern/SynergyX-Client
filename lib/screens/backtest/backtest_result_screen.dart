@@ -62,21 +62,6 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
     return DateTime.tryParse(str);
   }
 
-  String _intervalFromPeriodUnit(String? unit) {
-    switch ((unit ?? '').toUpperCase()) {
-      case 'MIN':
-      case 'MINUTE':
-        return '1m';
-      case 'H':
-      case 'HOUR':
-        return '1H';
-      case 'D':
-      case 'DAY':
-      default:
-        return '1D';
-    }
-  }
-
   // 하이라이트 적용
   void _applyBestMatch(Map<String, dynamic> data) {
     final hr = data['highlightRange'];
@@ -197,35 +182,19 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
   Future<void> _loadCandles() async {
     final res = _res;
 
-    final dynamic stockIdDyn =
-        res['stockId'] ??
-            widget.result['stockId'] ??
-            (res['stock'] is Map ? (res['stock'] as Map)['id'] : null) ??
-            res['symbol'] ??
-            res['stockSymbol'];
-    final String? stockId = (stockIdDyn == null) ? null : stockIdDyn.toString();
-
     final int? backtestId =
     _asNum<int>(res['backtestId'] ?? widget.result['backtestId']);
 
-    if (stockId == null || backtestId == null) {
-      debugPrint('⚠️ stockId 또는 backtestId가 없어 캔들 요청을 생략합니다.');
+    if (backtestId == null) {
+      debugPrint('⚠️ backtestId가 없어 캔들 요청을 생략합니다.');
       return;
-
     }
-
-    final String? periodUnit = (res['periodUnit'] ?? res['PeriodUnit'])?.toString();
-    final interval = _intervalFromPeriodUnit(periodUnit);
 
     setState(() => _candleLoading = true);
     try {
+      // margin 기본값(20)으로 백테스트 캔들을 조회한다.
       final candles = await fetchBacktestCandles(
         backtestId: backtestId,
-        stockId: stockId,
-        interval: interval,
-        startDate: res['startDate']?.toString().split('T').first,
-        endDate: res['endDate']?.toString().split('T').first,
-
       );
 
       setState(() {

@@ -23,7 +23,7 @@ class RecentBacktestResultCard extends StatelessWidget {
   String _formatPercent(dynamic value, {bool isRatio = false}) {
     if (value == null) return '0.00%';
     final numVal = (value is num) ? value : num.tryParse(value.toString()) ?? 0;
-    final p = isRatio ? numVal * 100 : numVal;
+    final p = isRatio ? numVal : numVal;
     return '${p.toStringAsFixed(2)}%';
   }
 

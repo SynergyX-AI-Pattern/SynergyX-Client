@@ -7,25 +7,18 @@ import 'package:stockapp/services/api_client.dart';
 
 final Dio _dio = ApiClient.dio;
 
+/// 백테스트 결과의 캔들 데이터를 조회한다.
+/// [margin]으로 하이라이트 구간 전후의 캔들 개수를 조절할 수 있다.
 Future<List<CandleData>> fetchBacktestCandles({
   required int backtestId,
-  required String stockId,
-  String interval = '1D',
-  String? startDate,
-  String? endDate,
+  int margin = 20,
 }) async {
-  // 백테스트 차트 구간을 지정하기 위한 쿼리 파라미터 구성
-  final query = {
-    'stockId': stockId,
-    'interval': interval,
-    if (startDate != null && startDate.isNotEmpty) 'startDate': startDate,
-    if (endDate != null && endDate.isNotEmpty) 'endDate': endDate,
-  };
-  final params = query.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&');
-  final url = 'http://52.79.115.136:8080/backtests/results/$backtestId/candles?$params';
-
   try {
-    final response = await _dio.get(url);
+    // margin 파라미터만 사용하여 서버에 요청한다.
+    final response = await _dio.get(
+      '/backtests/results/$backtestId/candles',
+      queryParameters: {'margin': margin},
+    );
 
     if (response.statusCode == 200) {
       final data = response.data;

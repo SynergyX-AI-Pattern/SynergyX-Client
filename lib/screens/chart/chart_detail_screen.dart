@@ -324,11 +324,13 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
 
           const SizedBox(height: 12),
 
-          // 옵션 태그
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.start,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               _buildTag("기간: ${_pattern!.periodValue} ${_pattern!.periodUnit}"),
-              const SizedBox(width: 8),
               _buildTag("허용 오차: ${_pattern!.tolerance.toStringAsFixed(1)}"),
             ],
           ),
@@ -411,17 +413,6 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
 
               const SizedBox(height: 16);
 
-              // SizedBox(
-              //   height: 200,
-              //   child: InteractiveChart(
-              //     candles: candles,
-              //     style: const ChartStyle(
-              //       priceGainColor: Colors.red,
-              //       priceLossColor: Colors.blue,
-              //     ),
-              //   ),
-              // );
-
                 if (updated != null) {
                   setState(() => _pattern = PatternDetail.fromJson(updated));
                   _edited = true;
@@ -463,13 +454,6 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
         decoration: _cardDecoration(),
         child: const Text("백테스트 결과 없음", style: TextStyle(color: Colors.grey)),
       );
-    }
-
-    String formatPercent(dynamic value, {bool isRatio = false}) {
-      if (value == null) return "0.00%";
-      final numVal = (value is num) ? value : num.tryParse(value.toString()) ?? 0;
-      final p = isRatio ? numVal * 100 : numVal;
-      return "${p.toStringAsFixed(2)}%";
     }
 
     return FutureBuilder<List<CandleData>>(
@@ -588,15 +572,10 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                       ),
                       child: Row(
                         children: [
-                          // 종목 이미지
+                          // 종목 이미지 - URL이 없으면 기본 아이콘 표시
                           ClipRRect(
                             borderRadius: BorderRadius.circular(4),
-                            child: Image.network(
-                              stocks[i]["stockImage"] ?? '',
-                              width: 40,
-                              height: 40,
-                              fit: BoxFit.cover,
-                            ),
+                            child: _buildStockImage(stocks[i]["stockImage"] as String?),
                           ),
                           const SizedBox(width: 12),
                           // 종목명과 종목코드
@@ -607,6 +586,8 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                                 Text(
                                   stocks[i]["stockName"] ??
                                       stocks[i]['name']?.toString() ?? '',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis, // 텍스트 넘침 방지
                                   style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w500),
@@ -614,15 +595,19 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                                 const SizedBox(height: 4),
                                 Text(
                                   stocks[i]["symbol"] ?? '',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis, // 텍스트 넘침 방지
                                   style: const TextStyle(
                                       fontSize: 12, color: Colors.grey),
                                 ),
                               ],
                             ),
                           ),
-                          // 삭제 버튼
+                          // 삭제 버튼 - 여백을 제거하여 오버플로우 방지
                           IconButton(
                             icon: const Icon(Icons.close, size: 18),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
                             onPressed: () => _removeAppliedStockAt(i),
                           ),
                         ],
@@ -667,6 +652,25 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
     );
   }
 
+  /// 이미지 URL이 없을 때 기본 아이콘을 표시하는 위젯
+  Widget _buildStockImage(String? url) {
+    if (url != null && url.isNotEmpty) {
+      return Image.network(
+        url,
+        width: 40,
+        height: 40,
+        fit: BoxFit.cover,
+      );
+    }
+    // URL이 비어있는 경우 회색 박스와 아이콘으로 대체
+    return Container(
+      width: 40,
+      height: 40,
+      color: Colors.grey[300],
+      child: const Icon(Icons.image_not_supported,
+          size: 24, color: Colors.grey),
+    );
+  }
 
   /// 태그 위젯
   Widget _buildTag(String text) {

@@ -1,14 +1,16 @@
 import 'package:dio/dio.dart';
 import 'package:stockapp/models/stock.dart';
+import 'package:stockapp/services/api_client.dart';
 
-final Dio dio = Dio();
+final Dio _dio = ApiClient.dio;
 
 Future<List<Stock>> fetchSearchedStocks(String keyword) async {
   try {
-    final response = await dio.get(
-      'http://52.79.115.136:8080/stocks/search',
-      queryParameters: {'query': keyword}, // ✅ 파라미터 이름 정확히 맞춤
+    final response = await _dio.get(
+      '/stocks/search',
+      queryParameters: {'query': keyword},
     );
+
 
     if (response.statusCode == 200 && response.data['isSuccess'] == true) {
       final List<dynamic> result = response.data['result'];

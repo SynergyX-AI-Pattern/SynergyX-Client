@@ -1,4 +1,4 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/auth_response.dart';
 
 class AuthState {
@@ -11,6 +11,9 @@ class AuthState {
   static const _usernameKey = 'username';
   static const _emailKey = 'email';
   static const _isNewUserKey = 'isNewUser';
+
+  // 민감한 토큰은 보안 저장소에 저장한다.
+  static const _secure = FlutterSecureStorage();
 
   static Future<void> updateFromLogin(
       LoginResponse res,
@@ -32,34 +35,32 @@ class AuthState {
   }
 
   static Future<void> loadFromPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-    accessToken = prefs.getString(_tokenKey);
-    username = prefs.getString(_usernameKey);
-    email = prefs.getString(_emailKey);
-    isNewUser = prefs.getBool(_isNewUserKey);
+    accessToken = await _secure.read(key: _tokenKey);
+    username   = await _secure.read(key: _usernameKey);
+    email      = await _secure.read(key: _emailKey);
+    final b    = await _secure.read(key: _isNewUserKey);
+    isNewUser  = (b == '1' || b == 'true');
   }
 
   static Future<void> _saveToPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (accessToken != null) {
-      await prefs.setString(_tokenKey, accessToken!);
-    }
-    if (username != null) {
-      await prefs.setString(_usernameKey, username!);
-    }
-    if (email != null) {
-      await prefs.setString(_emailKey, email!);
-    }
-    if (isNewUser != null) {
-      await prefs.setBool(_isNewUserKey, isNewUser!);
-    }
-  }
+    (accessToken != null)
+        ? await _secure.write(key: _tokenKey, value: accessToken!)
+           : await _secure.delete(key: _tokenKey);
+        (username != null)
+            ? await _secure.write(key: _usernameKey, value: username!)
+            : await _secure.delete(key: _usernameKey);
+        (email != null)
+            ? await _secure.write(key: _emailKey, value: email!)
+            : await _secure.delete(key: _emailKey);
+        (isNewUser != null)
+            ? await _secure.write(key: _isNewUserKey, value: isNewUser! ? '1' : '0')
+            : await _secure.delete(key: _isNewUserKey);
+      }
 
   static Future<void> _clearPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tokenKey);
-    await prefs.remove(_usernameKey);
-    await prefs.remove(_emailKey);
-    await prefs.remove(_isNewUserKey);
-  }
+        await _secure.delete(key: _tokenKey);
+        await _secure.delete(key: _usernameKey);
+        await _secure.delete(key: _emailKey);
+        await _secure.delete(key: _isNewUserKey);
+      }
 }
