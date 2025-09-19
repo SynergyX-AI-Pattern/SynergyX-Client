@@ -1,10 +1,9 @@
-// lib/screens/interest/pattern_library_screen.dart
 import 'package:flutter/material.dart';
 import 'package:stockapp/data/pattern_api.dart';
 import 'package:stockapp/data/pattern_apply_api.dart';
 import 'package:stockapp/models/pattern.dart';
 import 'package:stockapp/screens/interest/interest_pattern_screen.dart';
-import 'package:stockapp/widgets/common/app_confirm_dialog.dart';
+import 'package:stockapp/widgets/interest/pattern_apply_dialog.dart';
 import 'package:stockapp/widgets/interest/pattern_no_pattern_view.dart';
 import 'package:stockapp/widgets/interest/pattern_pick_card.dart';
 
@@ -44,40 +43,43 @@ class _PatternLibraryScreenState extends State<PatternLibraryScreen> {
 
   Future<void> _onApplyPressed(Pattern p) async {
     if (_working) return;
-    final ok = await showAppConfirmDialog(
+
+    // 사용자가 값 입력
+    final input = await showPatternApplyDialog(
       context,
-      title: "'${p.patternName}' 패턴을 ${widget.patternApplyId != null ? '수정' : '적용'}할까요?",
+      initialDate: DateTime.now(),
+      initialMinValidReturn: 0,
+      isUpdate: widget.patternApplyId != null,
     );
-    if (ok == true) {
-      await _applyOrUpdate(p);
-    }
+    if (input == null) return;
+
+    await _applyOrUpdate(p, input.entryAt, input.minValidReturn);
   }
 
-  // ★ 여기 넣으세요
-  Future<void> _applyOrUpdate(Pattern p) async {
+  Future<void> _applyOrUpdate(Pattern p, DateTime entryAt, double minValidReturn) async {
     setState(() => _working = true);
     try {
       if (widget.patternApplyId != null) {
-        // 🔧 수정 = 기존 적용 삭제 후 새 패턴 적용
+        // 수정(교체)
         await _applyApi.replacePattern(
           patternApplyId: widget.patternApplyId!,
           stockId: widget.stockId,
           newPatternId: p.patternId,
-          entryAt: DateTime.now(),
-          minValidReturn: 0,
+          entryAt: entryAt,
+          minValidReturn: minValidReturn,
         );
       } else {
-        // 🆕 신규 적용
+        // 신규
         await _applyApi.applySimple(
           patternId: p.patternId,
           stockId: widget.stockId,
-          entryAt: DateTime.now(),
-          minValidReturn: 0,
+          entryAt: entryAt,
+          minValidReturn: minValidReturn,
         );
       }
 
       if (!mounted) return;
-      // C(라이브러리) pop → B(기존 패턴 화면) pop → D(새 패턴 화면) push
+      // 라이브러리 pop → 기존 패턴 화면 pop → 최신 패턴 화면 push
       Navigator.of(context).pop();
       Navigator.of(context).pop();
       Navigator.of(context).push(
