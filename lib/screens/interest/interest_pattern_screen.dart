@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:stockapp/data/backtest_api.dart';
 import 'package:stockapp/data/interest_pattern_api.dart';
 import 'package:stockapp/data/pattern_apply_api.dart';
 import 'package:stockapp/models/pattern_apply.dart';
 import 'package:stockapp/screens/interest/pattern_library_screen.dart';
 import 'package:stockapp/widgets/common/app_confirm_dialog.dart';
+import 'package:stockapp/widgets/interest/backtest_config_dialog.dart';
 import 'package:stockapp/widgets/interest/pattern_empty_view.dart';
 import 'package:stockapp/widgets/interest/pattern_exists_view.dart';
 import 'package:stockapp/widgets/interest/pattern_stock_header.dart';
@@ -23,6 +25,51 @@ class _InterestPatternScreenState extends State<InterestPatternScreen> {
   final _api = PatternApi();
   late Future<PatternApply?> _future;
   final _applyApi = PatternApplyApi(); // delete 호출
+  bool _runningBacktest = false;
+
+  Future<void> _onRunBacktest(int patternId) async {
+    // 1) 다이얼로그로 입력 받기
+    final cfg = await showBacktestConfigDialog(context);
+    if (cfg == null) return;
+
+    setState(() => _runningBacktest = true);
+    try {
+      // 2) API 호출
+      await BacktestService.run(
+        patternId: patternId,
+        stockId: widget.stockId,
+        startDate: cfg.startDate,
+        endDate: cfg.endDate,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('백테스팅이 실행되었습니다.')));
+
+      // 3) 결과 새로고침
+      await Future.delayed(const Duration(seconds: 1));
+
+      try {
+        await _reload(); // 결과 조회
+      } catch (e) {
+        debugPrint('새로고침 실패: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('결과가 아직 준비 중입니다. 잠시 후 다시 시도해주세요.')),
+          );
+        }
+      }
+    } catch (e) {
+      if (!mounted) return;
+      // 실행 자체가 실패한 경우에만 이쪽으로 옴
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('백테스팅 실행 실패: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _runningBacktest = false);
+    }
+  }
 
   @override
   void initState() {
@@ -134,7 +181,9 @@ class _InterestPatternScreenState extends State<InterestPatternScreen> {
                         ),
                       ),
                     );},
-                    onRunBacktest: () {/* TODO */},
+                    onRunBacktest: _runningBacktest
+                        ? null
+                        : () => _onRunBacktest(data.pattern!.patternId),
                   )
                       : PatternEmptyView(
                     onAdd: () async {

@@ -94,7 +94,16 @@ class PatternExistsView extends StatelessWidget {
           child: Text('최근 백테스팅 결과', style: TextStyles.sectionHeader),
         ),
         if (data.hasBacktest)
-          BacktestResultCard(result: data.backtest!)
+          Column(
+            children: [
+              BacktestResultCard(result: data.backtest!),
+              SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: AppButton(label: '다시 돌리기', onPressed: onRunBacktest),
+              )
+            ]
+          )
         else
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),

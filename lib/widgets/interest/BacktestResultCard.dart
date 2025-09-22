@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:stockapp/models/pattern_apply.dart';
 import 'package:stockapp/widgets/common/InfoCardGroup.dart';
 import 'dart:math' as math;
-
 import 'package:stockapp/widgets/common/app_button.dart';
 
 class BacktestResultCard extends StatelessWidget {
@@ -77,14 +76,6 @@ class BacktestResultCard extends StatelessWidget {
                   {'label': '최대 수익', 'value': _fmtPct(result.maxReturn,   decimals: 2, round: false), 'subValue': result.maxReturnDate,'color': const Color(0xFF1573FE)},
                 ],),
 
-              const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerRight,
-                child: AppButton(
-                    label: '다시 돌리기',
-                    onPressed: () {}
-                )
-              ),
             ],
           )
     );
