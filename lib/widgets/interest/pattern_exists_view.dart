@@ -100,7 +100,10 @@ class PatternExistsView extends StatelessWidget {
               SizedBox(height: 12),
               Align(
                 alignment: Alignment.centerRight,
-                child: AppButton(label: '다시 돌리기', onPressed: onRunBacktest),
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: AppButton(label: '다시 돌리기', onPressed: onRunBacktest),
+                ),
               )
             ]
           )

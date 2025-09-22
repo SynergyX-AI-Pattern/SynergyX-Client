@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:stockapp/models/pattern_apply.dart';
+import 'package:stockapp/screens/backtest/backtest_result_screen.dart';
 import 'package:stockapp/widgets/common/InfoCardGroup.dart';
 import 'dart:math' as math;
 import 'package:stockapp/widgets/common/app_button.dart';
@@ -55,7 +56,17 @@ class BacktestResultCard extends StatelessWidget {
                   Text('${result.startDate} ~ ${result.endDate}', style: TextStyles.valueText,),
                   const Spacer(),
                   TextButton(
-                      onPressed: () {},
+                    onPressed: () {
+                      // Navigator.of(context).push(
+                      //   MaterialPageRoute(
+                      //     builder: (_) => BacktestResultScreen(
+                      //       patternId: patt.patternId,
+                      //       stockId: data.stockId,
+                      //       stockName: data.stockName, // 앱바 타이틀용
+                      //     ),
+                      //   ),
+                      // );
+                    },
                     style: TextButton.styleFrom(
                       minimumSize: Size.zero,
                       padding: EdgeInsets.zero,
