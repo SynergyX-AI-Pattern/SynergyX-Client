@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:stockapp/models/pattern_apply.dart';
+import 'package:stockapp/screens/backtest/backtest_result_screen.dart';
 import 'package:stockapp/widgets/common/InfoCardGroup.dart';
 import 'dart:math' as math;
+import 'package:stockapp/widgets/common/app_button.dart';
 
 class BacktestResultCard extends StatelessWidget {
   final BacktestResult result;
@@ -27,57 +29,64 @@ class BacktestResultCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 기간/실행일
-              Text('기간 ${result.startDate} ~ ${result.endDate}'),
+              // 실행일, 매칭 횟수
               Row(
                 children: [
-                  Text('실행 날짜 ${result.executedAt}',
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
-                  const Spacer(),
-                  Text('매칭 횟수 : ${result.matchedCount}'),
+                  Text('실행 날짜 : ',
+                      style: TextStyles.partName),
+                  Text('${result.executedAt}', style: TextStyles.valueText,),
+                  SizedBox(width: 10),
+                  Text('매칭 횟수 : ', style: TextStyles.partName),
+                  Text('${result.matchedCount}', style: TextStyles.valueText,),
                 ],
+
               ),
               const SizedBox(height: 12),
+              //패턴
+
+
+              //기간
+              Row(
+                children: [
+                  Text('기간 : ', style: TextStyles.partName,),
+                  Text('${result.startDate} ~ ${result.endDate}', style: TextStyles.valueText,),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: () {
+                      // Navigator.of(context).push(
+                      //   MaterialPageRoute(
+                      //     builder: (_) => BacktestResultScreen(
+                      //       patternId: patt.patternId,
+                      //       stockId: data.stockId,
+                      //       stockName: data.stockName, // 앱바 타이틀용
+                      //     ),
+                      //   ),
+                      // );
+                    },
+                    style: TextButton.styleFrom(
+                      minimumSize: Size.zero,
+                      padding: EdgeInsets.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                      child: Text('더보기',
+                        style: TextStyle(color: Color(0xFF9D9D9D), fontSize: 13),
+                      ),
+                  ),
+                ],
+              ),
 
               // 지표들
               InfoCardGroup(
                 rows: [
                   {'label': '승률', 'value': _fmtPct(result.winRate, decimals: 1)},
-                  {'label': '평균 수익', 'value': _fmtPct(result.averageReturn, decimals: 2, inputIsRatio: false), 'color': const Color(0xFF289BF6)},
-                  {'label': '최대 수익', 'value': _fmtPct(result.maxReturn,   decimals: 2, round: false), 'subValue': result.maxReturnDate,'color': const Color(0xFF289BF6)},
+                  {'label': '평균 수익', 'value': _fmtPct(result.averageReturn, decimals: 2, inputIsRatio: false), 'color': const Color(0xFF1573FE)},
+                  {'label': '최대 수익', 'value': _fmtPct(result.maxReturn,   decimals: 2, round: false), 'subValue': result.maxReturnDate,'color': const Color(0xFF1573FE)},
                 ],),
 
-              const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerRight,
-                child: ElevatedButton(
-                  onPressed: () {
-                    // TODO: 재실행 API 있으면 호출 후 상단 RefreshIndicator로 갱신
-                  },
-                  style:  ElevatedButton.styleFrom(
-                // 메인 컬러
-                // primary: Colors.red, // Deprecated
-                // 텍스트색상, ripple컬러
-                foregroundColor: Colors.white,
-                  // 버튼 배경 색
-                  backgroundColor: Colors.black,
-                  textStyle:
-                  TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
-                  // 글자 주변에 적용
-                  padding: EdgeInsets.all(12),
-                  // 테두리 설정
-                  side: BorderSide( color: Colors.black, width: 1),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)
-                  ),
-                ),
-                  child: const Text('다시 돌리기'),
-                ),
-              ),
             ],
           )
     );
@@ -108,4 +117,15 @@ class _Metric extends StatelessWidget {
       ),
     );
   }
+}
+
+class TextStyles {
+  static const TextStyle partName = TextStyle(
+      color: Color(0xFF8198A5),
+      fontSize: 14
+  );
+  static const TextStyle valueText= TextStyle(
+      fontWeight: FontWeight.w500,
+      fontSize: 13
+  );
 }

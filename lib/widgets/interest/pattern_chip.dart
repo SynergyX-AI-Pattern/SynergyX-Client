@@ -10,8 +10,8 @@ class PatternChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(999),
+        color: Color(0xFFF4F4F4),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Text(text, style: const TextStyle(fontSize: 12)),
     );

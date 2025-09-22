@@ -28,10 +28,21 @@ class PatternApplyApi {
     num minValidReturn = 0,
   }) async {
     // 1) 삭제
-    final del = await _dio.delete('/pattern-applies/$patternApplyId');
-    if (del.statusCode != 200 || del.data is! Map || (del.data['isSuccess'] != true)) {
-      final msg = (del.data is Map ? del.data['message'] : null) ?? '패턴 해제 실패';
-      throw Exception('DELETE 실패: $msg (HTTP ${del.statusCode})');
+    final del = await _dio.delete(
+      '/pattern-applies/$patternApplyId',
+      options: Options(validateStatus: (s) => s != null && s < 500),
+    );
+    final delOk =
+        (del.statusCode != null &&
+            del.statusCode! >= 200 &&
+            del.statusCode! < 300);
+    if (delOk) {
+      if (del.data is Map && (del.data['isSuccess'] != true)) {
+        final msg = (del.data['message']) ?? '패턴 해제 실패';
+        throw Exception('DELETE 실패: $msg (HTTP ${del.statusCode})');
+      }
+    } else {
+      throw Exception('DELETE 실패: HTTP ${del.statusCode}');
     }
 
     // 2) 재적용
@@ -41,9 +52,18 @@ class PatternApplyApi {
       'entryAt': (entryAt ?? DateTime.now()).toUtc().toIso8601String(),
       'minValidReturn': minValidReturn,
     };
-    final post = await _dio.post('/pattern-applies', data: body);
-    if (post.statusCode != 200 || post.data is! Map || (post.data['isSuccess'] != true)) {
-      final msg = (post.data is Map ? post.data['message'] : null) ?? '패턴 재적용 실패';
+    final post = await _dio.post(
+      '/pattern-applies',
+      data: body,
+      options: Options(validateStatus: (s) => s != null && s < 500),
+    );
+    final postOk =
+        (post.statusCode != null &&
+            post.statusCode! >= 200 &&
+            post.statusCode! < 300);
+    if (!postOk || post.data is! Map || (post.data['isSuccess'] != true)) {
+      final msg =
+          (post.data is Map ? post.data['message'] : null) ?? '패턴 재적용 실패';
       throw Exception('POST 실패: $msg (HTTP ${post.statusCode})');
     }
   }
@@ -95,9 +115,8 @@ class PatternApplyApi {
       final data = res.data as Map<String, dynamic>;
       if (data['isSuccess'] == true) {
         final result = data['result'];
-        final id = (result is Map)
-            ? (result['patternApplyId'] ?? result['id'])
-            : null;
+        final id =
+            (result is Map) ? (result['patternApplyId'] ?? result['id']) : null;
         if (id is num) return id.toInt();
         throw Exception('응답에 patternApplyId가 없습니다: ${res.data}');
       }

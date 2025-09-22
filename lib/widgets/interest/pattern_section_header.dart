@@ -9,7 +9,7 @@ class PatternSectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+      child: Text(title, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w600)),
     );
   }
 }
