@@ -58,19 +58,19 @@ class AppButton extends StatelessWidget {
 
     return SizedBox(
       width: block ? double.infinity : null,
-      height: minHeight,
       child: ElevatedButton(
         onPressed: loading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: bgColor ?? Colors.black,   // M3: primary 대신 backgroundColor
-          foregroundColor: fgColor ?? Colors.white,   // 글자/리플 색
+          backgroundColor: bgColor ?? Colors.black,
+          foregroundColor: fgColor ?? Colors.white,
           shadowColor: shadowColor,
-          elevation: elevation ?? 0,                  // 입체감
-          padding: padding ?? const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          elevation: elevation ?? 0,
+          padding: padding ?? const EdgeInsets.symmetric(horizontal: 16),
           textStyle: textStyle ?? const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius)),
-          side: side,                                  // 테두리 필요 시
-          minimumSize: Size(block ? double.infinity : 0, minHeight),
+          side: side,
+          minimumSize: Size(block ? double.infinity : 0, minHeight), // 여기서 높이만 조정
+          alignment: Alignment.center, // 세로 중앙 정렬 확실히
         ),
         child: child,
       ),

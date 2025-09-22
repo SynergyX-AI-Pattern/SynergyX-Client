@@ -19,6 +19,35 @@ class PatternApplyApi {
     throw Exception('HTTP ${res.statusCode}');
   }
 
+  /// 패턴 교체: 삭제 후 재적용
+  Future<void> replacePattern({
+    required int patternApplyId,
+    required int stockId,
+    required int newPatternId,
+    DateTime? entryAt,
+    num minValidReturn = 0,
+  }) async {
+    // 1) 삭제
+    final del = await _dio.delete('/pattern-applies/$patternApplyId');
+    if (del.statusCode != 200 || del.data is! Map || (del.data['isSuccess'] != true)) {
+      final msg = (del.data is Map ? del.data['message'] : null) ?? '패턴 해제 실패';
+      throw Exception('DELETE 실패: $msg (HTTP ${del.statusCode})');
+    }
+
+    // 2) 재적용
+    final body = {
+      'patternId': newPatternId,
+      'stockId': stockId,
+      'entryAt': (entryAt ?? DateTime.now()).toUtc().toIso8601String(),
+      'minValidReturn': minValidReturn,
+    };
+    final post = await _dio.post('/pattern-applies', data: body);
+    if (post.statusCode != 200 || post.data is! Map || (post.data['isSuccess'] != true)) {
+      final msg = (post.data is Map ? post.data['message'] : null) ?? '패턴 재적용 실패';
+      throw Exception('POST 실패: $msg (HTTP ${post.statusCode})');
+    }
+  }
+
   /// 패턴 알림 토글
   /// 성공 시: true/false (서버가 상태를 반환하면), 상태 미반환 시 null
   Future<bool?> toggleNotification(int patternApplyId) async {

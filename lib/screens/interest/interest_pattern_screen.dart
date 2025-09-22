@@ -11,8 +11,9 @@ import 'package:stockapp/widgets/interest/pattern_stock_header.dart';
 class InterestPatternScreen extends StatefulWidget {
   final int stockId;
   final String? stockName;
+  final String? stockImageUrl;
 
-  const InterestPatternScreen({super.key, required this.stockId, this.stockName});
+  const InterestPatternScreen({super.key, required this.stockId, this.stockName, this.stockImageUrl,});
 
   @override
   State<InterestPatternScreen> createState() => _InterestPatternScreenState();
@@ -94,8 +95,10 @@ class _InterestPatternScreenState extends State<InterestPatternScreen> {
         final title = data != null && data.stockName.isNotEmpty
             ? data.stockName
             : (widget.stockName ?? '패턴');
-        final img = (data != null && data.stockImage.isNotEmpty) ? data.stockImage : null;
         final hasPattern = data != null && data.hasPattern;
+        final headerImg = (data?.stockImage.isNotEmpty ?? false)
+            ? data!.stockImage
+            : widget.stockImageUrl;
 
         return Scaffold(
           appBar: AppBar(backgroundColor: Colors.white),
@@ -104,7 +107,7 @@ class _InterestPatternScreenState extends State<InterestPatternScreen> {
             onRefresh: _reload,
             child: Column(
               children: [
-                StockHeader(name: title, imageUrl: img),
+                StockHeader(name: title, imageUrl: headerImg),
                 Expanded(
                   child: hasPattern
                       ? PatternExistsView(
@@ -119,7 +122,18 @@ class _InterestPatternScreenState extends State<InterestPatternScreen> {
                       }
                       _confirmAndDelete(id);
                     },
-                    onEdit: () {/* TODO */},
+                    onEdit: () {final id = data.patternApplyId; // PatternApply 모델의 id
+                    if (id == null) return;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PatternLibraryScreen(
+                          stockId: widget.stockId,
+                          stockName: widget.stockName,
+                          patternApplyId: id, // ← 여기!
+                        ),
+                      ),
+                    );},
                     onRunBacktest: () {/* TODO */},
                   )
                       : PatternEmptyView(

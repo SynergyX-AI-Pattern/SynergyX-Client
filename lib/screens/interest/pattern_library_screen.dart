@@ -3,14 +3,23 @@ import 'package:stockapp/data/pattern_api.dart';
 import 'package:stockapp/data/pattern_apply_api.dart';
 import 'package:stockapp/models/pattern.dart';
 import 'package:stockapp/screens/interest/interest_pattern_screen.dart';
-import 'package:stockapp/widgets/common/app_confirm_dialog.dart';
+import 'package:stockapp/widgets/interest/pattern_apply_dialog.dart';
 import 'package:stockapp/widgets/interest/pattern_no_pattern_view.dart';
 import 'package:stockapp/widgets/interest/pattern_pick_card.dart';
 
 class PatternLibraryScreen extends StatefulWidget {
   final int stockId;
   final String? stockName;
-  const PatternLibraryScreen({super.key, required this.stockId, this.stockName});
+
+  /// 수정 플로우로 들어온 경우만 전달 (없으면 신규 적용 플로우)
+  final int? patternApplyId;
+
+  const PatternLibraryScreen({
+    super.key,
+    required this.stockId,
+    this.stockName,
+    this.patternApplyId,
+  });
 
   @override
   State<PatternLibraryScreen> createState() => _PatternLibraryScreenState();
@@ -18,7 +27,7 @@ class PatternLibraryScreen extends StatefulWidget {
 
 class _PatternLibraryScreenState extends State<PatternLibraryScreen> {
   final _applyApi = PatternApplyApi();
-  bool _applying = false;
+  bool _working = false; // ← _applying 대신
   late Future<List<Pattern>> _future;
 
   @override
@@ -33,31 +42,46 @@ class _PatternLibraryScreenState extends State<PatternLibraryScreen> {
   }
 
   Future<void> _onApplyPressed(Pattern p) async {
-    if (_applying) return;
-    final ok = await showAppConfirmDialog(
-      context,
-      title: "'${p.patternName}' 패턴을 적용할까요?",
-    );
+    if (_working) return;
 
-    if (ok == true) {
-      await _apply(p);
-    }
+    // 사용자가 값 입력
+    final input = await showPatternApplyDialog(
+      context,
+      initialDate: DateTime.now(),
+      initialMinValidReturn: 0,
+      isUpdate: widget.patternApplyId != null,
+    );
+    if (input == null) return;
+
+    await _applyOrUpdate(p, input.entryAt, input.minValidReturn);
   }
 
-  Future<void> _apply(Pattern p) async {
-    setState(() => _applying = true);
+  Future<void> _applyOrUpdate(Pattern p, DateTime entryAt, double minValidReturn) async {
+    setState(() => _working = true);
     try {
-      await _applyApi.applySimple(
-        patternId: p.patternId,
-        stockId: widget.stockId,
-        entryAt: DateTime.now(),
-        minValidReturn: 0,
-      );
-      if (!mounted) return;
+      if (widget.patternApplyId != null) {
+        // 수정(교체)
+        await _applyApi.replacePattern(
+          patternApplyId: widget.patternApplyId!,
+          stockId: widget.stockId,
+          newPatternId: p.patternId,
+          entryAt: entryAt,
+          minValidReturn: minValidReturn,
+        );
+      } else {
+        // 신규
+        await _applyApi.applySimple(
+          patternId: p.patternId,
+          stockId: widget.stockId,
+          entryAt: entryAt,
+          minValidReturn: minValidReturn,
+        );
+      }
 
-      // 스택 재구성: 라이브러리 → 이전 패턴 화면 pop → 관심 화면으로 돌아간 뒤 새 패턴 화면 push
-      Navigator.of(context).pop(); // C
-      Navigator.of(context).pop(); // B → A
+      if (!mounted) return;
+      // 라이브러리 pop → 기존 패턴 화면 pop → 최신 패턴 화면 push
+      Navigator.of(context).pop();
+      Navigator.of(context).pop();
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => InterestPatternScreen(
@@ -69,10 +93,10 @@ class _PatternLibraryScreenState extends State<PatternLibraryScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('적용 실패: $e')),
+        SnackBar(content: Text('패턴 ${widget.patternApplyId != null ? '수정' : '적용'} 실패: $e')),
       );
     } finally {
-      if (mounted) setState(() => _applying = false);
+      if (mounted) setState(() => _working = false);
     }
   }
 
@@ -81,7 +105,9 @@ class _PatternLibraryScreenState extends State<PatternLibraryScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(style: TextStyle(fontWeight: FontWeight.w700), widget.stockName ?? '전략 패턴'),
+        // Text 파라미터 순서 수정: Text('문자열', style: ...)
+        title: Text(widget.stockName ?? '전략 패턴',
+            style: const TextStyle(fontWeight: FontWeight.w700)),
         backgroundColor: Colors.white,
       ),
       body: FutureBuilder<List<Pattern>>(
@@ -102,7 +128,7 @@ class _PatternLibraryScreenState extends State<PatternLibraryScreen> {
 
           final items = snap.data ?? const <Pattern>[];
           if (items.isEmpty) {
-            return const PatternNoPatternView(); // ← 분리된 위젯
+            return const PatternNoPatternView();
           }
 
           return ListView.separated(
@@ -111,10 +137,10 @@ class _PatternLibraryScreenState extends State<PatternLibraryScreen> {
             separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (context, i) {
               final p = items[i];
-              return PatternPickCard(             // ← 분리된 위젯
+              return PatternPickCard(
                 pattern: p,
-                applying: _applying,
-                onApply: _applying ? null : () => _onApplyPressed(p),
+                applying: _working,
+                onApply: _working ? null : () => _onApplyPressed(p),
               );
             },
           );
