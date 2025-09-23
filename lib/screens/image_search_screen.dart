@@ -46,8 +46,7 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
     if (rp.isGranted) return true;
     final rs = await Permission.storage.request(); // 안드 12-
     if (rs.isGranted) return true;
-    if (rp.isPermanentlyDenied || rs.isPermanentlyDenied)
-      await openAppSettings();
+    if (rp.isPermanentlyDenied || rs.isPermanentlyDenied) await openAppSettings();
     return false;
   }
 
@@ -150,25 +149,20 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
       }
 
       // 비즈니스 성공/실패 분기
-      if (res.isSuccess == true && res.id != null) {
-        // 성공: 결과 카드 표시 (자동 이동은 여기서 선택적으로)
-        setState(() {
-          _error = null;
-          _result = res;
-        });
-
-        // 자동 이동 시 주석 해제
-        // if (autoNavigate) {
-        //   final item = StockItem(
-        //     stockId: res.id!, name: res.name ?? '', imageUrl: res.imageUrl ?? '',
-        //     price: 0, changeRate: 0, rank: 0,
-        //   );
-        //   await Navigator.of(context).push(
-        //     MaterialPageRoute(builder: (_) => DetailScreen(stock: item)),
-        //   );
-        // }
+      if (res.isSuccess == true && res.result != null) {
+        final r = res.result!;
+        if (r.id != null) {
+          setState(() {
+            _error = null;
+            _result = res;
+          });
+        } else {
+          setState(() {
+            _result = res;
+            _error = null;
+          });
+        }
       } else {
-        // 실패: 코드 기반 에러 메시지 노출, 결과 카드 숨김
         final msg = _friendlyMessage(res.code, res.message);
         setState(() {
           _result = null;
@@ -182,7 +176,6 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
       }
     } on DioException catch (e) {
       if (!mounted) return;
-      // 로딩 다이얼로그 닫기
       _closeLoadingIfOpen();
 
       if (CancelToken.isCancel(e)) {
@@ -193,7 +186,6 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
         return;
       }
 
-      // 서비스 레벨에서 4xx를 응답으로 돌리지 않는 환경 대비: 404/400도 에러 메시지 매핑
       String? codeFromBody;
       if (e.response?.data is Map) {
         final map = e.response!.data as Map;
@@ -208,7 +200,7 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
     } catch (e, st) {
       debugPrint('upload error: $e\n$st');
       if (!mounted) return;
-      _closeLoadingIfOpen(); // 로딩 닫기
+      _closeLoadingIfOpen();
       setState(() {
         _error = '업로드 실패: $e';
       });
@@ -242,7 +234,7 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
                 onPressed: () {
                   _cancelToken?.cancel('사용자 취소');
                   _isDialogOpen = false;
-                  Navigator.of(dialogCtx).pop(); // 다이얼로그 닫기
+                  Navigator.of(dialogCtx).pop();
                 },
                 child: const Text('취소'),
               ),
@@ -251,7 +243,7 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
         );
       },
     ).whenComplete(() {
-      _isDialogOpen = false; // 어떤 경로로든 닫히면 false 보장
+      _isDialogOpen = false;
     });
   }
 
@@ -264,8 +256,8 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
 
   // ─ 공통 버튼 스타일
   ButtonStyle get _moreButtonStyle => ElevatedButton.styleFrom(
-    backgroundColor: const Color(0xFF2C2C2C), // 다크그레이
-    foregroundColor: const Color(0xFFF5F5F5), // 오프화이트
+    backgroundColor: const Color(0xFF2C2C2C),
+    foregroundColor: const Color(0xFFF5F5F5),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     padding: const EdgeInsets.symmetric(vertical: 10),
   );
@@ -300,7 +292,7 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              // ─ 이미지 영역 (TopStockListCard 스타일)
+              // ─ 이미지 영역
               if (_selectedFile != null)
                 Card(
                   color: Colors.white,
@@ -332,26 +324,20 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
                     alignment: Alignment.center,
                     child: const Text(
                       '이미지를 선택해주세요.',
-                      style: const TextStyle(color: Colors.grey, fontSize: 14),
+                      style: TextStyle(color: Colors.grey, fontSize: 14),
                     ),
                   ),
                 ),
               const SizedBox(height: 12),
 
-              // ─ 카메라/앨범 버튼 (공통 스타일 적용)
+              // ─ 카메라/앨범 버튼
               Row(
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
                       style: _moreButtonStyle,
-                      icon: const Icon(
-                        Icons.photo_camera,
-                        color: Color(0xFFF5F5F5),
-                      ),
-                      label: const Text(
-                        '카메라',
-                        style: TextStyle(fontWeight: FontWeight.w700),
-                      ),
+                      icon: const Icon(Icons.photo_camera, color: Color(0xFFF5F5F5)),
+                      label: const Text('카메라', style: TextStyle(fontWeight: FontWeight.w700)),
                       onPressed: _loading ? null : _pickCamera,
                     ),
                   ),
@@ -359,34 +345,24 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
                   Expanded(
                     child: ElevatedButton.icon(
                       style: _moreButtonStyle,
-                      icon: const Icon(
-                        Icons.photo_library,
-                        color: Color(0xFFF5F5F5),
-                      ),
-                      label: const Text(
-                        '앨범',
-                        style: TextStyle(fontWeight: FontWeight.w700),
-                      ),
+                      icon: const Icon(Icons.photo_library, color: Color(0xFFF5F5F5)),
+                      label: const Text('앨범', style: TextStyle(fontWeight: FontWeight.w700)),
                       onPressed: _loading ? null : _pickGallery,
                     ),
                   ),
                 ],
               ),
 
-              // ─ 에러 영역 (버튼 포함)
+              // ─ 에러 영역
               if (_error != null) ...[
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.error.withOpacity(0.06),
+                    color: Theme.of(context).colorScheme.error.withOpacity(0.06),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.error.withOpacity(0.2),
+                      color: Theme.of(context).colorScheme.error.withOpacity(0.2),
                     ),
                   ),
                   child: Column(
@@ -394,10 +370,7 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
                     children: [
                       Row(
                         children: [
-                          Icon(
-                            Icons.info,
-                            color: Theme.of(context).colorScheme.error,
-                          ),
+                          Icon(Icons.info, color: Theme.of(context).colorScheme.error),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -410,142 +383,116 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      if (_error!.contains('용량'))
-                        const Text('• 이미지 크기를 줄이거나 스크린샷 대신 원본 이미지를 사용해 보세요.'),
-                      if (_error!.contains('형식'))
-                        const Text('• 파일 확장자가 jpg/jpeg/png인지 확인하세요.'),
-                      if (_error!.contains('찾지 못했어요'))
-                        const Text('• 선명하게 다시 촬영해 보세요.'),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              style: _moreButtonStyle,
-                              onPressed: _loading ? null : _pickCamera,
-                              icon: const Icon(
-                                Icons.photo_camera,
-                                color: Color(0xFFF5F5F5),
-                              ),
-                              label: const Text(
-                                '다시 찍기',
-                                style: TextStyle(fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              style: _moreButtonStyle,
-                              onPressed: _loading ? null : _pickGallery,
-                              icon: const Icon(
-                                Icons.photo_library,
-                                color: Color(0xFFF5F5F5),
-                              ),
-                              label: const Text(
-                                '다른 이미지',
-                                style: TextStyle(fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
                     ],
                   ),
                 ),
               ],
 
               // ─ 결과 영역
-              if (_result != null) ...[
+              if (_result != null && _result!.result != null) ...[
                 const Divider(height: 32),
                 const Text(
                   'AI 분석으로 찾은 종목',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 17,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
                 ),
                 const SizedBox(height: 8),
-                if (_result!.imageUrl != null)
-                  Card(
-                    color: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 1,
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        children: [
-                          CircleAvatar(
-                            radius: 36,
-                            backgroundColor: Colors.grey.shade100,
-                            backgroundImage:
-                                _result!.imageUrl != null
-                                    ? NetworkImage(_result!.imageUrl!)
-                                    : null,
-                            child:
-                                _result!.imageUrl == null
-                                    ? const Icon(
-                                      Icons.image_not_supported,
-                                      color: Colors.grey,
-                                    )
-                                    : null,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            _result!.name ?? '종목명 미확인',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 18,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          if (_result!.id != null)
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton.icon(
-                                style: _moreButtonStyle.copyWith(
-                                  backgroundColor: MaterialStateProperty.all(
-                                    const Color(0xFF1A237E),
-                                  ),
-                                  padding: MaterialStateProperty.all(
-                                    const EdgeInsets.symmetric(vertical: 14),
-                                  ),
-                                ),
-                                icon: const Icon(
-                                  Icons.open_in_new,
-                                  color: Color(0xFFF5F5F5),
-                                ),
-                                label: const Text(
-                                  '종목 상세 보기',
-                                  style: TextStyle(fontWeight: FontWeight.w700),
-                                ),
-                                onPressed: () {
-                                  final r = _result!;
-                                  final item = StockItem(
-                                    stockId: r.id!,
-                                    name: r.name ?? '',
-                                    imageUrl: r.imageUrl ?? '',
-                                    price: 0,
-                                    changeRate: 0,
-                                    rank: 0,
-                                  );
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => DetailScreen(stock: item),
-                                    ),
-                                  );
-                                },
+                Card(
+                  color: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 1,
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        // 이미지
+                        CircleAvatar(
+                          radius: 36,
+                          backgroundColor: Colors.grey.shade100,
+                          backgroundImage: _result!.result!.imageUrl != null
+                              ? NetworkImage(_result!.result!.imageUrl!)
+                              : null,
+                          child: _result!.result!.imageUrl == null
+                              ? const Icon(Icons.image_not_supported, color: Colors.grey)
+                              : null,
+                        ),
+                        const SizedBox(height: 12),
+                        // 이름
+                        Text(
+                          _result!.result!.name ?? '종목명 미확인',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+                        ),
+                        const SizedBox(height: 8),
+                        // 상태 안내 문구
+                        Builder(
+                          builder: (_) {
+                            final status = _result!.result!.status;
+                            String guide = '';
+                            switch (status) {
+                              case 'LISTED':
+                                guide = 'KOSPI100 종목이에요.';
+                                break;
+                              case 'LISTED_OUTSIDE':
+                                guide = '국내외 상장 기업이에요 (KOSPI100 제외).';
+                                break;
+                              case 'UNLISTED':
+                                guide = '비상장 기업이에요.';
+                                break;
+                              case 'UNKNOWN':
+                                guide = '판별할 수 없는 기업이에요.';
+                                break;
+                            }
+                            return Text(
+                              guide,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w500,
                               ),
+                              textAlign: TextAlign.center,
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        // 상세 보기 버튼 (LISTED만 노출)
+                        if (_result!.result!.status == 'LISTED' && _result!.result!.id != null)
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              style: _moreButtonStyle.copyWith(
+                                backgroundColor: MaterialStateProperty.all(const Color(0xFF1A237E)),
+                                padding: MaterialStateProperty.all(
+                                  const EdgeInsets.symmetric(vertical: 14),
+                                ),
+                              ),
+                              icon: const Icon(Icons.open_in_new, color: Color(0xFFF5F5F5)),
+                              label: const Text(
+                                '종목 상세 보기',
+                                style: TextStyle(fontWeight: FontWeight.w700),
+                              ),
+                              onPressed: () {
+                                final r = _result!.result!;
+                                final item = StockItem(
+                                  stockId: r.id!,
+                                  name: r.name ?? '',
+                                  imageUrl: r.imageUrl ?? '',
+                                  price: 0,
+                                  changeRate: 0,
+                                  rank: 0,
+                                );
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(builder: (_) => DetailScreen(stock: item)),
+                                );
+                              },
                             ),
-                        ],
-                      ),
+                          ),
+                      ],
                     ),
                   ),
+                ),
               ],
             ],
           ),
