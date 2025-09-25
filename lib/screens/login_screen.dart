@@ -61,15 +61,22 @@ class _LoginScreenState extends State<LoginScreen> {
     final valid = _formKey.currentState?.validate() ?? false;
     if (!valid) return;
 
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
     final LoginResponse res = await _authService.login(
-      _emailController.text.trim(),
-      _passwordController.text.trim(),
+      email,
+      password,
     );
 
     if (!mounted) return;
 
     if (res.isSuccess) {
-      await AuthState.updateFromLogin(res, _emailController.text.trim());
+      await AuthState.updateFromLogin(
+        res,
+        email,
+        userPassword: password,
+      );
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const Tabview()),
