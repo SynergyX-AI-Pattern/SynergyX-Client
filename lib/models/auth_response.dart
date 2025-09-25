@@ -25,6 +25,7 @@ class SimpleResponse {
 /// 로그인 시 반환되는 결과 모델
 class LoginResponse extends SimpleResponse {
   final String? accessToken;
+  final String? refreshToken;
   final int? expiresIn;
   final String? username;
   final bool? isNewUser;
@@ -35,6 +36,7 @@ class LoginResponse extends SimpleResponse {
     String? message,
     Map<String, dynamic>? result,
     this.accessToken,
+    this.refreshToken,
     this.expiresIn,
     this.username,
     this.isNewUser,
@@ -54,6 +56,7 @@ class LoginResponse extends SimpleResponse {
       message: json['message'] as String?,
       result: result.cast<String, dynamic>(),
       accessToken: result['accessToken'] as String?,
+      refreshToken: result['refreshToken'] as String?,
       expiresIn: result['expiresIn'] is int
           ? result['expiresIn'] as int
           : int.tryParse('${result['expiresIn']}'),

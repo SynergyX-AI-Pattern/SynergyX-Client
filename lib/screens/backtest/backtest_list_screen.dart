@@ -10,8 +10,14 @@ import 'package:stockapp/widgets/common/InfoCardGroup.dart';
 class BacktestListScreen extends StatefulWidget {
   final int? patternId;
   final int? backtestId;
+  final bool showAll;
 
-  const BacktestListScreen({super.key, this.patternId, this.backtestId});
+  const BacktestListScreen({
+    super.key,
+    this.patternId,
+    this.backtestId,
+    this.showAll = false,
+  });
 
   @override
   State<BacktestListScreen> createState() => _BacktestListScreenState();
@@ -24,32 +30,39 @@ class _BacktestListScreenState extends State<BacktestListScreen> {
   void initState() {
     super.initState();
     _future = BacktestService.fetchBacktestList(
-      patternId: widget.patternId,
+      // 전체 보기 모드에서는 패턴 필터를 제거하고 모든 백테스트를 요청한다.
+      patternId: widget.showAll ? null : widget.patternId,
       backtestId: widget.backtestId,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    // 현재 화면이 어떤 맥락인지에 따라 제목을 다르게 노출한다.
+    final title = widget.showAll
+        ? '전체 백테스트 목록'
+        : widget.backtestId != null
+        ? '패턴 백테스트 목록'
+        : '백테스트 목록';
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: Text(
-          widget.backtestId != null ? '해당 백테스트' : '백테스트 목록',
-          style: const TextStyle(color: Colors.black),
-        ),
+        title: Text(title, style: const TextStyle(color: Colors.black)),
         iconTheme: const IconThemeData(color: Colors.black),
         actions: [
-          if (widget.backtestId != null)
+          if (widget.patternId != null && !widget.showAll)
             TextButton(
               onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (_) => BacktestListScreen(
+                      // 전체 보기는 패턴 제한 없이 전부를 보여준다.
                       patternId: widget.patternId,
+                      showAll: true,
                     ),
                   ),
                 );
