@@ -147,10 +147,11 @@ class _DiaryScreenState extends State<DiaryScreen> {
             Expanded(
               child: ListView(
                 controller: _scrollController, //페이지 진입 시 맨 아래로 이동
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 15),
                 children: _buildGroupedDiaryWidgets(),
               ),
             ),
+            SizedBox(height: 4),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: EmotionInputBar(onSubmit: _submitDiary),
