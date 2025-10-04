@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:stockapp/data/watchlist_api.dart';
 import 'package:stockapp/models/StockItemModel.dart';
+import 'package:stockapp/screens/mypage_interest_screen.dart';
 import 'package:stockapp/widgets/interest/WatchlistAppBarActions.dart';
 
 class InterestScreen extends StatefulWidget {
@@ -41,7 +42,16 @@ class _InterestScreenState extends State<InterestScreen> {
         foregroundColor: Colors.black,
         centerTitle: true,
         actions: [
-          IconButton(onPressed: () {/* 설정 */}, icon: const Icon(Icons.settings)),
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const WatchlistEditPage(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.settings),
+          ),
           IconButton(onPressed: () {/* 추가 */}, icon: const Icon(Icons.add)),
         ],
       ),
