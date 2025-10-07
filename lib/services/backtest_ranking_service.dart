@@ -4,14 +4,10 @@ import 'package:stockapp/data/ranking_mock.dart';
 import 'package:stockapp/models/backtest_ranking.dart';
 import 'package:stockapp/services/api_client.dart';
 
-/// 백테스팅 랭킹 조회 API 호출을 담당하는 서비스
 class BacktestRankingService {
   BacktestRankingService({Dio? dio}) : _dio = dio ?? ApiClient.dio;
-
-  /// HTTP 통신에 사용할 Dio 인스턴스
   final Dio _dio;
 
-  /// 랭킹 목록 조회
   Future<List<BacktestRanking>> fetchRankings({int limit = 100}) async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
@@ -41,7 +37,6 @@ class BacktestRankingService {
     }
   }
 
-  /// 서버가 준비되지 않은 상황에서도 동일한 흐름으로 사용할 수 있는 목데이터를 제공한다.
   List<BacktestRanking> _provideMockData(int limit) {
     return mockBacktestRankings.take(limit).toList();
   }
