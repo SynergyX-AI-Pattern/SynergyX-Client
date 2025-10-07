@@ -1,10 +1,9 @@
-// screens/watchlist/widgets/watchlist_item.dart
 import 'package:flutter/material.dart';
 import 'package:stockapp/models/stock.dart';
 import 'package:stockapp/models/StockItemModel.dart';        // 시세 모델
 import 'package:stockapp/screens/interest/interest_pattern_screen.dart';
 import 'package:stockapp/widgets/common/app_button.dart';
-import 'package:stockapp/widgets/main/StockItems.dart' as Tile; // 재사용 타일
+import 'package:stockapp/widgets/main/StockItems.dart'; // 재사용 타일
 
 class WatchlistItem extends StatelessWidget {
   /// 기본 종목 정보 (id, name, image)
@@ -34,7 +33,7 @@ class WatchlistItem extends StatelessWidget {
       imageUrl: stock.imageUrl,
     );
 
-    return Tile.StockItems(
+    return StockItems(
       stock: merged,
       onTap: onTap,
       // 관심종목 전용 오른쪽 액션들
@@ -56,17 +55,10 @@ class WatchlistItem extends StatelessWidget {
               );
             },
           ),
-          // 필요 시 알림 버튼도 여기서 추가 가능
-          // const SizedBox(width: 6),
-          // IconButton(
-          //   onPressed: () {/* 알림 토글 */},
-          //   icon: const Icon(Icons.notifications_none),
-          //   splashRadius: 20,
-          // ),
         ],
       ),
       // 화면에 맞게 여백 살짝
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
     );
   }
 }

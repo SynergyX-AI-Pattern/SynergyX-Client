@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:stockapp/data/interestlist_api.dart';
 import 'package:stockapp/data/recent_api.dart';
+import 'package:stockapp/data/stock_detail_api.dart';
+import 'package:stockapp/models/StockItemModel.dart';
 import 'package:stockapp/models/stock.dart';
 import '../../models/stock_brief.dart';
 import '../../widgets/common/TopTabSelector.dart';
@@ -76,39 +78,53 @@ class _WatchlistViewState extends State<WatchlistView> {
   }
 }
 
-class _WatchlistListFuture extends StatelessWidget {
+class _WatchlistListFuture extends StatefulWidget {
   final Future<List<StockBrief>> future;
   final Future<void> Function() onRefresh;
   const _WatchlistListFuture({required this.future, required this.onRefresh});
 
   @override
+  State<_WatchlistListFuture> createState() => _WatchlistListFutureState();
+}
+
+class _WatchlistListFutureState extends State<_WatchlistListFuture> {
+  final _detailApi = StockDetailApiService();
+  final Map<int, Future<StockItem?>> _cache = {}; // ✅ 캐시
+
+  @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<StockBrief>>(
-      future: future,
+      future: widget.future,
       builder: (context, snap) {
-        if (snap.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snap.hasError) {
-          return Center(
-            child: TextButton.icon(
-              onPressed: onRefresh,
-              icon: const Icon(Icons.refresh),
-              label: Text('불러오기 실패: ${snap.error}'),
-            ),
-          );
-        }
-        final items = snap.data ?? const <StockBrief>[];
+        if (!snap.hasData) return const Center(child: CircularProgressIndicator());
+        final items = snap.data!;
+
         return RefreshIndicator(
-          onRefresh: onRefresh,
+          onRefresh: widget.onRefresh,
           child: ListView.builder(
-            physics: const AlwaysScrollableScrollPhysics(),
             itemCount: items.length,
             itemBuilder: (context, i) {
               final s = items[i];
-              return WatchlistItem(
-                stock: Stock(id: s.id, name: s.name, imageUrl: s.imageUrl),
-                onTap: () {},
+              _cache[s.id] ??= _detailApi.fetchStockDetail(s.id.toString()).then((resp) {
+                return StockItem(
+                  stockId: s.id,
+                  name: s.name,
+                  price: int.tryParse((resp.price ?? '').replaceAll(',', '')) ?? 0,
+                  changeRate: double.tryParse((resp.changeRate ?? '').replaceAll('%', '')) ?? 0.0,
+                  imageUrl: s.imageUrl,
+                  rank: 0,
+                );
+              });
+
+              return FutureBuilder<StockItem?>(
+                future: _cache[s.id], // ✅ 캐싱된 Future 사용
+                builder: (context, qSnap) {
+                  final quote = qSnap.data;
+                  return WatchlistItem(
+                    stock: Stock(id: s.id, name: s.name, imageUrl: s.imageUrl),
+                    quote: quote,
+                  );
+                },
               );
             },
           ),
