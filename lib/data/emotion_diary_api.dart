@@ -28,4 +28,13 @@ class EmotionDiaryApi {
       rethrow;
     }
   }
+
+  /// 삭제
+  Future<void> deleteDiary(int diaryId) async {
+    final response = await _dio.delete('/diaries/$diaryId');
+    if (response.statusCode != 200) {
+      throw Exception('삭제 실패');
+    }
+  }
+
 }

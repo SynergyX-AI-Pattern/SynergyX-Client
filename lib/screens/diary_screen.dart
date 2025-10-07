@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:stockapp/data/emotion_diary_api.dart';
+import 'package:stockapp/widgets/common/app_confirm_dialog.dart';
 import 'package:stockapp/widgets/emotion_diary/DairyBubble.dart';
 import 'package:stockapp/widgets/emotion_diary/EmotionAnalysisCard.dart';
 import 'package:stockapp/widgets/emotion_diary/EmotionHeader.dart';
@@ -77,6 +78,23 @@ class _DiaryScreenState extends State<DiaryScreen> {
     return grouped;
   }
 
+  void _confirmDelete(int diaryId) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) => AppConfirmDialog(
+        title: '일기 삭제',
+        content: '정말 이 감정일기를 삭제하시겠습니까?',
+        cancelText: '취소',
+        confirmText: '삭제',
+      ),
+    );
+
+    if (shouldDelete == true) {
+      await _api.deleteDiary(diaryId);
+      _loadDiaries(); // 목록 새로고침
+    }
+  }
+
   List<Widget> _buildGroupedDiaryWidgets() {
     final grouped = groupDiariesByDate(_diaryList);
     final sortedDateKeys = grouped.keys.toList()..sort((a, b) => a.compareTo(b));
@@ -101,7 +119,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
       for (final diary in grouped[dateKey]!) {
         widgets.addAll([
           const SizedBox(height: 6),
-          DiaryBubble(text: diary['content'] ?? ''),
+          DiaryBubble(text: diary['content'] ?? '', onDelete: () => _confirmDelete(diary['diaryId'])),
           const SizedBox(height: 8),
           EmotionAnalysisCard(
             emotions: List<String>.from(diary['emotion'] ?? []),
@@ -129,10 +147,11 @@ class _DiaryScreenState extends State<DiaryScreen> {
             Expanded(
               child: ListView(
                 controller: _scrollController, //페이지 진입 시 맨 아래로 이동
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 15),
                 children: _buildGroupedDiaryWidgets(),
               ),
             ),
+            SizedBox(height: 4),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: EmotionInputBar(onSubmit: _submitDiary),

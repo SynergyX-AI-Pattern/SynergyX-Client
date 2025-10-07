@@ -37,13 +37,16 @@ class _EmotionInputBarState extends State<EmotionInputBar> {
       child: TextField(
         controller: _controller,
         onSubmitted: (_) => _handleSend(),
+        style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
         decoration: InputDecoration(
           hintText: '오늘 투자하며 느낀 감정을 자유롭게 적어보세요.',
+          hintStyle: TextStyle(color: Color(0xFF8D8D8D)),
           filled: true,
           fillColor: const Color(0xFFF2F2F2),
           contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
           suffixIcon: IconButton(
             icon: const Icon(Icons.send),
+            color: Colors.black,
             onPressed: _handleSend,
           ),
           border: OutlineInputBorder(

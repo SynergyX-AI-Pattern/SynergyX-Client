@@ -19,7 +19,7 @@ class EmotionAnalysisCard extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 224),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
             border: Border.all(color: Colors.black),
             borderRadius: BorderRadius.circular(8),
@@ -30,11 +30,12 @@ class EmotionAnalysisCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.sentiment_satisfied_alt, color: Colors.orange),
-                  const SizedBox(width: 8),
+                  const Icon(Icons.sentiment_satisfied_alt, color: Colors.orange,size: 16,),
+                  const SizedBox(width: 7),
                   Expanded(
                     child: Text(
                       '감정 분석: ${emotions.join(", ")}',
+                      style: TextStyles.contentText,
                       softWrap: true,
                       overflow: TextOverflow.visible,
                     ),
@@ -42,13 +43,21 @@ class EmotionAnalysisCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 10),
-              Text('💡 투자 조언: $feedback'),
+              Text('💡 투자 조언: $feedback', style: TextStyles.contentText),
               const SizedBox(height: 10),
-              Text('📝 오늘의 일기: $summary'),
+              Text('📝 오늘의 일기: $summary', style: TextStyles.contentText),
             ],
           ),
           ),
         ),
       );
   }
+}
+
+class TextStyles {
+  static const TextStyle contentText = TextStyle(
+    fontWeight: FontWeight.w500,
+    fontSize: 13,
+  );
+
 }
