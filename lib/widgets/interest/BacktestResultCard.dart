@@ -62,13 +62,14 @@ class BacktestResultCard extends StatelessWidget {
               const Spacer(),
               TextButton(
                 onPressed: () {
-                  // Navigator.of(context).push(
-                  //   MaterialPageRoute(
-                  //     builder: (_) => BacktestResultScreen(
-                  //       result: result, // 혹은 모델 -> Map 변환
-                  //     ),
-                  //   ),
-                  // );
+                  // ✅ 백테스트 상세 페이지로 이동
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => BacktestResultScreen(
+                        result: result.toJson(), // ← Map으로 변환해서 전달
+                      ),
+                    ),
+                  );
                 },
                 style: TextButton.styleFrom(
                   minimumSize: Size.zero,

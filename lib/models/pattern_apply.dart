@@ -100,4 +100,17 @@ class BacktestResult {
     maxReturn: (json['maxReturn'] as num).toDouble(),
     maxReturnDate: json['maxReturnDate'] as String,
   );
+
+  Map<String, dynamic> toJson() => {
+    'backtestId': backtestId,
+    'executedAt': executedAt,
+    'matchedCount': matchedCount,
+    'startDate': startDate,
+    'endDate': endDate,
+    'winRate': winRate,
+    'averageReturn': averageReturn,
+    'maxReturn': maxReturn,
+    'maxReturnDate': maxReturnDate,
+    // 필요한 필드 더 있으면 여기에 추가
+  };
 }
