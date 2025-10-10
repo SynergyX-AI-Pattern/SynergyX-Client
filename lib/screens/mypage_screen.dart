@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-
+import 'package:stockapp/screens/backtest/backtest_ranking_screen.dart';
+import 'package:stockapp/screens/interest/interest_screen.dart';
 import 'package:stockapp/screens/login_screen.dart';
 import 'package:stockapp/screens/notification_settings_screen.dart';
-import 'package:stockapp/screens/interest/interest_screen.dart';
 import 'package:stockapp/services/auth_service.dart';
 import 'package:stockapp/services/auth_state.dart';
 import 'package:stockapp/services/user_service.dart';
-
 
 // 마이페이지 화면: 사용자 정보 표시 및 다양한 설정 항목 제공
 class MypageScreen extends StatefulWidget {
@@ -97,6 +96,13 @@ class _MypageScreenState extends State<MypageScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const NotificationSettingsScreen()),
+    );
+  }
+
+  void _goToBacktestRankingScreen(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const BacktestRankingScreen()),
     );
   }
 
@@ -211,6 +217,12 @@ class _MypageScreenState extends State<MypageScreen> {
             ),
             _divider(),
             _MenuTile(
+              icon: Icons.emoji_events_outlined,
+              title: '백테스트 랭킹',
+              onTap: () => _goToBacktestRankingScreen(context),
+            ),
+            _divider(),
+            _MenuTile(
               icon: Icons.help_outline,
               title: 'FAQ',
             ),
@@ -237,7 +249,8 @@ class _MypageScreenState extends State<MypageScreen> {
               onTap: () => _withdraw(context),
             ),
 
-            // 하단 여백
+            _sectionSpacer(),
+
             const SizedBox(height: 24),
           ],
         ),
