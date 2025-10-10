@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:stockapp/models/pattern_apply.dart';
 import 'package:stockapp/widgets/common/app_button.dart';
+import 'package:stockapp/widgets/common/backtest_candle_chart.dart';
 import 'package:stockapp/widgets/common/pattern_line_chart.dart';
 import 'package:stockapp/widgets/interest/BacktestResultCard.dart';
 import 'package:stockapp/widgets/interest/pattern_alert_button.dart';
@@ -95,17 +96,17 @@ class PatternExistsView extends StatelessWidget {
         ),
         if (data.hasBacktest)
           Column(
-            children: [
-              BacktestResultCard(result: data.backtest!),
-              SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: AppButton(label: '다시 돌리기', onPressed: onRunBacktest),
-                ),
-              )
-            ]
+              children: [
+                BacktestResultCard(result: data.backtest!),
+                SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: AppButton(label: '다시 돌리기', onPressed: onRunBacktest),
+                  ),
+                )
+              ]
           )
         else
           Padding(
