@@ -18,14 +18,14 @@ class RecentStockTile extends StatelessWidget {
               width: 40, height: 40, fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => CircleAvatar(
                 radius: 20, backgroundColor: const Color(0xFFF1F3F5),
-                child: Text(stock.name.isNotEmpty ? stock.name.characters.first : '?'),
+                child: Text(stock.stockName.isNotEmpty ? stock.stockName.characters.first : '?'),
               ),
             ),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              stock.name,
+              stock.stockName,
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
               overflow: TextOverflow.ellipsis,
             ),

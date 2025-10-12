@@ -8,8 +8,8 @@ class PatternEmptyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const PatternSectionHeader(title: '내 전략 패턴'),
         const SizedBox(height: 40),

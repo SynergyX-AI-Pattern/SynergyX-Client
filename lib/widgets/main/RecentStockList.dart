@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:stockapp/data/recent_api.dart';
+import 'package:stockapp/models/StockItemModel.dart';
 import 'package:stockapp/models/stock_brief.dart';
+import 'package:stockapp/widgets/main/StockItems.dart';
 import 'package:stockapp/widgets/main/recent_stock_tile.dart';
 
 class RecentStockList extends StatefulWidget {
@@ -75,8 +77,16 @@ class _RecentStockListState extends State<RecentStockList> {
                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
                   child: Column(
                     children: [
-                      RecentStockTile(
-                        stock: s,
+                      StockItems(
+                        stock: StockItem(
+                          stockId: s.stockId,
+                          name: s.stockName,
+                          price: int.tryParse(s.price.replaceAll(',', '')) ?? 0,
+                          changeRate: double.tryParse(s.changeRate.replaceAll('%', '')) ?? 0.0,
+                          imageUrl: s.imageUrl,
+                          rank: 0,
+                        ),
+                        padding: EdgeInsets.symmetric(vertical: 0),
                         onTap: () {
                           // TODO: 상세 이동
                         },
