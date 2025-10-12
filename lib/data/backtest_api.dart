@@ -2,12 +2,12 @@
 import 'package:dio/dio.dart';
 export 'package:stockapp/models/backtest_result.dart';
 import 'package:stockapp/services/api_client.dart';
+import 'package:stockapp/services/stock_image_resolver.dart';
 
 class BacktestService {
   static final Dio _dio = ApiClient.dio;
 
-  /// periodUnit → interval 매핑 유틸
-  /// 서버가 "HOUR"/"DAY" 등을 주면 캔들 조회 interval로 변환해 사용할 수 있음.
+
   static String intervalFromPeriodUnit(String? periodUnit) {
     switch ((periodUnit ?? '').toUpperCase()) {
       case 'MINUTE':
@@ -28,17 +28,14 @@ class BacktestService {
     int? backtestId,
   }) async {
     try {
-      // 패턴 ID가 있는 경우에는 전체 목록을 우선 불러와 사용자가 모든 결과를 확인할 수 있게 한다.
       final list = await _fetchBacktestSummaries(patternId: patternId);
 
       if (list.isEmpty && backtestId != null) {
-        // 목록이 비어 있고 특정 백테스트 ID만 존재한다면, 상세 조회를 통해 최소 한 건을 보여준다.
         final detail = await fetchBacktestResult(backtestId);
-        return [_summaryFromDetail(detail, backtestId)];
+        return [await _summaryFromDetail(detail, backtestId)];
       }
 
       if (backtestId != null) {
-        // 기존 목록에서 사용자가 보고 있던 백테스트를 상단에 배치한다.
         final targetIndex = list.indexWhere((item) {
           final id = item['backtestId'];
           if (id == null) return false;
@@ -51,9 +48,8 @@ class BacktestService {
           final selected = list.removeAt(targetIndex);
           list.insert(0, selected);
         } else if (targetIndex == -1) {
-          // 목록에 존재하지 않더라도 상세 조회 결과를 맨 앞에 추가하여 사용자가 찾을 수 있게 한다.
           final detail = await fetchBacktestResult(backtestId);
-          list.insert(0, _summaryFromDetail(detail, backtestId));
+          list.insert(0, await _summaryFromDetail(detail, backtestId));
         }
       }
 
@@ -63,7 +59,6 @@ class BacktestService {
     }
   }
 
-  /// 백테스트 요약 목록을 조회하고 주식 관련 보조 정보를 채워 넣는다.
   static Future<List<Map<String, dynamic>>> _fetchBacktestSummaries({
     int? patternId,
   }) async {
@@ -73,7 +68,7 @@ class BacktestService {
     );
     final data = res.data;
     final container =
-        (data is Map) ? (data['result'] ?? data['data'] ?? data) : null;
+    (data is Map) ? (data['result'] ?? data['data'] ?? data) : null;
     final listRaw =
         (container is Map ? container['content'] : null) as List? ?? const [];
     final list = List<Map<String, dynamic>>.from(listRaw);
@@ -91,26 +86,29 @@ class BacktestService {
           m['stockImage'] = stock['imageUrl'].toString();
         }
       }
+
+      // 백엔드 응답에 이미지가 검색 API로 보완한다.
+      await _fillStockImage(m);
     }
 
     return list;
   }
 
   /// 백테스트 상세 응답을 목록 아이템 형식으로 변환한다.
-  static Map<String, dynamic> _summaryFromDetail(
-    Map<String, dynamic> detail,
-    int backtestId,
-  ) {
-    return <String, dynamic>{
+  static Future<Map<String, dynamic>> _summaryFromDetail(
+      Map<String, dynamic> detail,
+      int backtestId,
+      ) async {
+    final summary = <String, dynamic>{
       'backtestId': detail['backtestId'] ?? backtestId,
       'executedAt': detail['executedAt'],
       'matchedCount': detail['matchedCount'],
       'stockImage': detail['stockImage'],
       'stockName': detail['stockName'],
       'stockId':
-          (detail['stockId'] is num)
-              ? (detail['stockId'] as num).toInt()
-              : detail['stockId'],
+      (detail['stockId'] is num)
+          ? (detail['stockId'] as num).toInt()
+          : detail['stockId'],
       'symbol': detail['symbol'],
       'startDate': detail['startDate'],
       'averageReturn': detail['averageReturn'],
@@ -118,12 +116,15 @@ class BacktestService {
       'maxReturn': detail['maxReturn'],
       'maxReturnDate': detail['maxReturnDate'],
     };
+
+    await _fillStockImage(summary);
+    return summary;
   }
 
   static Future<Map<String, dynamic>> fetchBacktestResult(
-    int backtestId, {
-    int? stockId,
-  }) async {
+      int backtestId, {
+        int? stockId,
+      }) async {
     try {
       final res = await _dio.get(
         '/backtests/results/$backtestId',
@@ -147,6 +148,8 @@ class BacktestService {
           map['stock']['imageUrl'] != null) {
         map['stockImage'] = map['stock']['imageUrl'].toString();
       }
+
+      await _fillStockImage(map);
 
       return map;
     } catch (e) {
@@ -179,4 +182,44 @@ class BacktestService {
       throw Exception('백테스트 실행 오류: $e');
     }
   }
+}
+
+Future<void> _fillStockImage(Map<String, dynamic> map) async {
+  final current = map['stockImage']?.toString() ?? '';
+  if (current.trim().isNotEmpty) {
+    return;
+  }
+
+  final stock = map['stock'];
+  final dynamic rawId = map['stockId'] ?? (stock is Map ? stock['id'] : null);
+  final id = _parseId(rawId);
+  final name = (map['stockName'] ?? (stock is Map ? stock['name'] : null))
+      ?.toString()
+      .trim() ??
+      '';
+  if (name.isEmpty) {
+    return;
+  }
+
+  final resolved = await StockImageResolver.fetchImageUrl(
+    stockId: id,
+    stockName: name,
+  );
+  if (resolved.trim().isEmpty) {
+    return;
+  }
+
+  // 검색 결과가 존재하면 바로 주입한다.
+  map['stockImage'] = resolved;
+}
+
+/// 숫자나 문자열로 내려오는 종목 ID를 안전하게 파싱한다.
+int? _parseId(dynamic value) {
+  if (value == null) {
+    return null;
+  }
+  if (value is num) {
+    return value.toInt();
+  }
+  return int.tryParse(value.toString());
 }
