@@ -151,13 +151,24 @@ class _InterestPatternScreenState extends State<InterestPatternScreen> {
           appBar: AppBar(backgroundColor: Colors.white),
           backgroundColor: Colors.white,
           body: RefreshIndicator(
-            onRefresh: _reload,
+          onRefresh: _reload,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 StockHeader(name: title, imageUrl: headerImg),
-                Expanded(
-                  child: hasPattern
-                      ? PatternExistsView(
+
+                const Divider(
+                  color: Color(0xFFB5B5B5), // 선 색상
+                  thickness: 1,             // 두께
+                  height: 13,               // 위아래 여백 포함
+                  indent: 16,               // 왼쪽 들여쓰기
+                  endIndent: 16,            // 오른쪽 들여쓰기
+                ),
+
+                if (hasPattern)
+                  PatternExistsView(
                     data: data!,
                     onDelete: () {
                       final id = data.patternApplyId;
@@ -169,23 +180,26 @@ class _InterestPatternScreenState extends State<InterestPatternScreen> {
                       }
                       _confirmAndDelete(id);
                     },
-                    onEdit: () {final id = data.patternApplyId; // PatternApply 모델의 id
-                    if (id == null) return;
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => PatternLibraryScreen(
-                          stockId: widget.stockId,
-                          stockName: widget.stockName,
-                          patternApplyId: id, // ← 여기!
+                    onEdit: () {
+                      final id = data.patternApplyId;
+                      if (id == null) return;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PatternLibraryScreen(
+                            stockId: widget.stockId,
+                            stockName: widget.stockName,
+                            patternApplyId: id,
+                          ),
                         ),
-                      ),
-                    );},
+                      );
+                    },
                     onRunBacktest: _runningBacktest
                         ? null
                         : () => _onRunBacktest(data.pattern!.patternId),
                   )
-                      : PatternEmptyView(
+                else
+                  PatternEmptyView(
                     onAdd: () async {
                       final applied = await Navigator.push<bool>(
                         context,
@@ -198,17 +212,16 @@ class _InterestPatternScreenState extends State<InterestPatternScreen> {
                       );
 
                       if (applied == true) {
-                        // 즉시 '있음' 화면으로 전환 후 서버 동기화
                         setState(() => _future = Future.value(null));
                         await Future.delayed(const Duration(milliseconds: 120));
                         _reload();
                       }
                     },
                   ),
-                ),
               ],
             ),
           ),
+        ),
         );
       },
     );
