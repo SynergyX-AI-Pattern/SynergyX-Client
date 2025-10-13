@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:stockapp/data/recent_api.dart';
 import 'package:stockapp/models/StockItemModel.dart';
 import 'package:stockapp/models/stock_brief.dart';
+import 'package:stockapp/screens/interest/interest_screen.dart';
+import 'package:stockapp/screens/stock_detail_screen.dart';
 import 'package:stockapp/widgets/main/StockItems.dart';
-import 'package:stockapp/widgets/main/recent_stock_tile.dart';
+import 'package:stockapp/routes/TabView.dart';
 
 class RecentStockList extends StatefulWidget {
   const RecentStockList({super.key});
@@ -56,10 +58,22 @@ class _RecentStockListState extends State<RecentStockList> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(left: 16, right: 16, bottom: 8),
-              child: Text('최근 조회 종목',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20)),
+              child: Row(
+                children: [
+                  Text('최근 조회 종목',
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20)),
+                  Spacer(flex: 1),
+                  TextButton(
+                      onPressed: () {
+                        tabIndexNotifier.value = 1;        // BottomNav → 관심종목 탭
+                        interestTabNotifier.value = 1;     // WatchlistView 내부 탭 → '최근' 탭
+                  },
+                      child: const Text('더보기', style: TextStyle(color: Color(
+                          0xFF858585)),))
+                ],
+              ),
             ),
             if (items.isEmpty)
               const Padding(
@@ -88,7 +102,21 @@ class _RecentStockListState extends State<RecentStockList> {
                         ),
                         padding: EdgeInsets.symmetric(vertical: 0),
                         onTap: () {
-                          // TODO: 상세 이동
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => DetailScreen(
+                                stock: StockItem(
+                                  stockId: s.stockId,
+                                  name: s.stockName,
+                                  price: int.tryParse(s.price.replaceAll(',', '')) ?? 0,
+                                  changeRate: double.tryParse(s.changeRate.replaceAll('%', '')) ?? 0.0,
+                                  imageUrl: s.imageUrl,
+                                  rank: 0,
+                                ),
+                              ),
+                            ),
+                          );
                         },
                       ),
                     ],

@@ -6,7 +6,8 @@ import '../../widgets/common/TopTabSelector.dart';
 import '../../widgets/interest/WatchlistItem.dart';
 
 class WatchlistView extends StatefulWidget {
-  const WatchlistView({super.key});
+  final int initialIndex;
+  const WatchlistView({super.key, this.initialIndex = 0});
 
   @override
   State<WatchlistView> createState() => _WatchlistViewState();
@@ -14,8 +15,8 @@ class WatchlistView extends StatefulWidget {
 
 class _WatchlistViewState extends State<WatchlistView> {
   final _tabs = const ['관심', '최근'];
-  int _selectedIndex = 0;
-  final _pageController = PageController();
+  late int _selectedIndex;
+  late final PageController _pageController;
 
   final _api = InterestlistApi();
   final _recentApi = RecentApi();
@@ -26,6 +27,8 @@ class _WatchlistViewState extends State<WatchlistView> {
   @override
   void initState() {
     super.initState();
+    _selectedIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: _selectedIndex);
     _watchFuture = _api.fetchWatchlist();
     _recentFuture = _recentApi.fetchRecent();
   }

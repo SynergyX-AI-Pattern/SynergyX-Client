@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:stockapp/models/StockItemModel.dart'; // 시세 모델
 import 'package:stockapp/models/stock_brief.dart';
 import 'package:stockapp/screens/interest/interest_pattern_screen.dart';
+import 'package:stockapp/screens/stock_detail_screen.dart';
 import 'package:stockapp/widgets/common/app_button.dart';
 import 'package:stockapp/widgets/main/StockItems.dart'; // 재사용 타일
 
@@ -26,7 +27,23 @@ class WatchlistItem extends StatelessWidget {
 
     return StockItems(
       stock: merged,
-      onTap: onTap,
+      onTap: (){
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DetailScreen(
+              stock: StockItem(
+                stockId: stock.stockId,
+                name: stock.stockName,
+                price: int.tryParse(stock.price.replaceAll(',', '')) ?? 0,
+                changeRate: double.tryParse(stock.changeRate.replaceAll('%', '')) ?? 0.0,
+                imageUrl: stock.imageUrl,
+                rank: 0,
+              ),
+            ),
+          ),
+        );
+      },
       // 관심종목 전용 오른쪽 액션들
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
