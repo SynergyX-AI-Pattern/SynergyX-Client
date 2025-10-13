@@ -100,6 +100,7 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
           backtestResult: normalized,
         );
       });
+      _edited = true;
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -137,6 +138,7 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
       setState(() {
         _pattern = updated;
       });
+      _edited = true;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ 제목이 저장되었습니다.')));
     } catch (e) {
       if (!mounted) return;
@@ -172,7 +174,10 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
     try {
       await PatternApi.updatePattern(updated.patternId, _buildRequestFromDetail(updated));
       if (!mounted) return;
-      setState(() { _pattern = updated; });
+      setState(() {
+        _pattern = updated;
+        _edited = true;
+      });
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ 종목이 적용되었습니다.')));
     } catch (e) {
       if (!mounted) return;
@@ -198,10 +203,27 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
     try {
       await PatternApi.updatePattern(updated.patternId, _buildRequestFromDetail(updated));
       if (!mounted) return;
-      setState(() { _pattern = updated; });
+      setState(() {
+        _pattern = updated;
+        _edited = true; // 종목을 해제하면 데이터가 변하므로 상위 화면에 변경 사실을 알린다.
+      });
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ 종목 삭제 실패: $e')));
+    }
+  }
+
+  Future<void> _showBacktestDialog() async {
+    if (_pattern == null) return;
+
+    // 백테스트 팝업이 true를 반환하면 실행이 완료된 것이므로 상세/목록을 다시 불러온다.
+    final didRun = await openBacktestPopup(context, _pattern!.toJson());
+    if (didRun == true) {
+      await _fetchPatternDetail();
+      if (!mounted) return;
+      setState(() {
+        _edited = true; // 백테스트 결과가 생기면 상위 목록 새로고침을 유도한다.
+      });
     }
   }
 
@@ -247,8 +269,7 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
             icon: const Icon(Icons.play_arrow, color: Colors.black),
             tooltip: '백테스트 실행',
             onPressed: () {
-              openBacktestPopup(context, _pattern!.toJson()); // ← 여기로 교체
-            },
+              _showBacktestDialog();             },
           ),
         ],
       ),
@@ -459,59 +480,38 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
       );
     }
 
-    return FutureBuilder<List<CandleData>>(
-      future: fetchCandles(
-        stockId: "1",
-        interval: "1D",
-      ),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+    // 최근 백테스트 카드는 내부에서 캔들과 하이라이트를 모두 불러온다.
+    return RecentBacktestResultCard(
+      backtest: backtest,
+      onChangeStock: () async {
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const StockSearchPage()),
+        );
+        if (result is Map<String, dynamic> && result['id'] is int) {
+          await _runBacktestForStock(result['id'] as int, result['symbol']);
         }
-        if (snapshot.hasError) {
-          return Container(
-            padding: const EdgeInsets.all(16),
-            decoration: _cardDecoration(),
-            child: Text("캔들 데이터 불러오기 실패: ${snapshot.error}"),
+      }, // 종목 바꾸기 처리
+      onTapDetail: () async {
+        final id = backtest['backtestId'];
+        Map<String, dynamic> detail = backtest;
+        if (id != null) {
+          detail = await BacktestService.fetchBacktestResult(
+            id as int,
+            stockId: backtest['stockId'],
           );
         }
-
-        final candles = snapshot.data ?? [];
-
-        return RecentBacktestResultCard(
-          backtest: backtest,
-          candles: candles,
-          onChangeStock: () async {
-            final result = await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const StockSearchPage()),
-            );
-            if (result is Map<String, dynamic> && result['id'] is int) {
-              await _runBacktestForStock(result['id'] as int, result['symbol']);
-            }
-          }, // 종목 바꾸기 처리
-          onTapDetail: () async {
-            final id = backtest['backtestId'];
-            Map<String, dynamic> detail = backtest;
-            if (id != null) {
-              detail = await BacktestService.fetchBacktestResult(
-                id as int,
-                stockId: backtest['stockId'],
-              );
-            }
-            if (!context.mounted) return;
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                builder: (_) => BacktestResultScreen(result: detail)
-                ),
-            );
-          }, // 상세 결과 화면 이동
-          onRunBacktest: () {
-            openBacktestPopup(context, _pattern!.toJson());
-          }, // 다시 테스트 실행
+        if (!context.mounted) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => BacktestResultScreen(result: detail),
+          ),
         );
-      },
+      }, // 상세 결과 화면 이동
+      onRunBacktest: () {
+        _showBacktestDialog();
+      }, // 다시 테스트 실행
     );
   }
 
@@ -571,8 +571,7 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                       ),
                       child: Row(
                         children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
+                          ClipOval(
                             child: _buildStockImage(stocks[i]["stockImage"] as String?),
                           ),
                           const SizedBox(width: 12),
@@ -725,13 +724,15 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
     );
   }
 }
-
-void openBacktestPopup(BuildContext context, Map<String, dynamic> patternData) {
-  showDialog(
+Future<bool?> openBacktestPopup(
+    BuildContext context,
+    Map<String, dynamic> patternData,
+    ) {
+  return showDialog<bool>(
     context: context,
     barrierDismissible: false,
     barrierColor: Colors.transparent,
-    builder: (_) {
+    builder: (dialogContext) {
       return Stack(
         children: [
           Positioned.fill(
@@ -740,10 +741,22 @@ void openBacktestPopup(BuildContext context, Map<String, dynamic> patternData) {
               child: Container(color: Colors.white.withValues(alpha: 0.6)),
             ),
           ),
-          Center(child: BacktestPopup(patternData: patternData)),
+          Center(
+            child: BacktestPopup(
+              patternData: patternData,
+              onCompleted: (result) {
+                Navigator.of(dialogContext).pop(true);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => BacktestResultScreen(result: result),
+                  ),
+                );
+              },
+            ),
+          ),
         ],
       );
     },
   );
 }
-

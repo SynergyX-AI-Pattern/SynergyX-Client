@@ -3,6 +3,8 @@ import 'package:stockapp/models/pattern.dart';
 import 'package:stockapp/models/pattern_request.dart';
 export 'package:stockapp/models/pattern_request.dart';
 import 'package:stockapp/services/api_client.dart';
+import 'package:stockapp/services/stock_image_resolver.dart';
+
 
 class PatternApi {
   static final Dio _dio = ApiClient.dio;
@@ -31,7 +33,11 @@ class PatternApi {
     if (result == null || result is! Map) {
       throw Exception('패턴 상세 result가 비었거나 형식이 아님: $result');
     }
-    return PatternDetail.fromJson(result as Map<String, dynamic>);
+    final detail = PatternDetail.fromJson(result as Map<String, dynamic>);
+
+    await _fillAppliedStockImages(detail.appliedStockList);
+
+    return detail;
   }
 
   // 패턴 생성
@@ -49,4 +55,43 @@ class PatternApi {
     await _dio.delete('/patterns/$patternId');
   }
 
+}
+
+/// 패턴 상세에서 받은 종목 목록에 이미지가 없으면 검색 API로 채워 준다.
+Future<void> _fillAppliedStockImages(
+    List<Map<String, dynamic>> appliedStockList) async {
+  for (final stock in appliedStockList) {
+    final current = stock['stockImage']?.toString() ?? '';
+    if (current.trim().isNotEmpty) {
+      continue;
+    }
+
+    final id = _parseId(stock['stockId'] ?? stock['id']);
+    final name = (stock['stockName'] ?? stock['name'] ?? '')
+        .toString()
+        .trim();
+    if (name.isEmpty) {
+      continue;
+    }
+
+    final resolved = await StockImageResolver.fetchImageUrl(
+      stockId: id,
+      stockName: name,
+    );
+    if (resolved.trim().isEmpty) {
+      continue;
+    }
+
+    stock['stockImage'] = resolved;
+  }
+}
+
+int? _parseId(dynamic value) {
+  if (value == null) {
+    return null;
+  }
+  if (value is num) {
+    return value.toInt();
+  }
+  return int.tryParse(value.toString());
 }

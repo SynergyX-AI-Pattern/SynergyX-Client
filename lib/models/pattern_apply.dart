@@ -19,6 +19,18 @@ class PatternApply {
     this.isAlertEnabled,
   });
 
+  PatternApply copyWith({String? stockImage}) {
+    return PatternApply(
+      stockId: stockId,
+      stockName: stockName,
+      stockImage: stockImage ?? this.stockImage,
+      pattern: pattern,
+      backtest: backtest,
+      patternApplyId: patternApplyId,
+      isAlertEnabled: isAlertEnabled,
+    );
+  }
+
   factory PatternApply.fromJson(Map<String, dynamic> json) {
     final r = json['result'] as Map<String, dynamic>;
     final stock = r['stock'] as Map<String, dynamic>;
@@ -65,17 +77,16 @@ class PatternInfo {
   );
 }
 
-// ★ 백테스트 결과 모델 추가
 class BacktestResult {
   final int backtestId;
-  final String executedAt;   // '2025-08-16'
-  final String startDate;    // '2025-07-01'
-  final String endDate;      // '2025-08-13'
-  final int matchedCount;    // 5
-  final num winRate;         // 20  (단위: %)
-  final double averageReturn; // 0.05342... (단위: 비율)
-  final double maxReturn;     // 1.92 (단위: % 인지 리턴값 인지 백엔드 정의에 따름)
-  final String maxReturnDate; // '2025-07-14'
+  final String executedAt;
+  final String startDate;
+  final String endDate;
+  final int matchedCount;
+  final num winRate;
+  final double averageReturn;
+  final double maxReturn;
+  final String maxReturnDate;
 
   BacktestResult({
     required this.backtestId,
@@ -111,6 +122,5 @@ class BacktestResult {
     'averageReturn': averageReturn,
     'maxReturn': maxReturn,
     'maxReturnDate': maxReturnDate,
-    // 필요한 필드 더 있으면 여기에 추가
   };
 }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
 
 import 'package:stockapp/data/pattern_api.dart';
 

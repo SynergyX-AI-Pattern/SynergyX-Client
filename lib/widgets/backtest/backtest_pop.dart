@@ -14,7 +14,13 @@ import 'package:stockapp/models/backtest_result.dart'; // 상세 결과 모델
 
 class BacktestPopup extends StatefulWidget {
   final Map<String, dynamic> patternData;
-  const BacktestPopup({super.key, required this.patternData});
+  final void Function(Map<String, dynamic> result)? onCompleted;
+
+  const BacktestPopup({
+    super.key,
+    required this.patternData,
+    this.onCompleted,
+  });
 
   @override
   State<BacktestPopup> createState() => _BacktestPopupState();
@@ -149,11 +155,17 @@ class _BacktestPopupState extends State<BacktestPopup> {
       'targetReturn': double.tryParse(_profitController.text),
 
     };
+    if (widget.onCompleted != null) {
+      widget.onCompleted!(mergedForScreen);
+      return;
+    }
 
-    // 팝업 닫고 결과 화면으로
-    Navigator.of(context).pop();
-    Navigator.push(
-      context,
+    if (!mounted) return;
+
+    final navigator = Navigator.of(context);
+    final rootNavigator = Navigator.of(context, rootNavigator: true);
+    navigator.pop(true);
+    rootNavigator.push(
       MaterialPageRoute(builder: (_) => BacktestResultScreen(result: mergedForScreen)),
     );
   }

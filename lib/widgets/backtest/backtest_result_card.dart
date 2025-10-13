@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// 네트워크 이미지 주소가 비어있는 경우를 안전하게 처리하기 위한 헬퍼 함수.
 ImageProvider? safeNetworkImage(String? url) {
   if (url == null) return null;
   final trimmed = url.trim();

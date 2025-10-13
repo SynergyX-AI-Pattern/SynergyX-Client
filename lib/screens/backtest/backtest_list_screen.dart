@@ -1,9 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:interactive_chart/interactive_chart.dart';
 import 'package:stockapp/screens/backtest/backtest_result_screen.dart';
 import 'package:stockapp/data/backtest_api.dart';
 
-import 'package:stockapp/data/candle_api.dart';
+import 'package:stockapp/widgets/backtest/backtest_result_chart.dart';
 import 'package:stockapp/widgets/common/InfoCardGroup.dart';
 
 // backtest_list_screen.dart
@@ -127,7 +127,7 @@ ImageProvider? safeNetworkImage(String? url) {
   return NetworkImage(trimmed);
 }
 
-class _BacktestResultCard extends StatelessWidget {
+class _BacktestResultCard extends StatefulWidget {
   final Map<String, dynamic> summary;
   final VoidCallback onMore;
   final VoidCallback onRerun;
@@ -137,6 +137,42 @@ class _BacktestResultCard extends StatelessWidget {
     required this.onMore,
     required this.onRerun,
   });
+
+  @override
+  State<_BacktestResultCard> createState() => _BacktestResultCardState();
+}
+
+class _BacktestResultCardState extends State<_BacktestResultCard> {
+  Map<String, dynamic>? _detail;
+
+  @override
+  void didUpdateWidget(covariant _BacktestResultCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!mapEquals(widget.summary, oldWidget.summary)) {
+      setState(() {
+        _detail = null;
+      });
+    }
+  }
+
+  /// result 키 하위에 존재하는 상세 데이터를 평평하게 정규화한다.
+  Map<String, dynamic> _normalize(Map<String, dynamic> raw) {
+    final result = raw['result'];
+    if (result is Map) {
+      return Map<String, dynamic>.from(result as Map);
+    }
+    return Map<String, dynamic>.from(raw);
+  }
+
+  /// 상세 데이터를 우선 적용하고, 없으면 요약 데이터를 사용한다.
+  Map<String, dynamic> get _result => _normalize(_detail ?? widget.summary);
+
+  /// 차트 위젯이 상세 데이터를 로드했을 때 상태를 갱신한다.
+  void _handleDetailLoaded(Map<String, dynamic> detail) {
+    setState(() {
+      _detail = detail;
+    });
+  }
 
   BoxDecoration _cardDecoration() {
     return BoxDecoration(
@@ -149,25 +185,23 @@ class _BacktestResultCard extends StatelessWidget {
   }
 
   String _formatPercent(dynamic value, {bool isRatio = false}) {
-    if (value == null) return "0.00%";
+    if (value == null) return '0.00%';
     final numVal = (value is num) ? value : num.tryParse(value.toString()) ?? 0;
     final p = isRatio ? numVal : numVal;
-    return "${p.toStringAsFixed(2)}%";
+    return '${p.toStringAsFixed(2)}%';
   }
 
   @override
   Widget build(BuildContext context) {
-    final executedAt = summary['executedAt'] ?? '';
-    final matchedCount = summary['matchedCount'] ?? 0;
-    final stockImage = summary['stockImage'] ?? '';
-    final stockName = summary['stockName'] ?? '';
-    final stockId =
-    (summary['stockId'] ?? summary['symbol'] ?? '').toString();
-    final startDate = summary['startDate'] ?? '';
-    final avgReturn = summary['averageReturn'];
-    final winRate = summary['winRate'];
-    final maxReturn = summary['maxReturn'];
-    final maxReturnDt = summary['maxReturnDate'];
+    final executedAt = widget.summary['executedAt'] ?? '';
+    final matchedCount = widget.summary['matchedCount'] ?? 0;
+    final stockImage = widget.summary['stockImage'] ?? '';
+    final stockName = widget.summary['stockName'] ?? '';
+    final startDate = widget.summary['startDate'] ?? '';
+    final avgReturn = _result['averageReturn'];
+    final winRate = _result['winRate'];
+    final maxReturn = _result['maxReturn'];
+    final maxReturnDt = _result['maxReturnDate'];
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -175,91 +209,68 @@ class _BacktestResultCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("최근 백테스팅 결과",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-
+          const Text(
+            '최근 백테스팅 결과',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
           Row(
             children: [
-              Text("실행한 날짜: $executedAt",
-                  style: const TextStyle(fontSize: 13, color: Colors.grey)),
+              Text(
+                '실행한 날짜: $executedAt',
+                style: const TextStyle(fontSize: 13, color: Colors.grey),
+              ),
               const Spacer(),
-              Text("매칭 횟수: $matchedCount",
-                  style: const TextStyle(fontSize: 13, color: Colors.grey)),
+              Text(
+                '매칭 횟수: $matchedCount',
+                style: const TextStyle(fontSize: 13, color: Colors.grey),
+              ),
             ],
           ),
           const SizedBox(height: 12),
-
           Row(
             children: [
               CircleAvatar(
                 radius: 20,
                 backgroundImage: safeNetworkImage(stockImage),
-                child: (stockImage == null || stockImage.trim().isEmpty)
+                child: (stockImage == null || stockImage.toString().trim().isEmpty)
                     ? const Icon(Icons.image_not_supported, size: 18, color: Colors.grey)
                     : null,
               ),
               const SizedBox(width: 12),
-              Text(stockName,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              Text(
+                stockName,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
             ],
           ),
-
           const SizedBox(height: 16),
-
           SizedBox(
             height: 200,
-            child: FutureBuilder<List<CandleData>>(
-              future: fetchCandles(
-                stockId: stockId.isEmpty ? "1" : stockId,
-                interval: "1D",
-              ),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Text(
-                      "캔들 데이터 불러오기 실패: ${snapshot.error}",
-                      style: const TextStyle(color: Colors.red, fontSize: 12),
-                      textAlign: TextAlign.center,
-                    ),
-                  );
-                }
-                final candles = snapshot.data ?? [];
-                if (candles.isEmpty) {
-                  return const Center(
-                      child: Text("캔들 데이터 없음", style: TextStyle(color: Colors.grey)));
-                }
-                return InteractiveChart(
-                  candles: candles,
-                  style: const ChartStyle(
-                    priceGainColor: Colors.red,
-                    priceLossColor: Colors.blue,
-                  ),
-                );
-              },
+            child: BacktestResultChart(
+              summary: widget.summary,
+              onDetailLoaded: _handleDetailLoaded,
             ),
           ),
-
           const SizedBox(height: 8),
-
           Row(
             children: [
-              Text("시작 날짜: $startDate",
-                  style: const TextStyle(fontSize: 13, color: Colors.grey)),
+              Text(
+                '시작 날짜: $startDate',
+                style: const TextStyle(fontSize: 13, color: Colors.grey),
+              ),
               const SizedBox(width: 16),
-              Text("수익률: ${_formatPercent(avgReturn)}",
-                  style: const TextStyle(fontSize: 13, color: Colors.grey)),
+              Text(
+                '수익률: ${_formatPercent(avgReturn)}',
+                style: const TextStyle(fontSize: 13, color: Colors.grey),
+              ),
               const Spacer(),
               TextButton(
-                onPressed: onMore, // 상세 페이지 이동
+                onPressed: widget.onMore,
                 style: TextButton.styleFrom(foregroundColor: Colors.black),
-                child: const Text("더보기"),
+                child: const Text('더보기'),
               ),
             ],
           ),
-
           InfoCardGroup(
             rows: [
               {'label': '승률', 'value': _formatPercent(winRate)},
@@ -275,6 +286,14 @@ class _BacktestResultCard extends StatelessWidget {
                 'color': const Color(0xFF289BF6)
               },
             ],
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: widget.onRerun,
+              style: TextButton.styleFrom(foregroundColor: Colors.black),
+              child: const Text('다시 실행'),
+            ),
           ),
         ],
       ),
