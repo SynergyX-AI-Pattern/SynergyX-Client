@@ -459,59 +459,38 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
       );
     }
 
-    return FutureBuilder<List<CandleData>>(
-      future: fetchCandles(
-        stockId: "1",
-        interval: "1D",
-      ),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+    // 최근 백테스트 카드는 내부에서 캔들과 하이라이트를 모두 불러온다.
+    return RecentBacktestResultCard(
+      backtest: backtest,
+      onChangeStock: () async {
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const StockSearchPage()),
+        );
+        if (result is Map<String, dynamic> && result['id'] is int) {
+          await _runBacktestForStock(result['id'] as int, result['symbol']);
         }
-        if (snapshot.hasError) {
-          return Container(
-            padding: const EdgeInsets.all(16),
-            decoration: _cardDecoration(),
-            child: Text("캔들 데이터 불러오기 실패: ${snapshot.error}"),
+      }, // 종목 바꾸기 처리
+      onTapDetail: () async {
+        final id = backtest['backtestId'];
+        Map<String, dynamic> detail = backtest;
+        if (id != null) {
+          detail = await BacktestService.fetchBacktestResult(
+            id as int,
+            stockId: backtest['stockId'],
           );
         }
-
-        final candles = snapshot.data ?? [];
-
-        return RecentBacktestResultCard(
-          backtest: backtest,
-          candles: candles,
-          onChangeStock: () async {
-            final result = await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const StockSearchPage()),
-            );
-            if (result is Map<String, dynamic> && result['id'] is int) {
-              await _runBacktestForStock(result['id'] as int, result['symbol']);
-            }
-          }, // 종목 바꾸기 처리
-          onTapDetail: () async {
-            final id = backtest['backtestId'];
-            Map<String, dynamic> detail = backtest;
-            if (id != null) {
-              detail = await BacktestService.fetchBacktestResult(
-                id as int,
-                stockId: backtest['stockId'],
-              );
-            }
-            if (!context.mounted) return;
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                builder: (_) => BacktestResultScreen(result: detail)
-                ),
-            );
-          }, // 상세 결과 화면 이동
-          onRunBacktest: () {
-            openBacktestPopup(context, _pattern!.toJson());
-          }, // 다시 테스트 실행
+        if (!context.mounted) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => BacktestResultScreen(result: detail),
+          ),
         );
-      },
+      }, // 상세 결과 화면 이동
+      onRunBacktest: () {
+        openBacktestPopup(context, _pattern!.toJson());
+      }, // 다시 테스트 실행
     );
   }
 

@@ -1,10 +1,7 @@
 // backtest_result_screen.dart
 import 'package:flutter/material.dart';
-import 'package:interactive_chart/interactive_chart.dart';
-import 'package:stockapp/data/backtest_candle_api.dart';
 
-import 'package:stockapp/data/backtest_api.dart';
-import 'dart:math' as math;
+import 'package:stockapp/widgets/backtest/backtest_result_chart.dart';
 
 /// 백테스트 결과 상세 화면
 class BacktestResultScreen extends StatefulWidget {
@@ -17,16 +14,6 @@ class BacktestResultScreen extends StatefulWidget {
 
 class _BacktestResultScreenState extends State<BacktestResultScreen> {
   Map<String, dynamic>? _detail;
-
-  List<CandleData> _candles = [];
-  bool _candleLoading = false;
-
-  List<int> _patternPoints = [];
-  int? _matchStart;
-  int? _matchEnd;
-  DateTime? _hlFrom;
-  DateTime? _hlTo;
-
 
   Map<String, dynamic> get _res {
     final root = _detail ?? widget.result;
@@ -55,162 +42,13 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
     return s.split('T').first;
   }
 
-  DateTime? _parseDate(dynamic s) {
-    if (s == null) return null;
-    final str = s.toString();
-    if (str.isEmpty) return null;
-    return DateTime.tryParse(str);
-  }
-
-  // 하이라이트 적용
-  void _applyBestMatch(Map<String, dynamic> data) {
-    final hr = data['highlightRange'];
-    final hasHR = hr is Map && (hr['fromDate'] != null && hr['toDate'] != null);
-
-
-    List<int> pts = [];
-    final dynamic matchesRaw = data['matches'] ?? data['matchResults'];
-    if (matchesRaw is List && matchesRaw.isNotEmpty) {
-      Map<String, dynamic> best = Map<String, dynamic>.from(matchesRaw.first as Map);
-      double bestReturn = _asNum<double>(
-        best['return'] ?? best['profit'] ?? best['returnRate'] ?? best['rate'],
-      ) ??
-          0;
-
-      for (final m in matchesRaw.skip(1)) {
-        final r = _asNum<double>(m['return'] ?? m['profit'] ?? m['returnRate'] ?? m['rate']) ?? 0;
-        if (r > bestReturn) {
-          best = Map<String, dynamic>.from(m as Map);
-          bestReturn = r;
-        }
-      }
-      final dynamic pp = best['patternPoints'] ?? best['points'];
-      if (pp is List) {
-        pts = pp.map((e) => _asNum<int>(e) ?? 0).toList();
-      }
-
-      if (!hasHR) {
-        final s = _asNum<int>(best['startIndex'] ?? best['matchStartIndex'] ?? best['start']);
-        final e = _asNum<int>(best['endIndex'] ?? best['matchEndIndex'] ?? best['end']);
-        setState(() {
-          _patternPoints = pts;
-          _matchStart = s;
-          _matchEnd = e;
-          _hlFrom = null;
-          _hlTo = null;
-        });
-        return;
-      }
-    }
-
-    if (hasHR) {
-      setState(() {
-        _hlFrom = _parseDate(hr['fromDate']);
-        _hlTo   = _parseDate(hr['toDate']);
-        _patternPoints = pts;
-        _matchStart = null;
-        _matchEnd   = null;
-      });
-      return;
-    }
-
-    final s = _asNum<int>(data['startIndex'] ?? data['matchStartIndex'] ?? data['matchStart']);
-    final e = _asNum<int>(data['endIndex']   ?? data['matchEndIndex']   ?? data['matchEnd']);
+  /// 차트가 상세 데이터를 받아오면 화면 전체에 반영한다.
+  void _handleDetailLoaded(Map<String, dynamic> detail) {
     setState(() {
-      _patternPoints = pts;
-      _matchStart = s;
-      _matchEnd = e;
-      _hlFrom = null;
-      _hlTo = null;
+      _detail = detail;
     });
   }
 
-  void _applyHighlightFromDates() {
-    if (_hlFrom == null || _hlTo == null || _candles.isEmpty) return;
-
-    final from = _hlFrom!.toLocal();
-    final to   = _hlTo!.toLocal();
-
-    int? startIdx;
-    for (int i = 0; i < _candles.length; i++) {
-      final t = DateTime.fromMillisecondsSinceEpoch(_candles[i].timestamp).toLocal();
-      if (!t.isBefore(from)) { startIdx = i; break; }
-    }
-    if (startIdx == null) return;
-
-    int endIdx = _candles.length - 1;
-    for (int i = startIdx; i < _candles.length; i++) {
-      final t = DateTime.fromMillisecondsSinceEpoch(_candles[i].timestamp).toLocal();
-      if (t.isAfter(to)) { endIdx = i - 1; break; }
-    }
-    if (endIdx < startIdx) return;
-
-    setState(() { _matchStart = startIdx; _matchEnd = endIdx; });
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _applyBestMatch(_res);
-    _loadDetail();
-  }
-
-  Future<void> _loadDetail() async {
-    final id = _asNum<int>(_res['backtestId'] ?? widget.result['backtestId']);
-    if (id == null) return;
-
-    try {
-      final stockId = _asNum<int>(_res['stockId'] ?? widget.result['stockId']);
-      final fetched = await BacktestService.fetchBacktestResult(
-        id,
-        stockId: stockId,
-      );
-
-      setState(() {
-        _detail = fetched;
-      });
-
-      _applyBestMatch(fetched);
-
-
-      await _loadCandles();
-    } catch (e) {
-      debugPrint('⚠️ 상세 로딩 실패: $e');
-    }
-  }
-
-  Future<void> _loadCandles() async {
-    final res = _res;
-
-    final int? backtestId =
-    _asNum<int>(res['backtestId'] ?? widget.result['backtestId']);
-
-    if (backtestId == null) {
-      debugPrint('⚠️ backtestId가 없어 캔들 요청을 생략합니다.');
-      return;
-    }
-
-    setState(() => _candleLoading = true);
-    try {
-      // margin 기본값(20)으로 백테스트 캔들을 조회한다.
-      final candles = await fetchBacktestCandles(
-        backtestId: backtestId,
-      );
-
-      setState(() {
-        _candles = candles;
-        _candleLoading = false;
-      });
-
-      _applyHighlightFromDates();
-
-    } catch (e) {
-      setState(() {
-        _candleLoading = false;
-        _candles = [];
-      });
-    }
-  }
   @override
   Widget build(BuildContext context) {
     final res = _res;
@@ -284,33 +122,9 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
             // 차트 카드 영역
             SizedBox(
               height: 200,
-              child: _candleLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _candles.isEmpty
-                  ? const Center(child: Text('캔들 데이터 없음'))
-                  : Stack(
-                children: [
-                  InteractiveChart(
-                    candles: _candles,
-                    style: const ChartStyle(
-                      priceGainColor: Color(0xFFDF1525),
-                      priceLossColor: Color(0xFF1573FE),
-                    ),
-                  ),
-                  if (_matchStart != null &&
-                      _matchEnd != null &&
-                      _matchEnd! >= _matchStart!)
-                    Positioned.fill(
-                      child: CustomPaint(
-                        painter: _MatchOverlayPainter(
-                          start: _matchStart!,
-                          end: _matchEnd!,
-                          total: _candles.length,
-                          patternPoints: _patternPoints,
-                        ),
-                      ),
-                    ),
-                ],
+              child: BacktestHighlightChart(
+                summary: widget.result,
+                onDetailLoaded: _handleDetailLoaded,
               ),
             ),
             const SizedBox(height: 16),
@@ -458,81 +272,5 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
         ),
       ),
     );
-  }
-}
-
-/// 매칭 구간/패턴 오버레이 페인터
-class _MatchOverlayPainter extends CustomPainter {
-  final int start;
-  final int end;
-  final int total;
-  final List<int> patternPoints;
-
-  _MatchOverlayPainter({
-    required this.start,
-    required this.end,
-    required this.total,
-    required this.patternPoints,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (total <= 0 || end < start) return;
-
-    final candleWidth = size.width / total;
-    final rect = Rect.fromLTWH(
-      start * candleWidth,
-      0,
-      (end - start + 1) * candleWidth,
-      size.height,
-    );
-
-    // 매칭 영역 음영
-    final fill = Paint()
-      ..color = Colors.amber.withValues(alpha:0.2)
-
-      ..style = PaintingStyle.fill;
-    canvas.drawRect(rect, fill);
-
-    // 테두리
-    final border = Paint()
-      ..color = Colors.amber
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-    canvas.drawRect(rect, border);
-
-    // 패턴 모양(선) — 서버가 제공한 경우에만
-    if (patternPoints.length >= 2) {
-      final minY = patternPoints.reduce(math.min).toDouble();
-      final maxY = patternPoints.reduce(math.max).toDouble();
-      final diffY = (maxY - minY == 0) ? 1 : maxY - minY;
-
-      final path = Path();
-      for (int i = 0; i < patternPoints.length; i++) {
-        final x =
-            rect.left + (i / (patternPoints.length - 1)) * rect.width;
-        final normY = (patternPoints[i] - minY) / diffY;
-        final y = rect.bottom - normY * rect.height;
-        if (i == 0) {
-          path.moveTo(x, y);
-        } else {
-          path.lineTo(x, y);
-        }
-      }
-
-      final line = Paint()
-        ..color = Colors.black
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2;
-      canvas.drawPath(path, line);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _MatchOverlayPainter old) {
-    return start != old.start ||
-        end != old.end ||
-        total != old.total ||
-        patternPoints != old.patternPoints;
   }
 }
