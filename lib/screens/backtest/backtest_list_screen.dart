@@ -246,7 +246,7 @@ class _BacktestResultCardState extends State<_BacktestResultCard> {
           const SizedBox(height: 16),
           SizedBox(
             height: 200,
-            child: BacktestHighlightChart(
+            child: BacktestResultChart(
               summary: widget.summary,
               onDetailLoaded: _handleDetailLoaded,
             ),

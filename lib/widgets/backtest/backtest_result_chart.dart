@@ -6,13 +6,13 @@ import 'package:stockapp/data/backtest_api.dart';
 import 'package:stockapp/data/backtest_candle_api.dart';
 import 'package:stockapp/widgets/backtest/backtest_result_overlay.dart';
 
-class BacktestHighlightChart extends StatefulWidget {
+class BacktestResultChart extends StatefulWidget {
   final Map<String, dynamic> summary;
   final ChartStyle chartStyle;
   final String emptyMessage;
   final ValueChanged<Map<String, dynamic>>? onDetailLoaded;
 
-  const BacktestHighlightChart({
+  const BacktestResultChart({
     super.key,
     required this.summary,
     this.chartStyle = const ChartStyle(
@@ -24,10 +24,10 @@ class BacktestHighlightChart extends StatefulWidget {
   });
 
   @override
-  State<BacktestHighlightChart> createState() => _BacktestHighlightChartState();
+  State<BacktestResultChart> createState() => _BacktestResultChartState();
 }
 
-class _BacktestHighlightChartState extends State<BacktestHighlightChart> {
+class _BacktestResultChartState extends State<BacktestResultChart> {
   Map<String, dynamic>? _detail;
   List<CandleData> _candles = const <CandleData>[];
   List<int> _patternPoints = const <int>[];
@@ -56,7 +56,7 @@ class _BacktestHighlightChartState extends State<BacktestHighlightChart> {
   }
 
   @override
-  void didUpdateWidget(covariant BacktestHighlightChart oldWidget) {
+  void didUpdateWidget(covariant BacktestResultChart oldWidget) {
     super.didUpdateWidget(oldWidget);
 
     final int? oldId = _asInt(_extractBacktestId(oldWidget.summary));
@@ -322,7 +322,7 @@ class _BacktestHighlightChartState extends State<BacktestHighlightChart> {
             _highlightEnd! >= _highlightStart!)
           Positioned.fill(
             child: CustomPaint(
-              painter: BacktestMatchOverlayPainter(
+              painter: BacktestresultOverlay(
                 start: _highlightStart!,
                 end: _highlightEnd!,
                 total: _candles.length,

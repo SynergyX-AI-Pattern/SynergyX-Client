@@ -1,13 +1,13 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
-class BacktestMatchOverlayPainter extends CustomPainter {
+class BacktestresultOverlay extends CustomPainter {
   final int start;
   final int end;
   final int total;
   final List<int> patternPoints;
 
-  const BacktestMatchOverlayPainter({
+  const BacktestresultOverlay({
     required this.start,
     required this.end,
     required this.total,
@@ -64,7 +64,7 @@ class BacktestMatchOverlayPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant BacktestMatchOverlayPainter oldDelegate) {
+  bool shouldRepaint(covariant BacktestresultOverlay oldDelegate) {
     return start != oldDelegate.start ||
         end != oldDelegate.end ||
         total != oldDelegate.total ||

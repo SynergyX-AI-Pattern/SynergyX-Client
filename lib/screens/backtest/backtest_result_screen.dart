@@ -122,7 +122,7 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
             // 차트 카드 영역
             SizedBox(
               height: 200,
-              child: BacktestHighlightChart(
+              child: BacktestResultChart(
                 summary: widget.result,
                 onDetailLoaded: _handleDetailLoaded,
               ),
