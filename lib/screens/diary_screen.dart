@@ -63,7 +63,9 @@ class _DiaryScreenState extends State<DiaryScreen> {
     }
   }
 
-  Map<String, List<Map<String, dynamic>>> groupDiariesByDate(List<Map<String, dynamic>> diaries) {
+  Map<String, List<Map<String, dynamic>>> groupDiariesByDate(
+    List<Map<String, dynamic>> diaries,
+  ) {
     final Map<String, List<Map<String, dynamic>>> grouped = {};
 
     for (final diary in diaries) {
@@ -81,12 +83,13 @@ class _DiaryScreenState extends State<DiaryScreen> {
   void _confirmDelete(int diaryId) async {
     final shouldDelete = await showDialog<bool>(
       context: context,
-      builder: (context) => AppConfirmDialog(
-        title: '일기 삭제',
-        content: '정말 이 감정일기를 삭제하시겠습니까?',
-        cancelText: '취소',
-        confirmText: '삭제',
-      ),
+      builder:
+          (context) => AppConfirmDialog(
+            title: '일기 삭제',
+            content: '정말 이 감정일기를 삭제하시겠습니까?',
+            cancelText: '취소',
+            confirmText: '삭제',
+          ),
     );
 
     if (shouldDelete == true) {
@@ -97,7 +100,8 @@ class _DiaryScreenState extends State<DiaryScreen> {
 
   List<Widget> _buildGroupedDiaryWidgets() {
     final grouped = groupDiariesByDate(_diaryList);
-    final sortedDateKeys = grouped.keys.toList()..sort((a, b) => a.compareTo(b));
+    final sortedDateKeys =
+        grouped.keys.toList()..sort((a, b) => a.compareTo(b));
 
     final List<Widget> widgets = [];
 
@@ -119,7 +123,10 @@ class _DiaryScreenState extends State<DiaryScreen> {
       for (final diary in grouped[dateKey]!) {
         widgets.addAll([
           const SizedBox(height: 6),
-          DiaryBubble(text: diary['content'] ?? '', onDelete: () => _confirmDelete(diary['diaryId'])),
+          DiaryBubble(
+            text: diary['content'] ?? '',
+            onDelete: () => _confirmDelete(diary['diaryId']),
+          ),
           const SizedBox(height: 8),
           EmotionAnalysisCard(
             emotions: List<String>.from(diary['emotion'] ?? []),
@@ -156,7 +163,6 @@ class _DiaryScreenState extends State<DiaryScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: EmotionInputBar(onSubmit: _submitDiary),
             ),
-            const SizedBox(height: 12),
           ],
         ),
       ),
