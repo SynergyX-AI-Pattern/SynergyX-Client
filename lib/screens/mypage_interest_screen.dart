@@ -63,7 +63,7 @@ class _WatchlistEditPageState extends State<WatchlistEditPage> {
 
       // 2. 로컬 리스트 갱신
       setState(() {
-        _items.removeWhere((e) => _selected.contains(e.id));
+        _items.removeWhere((e) => _selected.contains(e.stockId));
         _selected.clear();
         if (_items.isEmpty) _editMode = false;
       });
@@ -128,7 +128,7 @@ class _WatchlistEditPageState extends State<WatchlistEditPage> {
                       setState(() {
                         if (checked == true) {
                           _selected.clear();
-                          _selected.addAll(_items.map((e) => e.id));
+                          _selected.addAll(_items.map((e) => e.stockId));
                         } else {
                           _selected.clear();
                         }
@@ -187,7 +187,7 @@ class _WatchlistEditPageState extends State<WatchlistEditPage> {
           item: item,
           onTap: () {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('${item.name} 상세로 이동')),
+              SnackBar(content: Text('${item.stockName} 상세로 이동')),
             );
           },
           trailing: const Icon(Icons.chevron_right_rounded, color: Colors.grey),
@@ -203,10 +203,10 @@ class _WatchlistEditPageState extends State<WatchlistEditPage> {
       itemCount: _items.length,
       itemBuilder: (context, index) {
         final item = _items[index];
-        final selected = _selected.contains(item.id);
+        final selected = _selected.contains(item.stockId);
 
         return Dismissible(
-          key: ValueKey(item.id),
+          key: ValueKey(item.stockId),
           background: Container(
             color: Colors.redAccent,
             alignment: Alignment.centerRight,
@@ -228,9 +228,9 @@ class _WatchlistEditPageState extends State<WatchlistEditPage> {
                 onChanged: (v) {
                   setState(() {
                     if (v == true) {
-                      _selected.add(item.id);
+                      _selected.add(item.stockId);
                     } else {
-                      _selected.remove(item.id);
+                      _selected.remove(item.stockId);
                     }
                   });
                 },
@@ -240,9 +240,9 @@ class _WatchlistEditPageState extends State<WatchlistEditPage> {
               onTap: () {
                 setState(() {
                   if (selected) {
-                    _selected.remove(item.id);
+                    _selected.remove(item.stockId);
                   } else {
-                    _selected.add(item.id);
+                    _selected.add(item.stockId);
                   }
                 });
               },

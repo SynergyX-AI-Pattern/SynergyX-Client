@@ -36,8 +36,8 @@ class StockTile extends StatelessWidget {
                 item.imageUrl != null ? NetworkImage(item.imageUrl!) : null,
                 child: item.imageUrl == null
                     ? Text(
-                  item.name.isNotEmpty
-                      ? item.name.characters.first
+                  item.stockName.isNotEmpty
+                      ? item.stockName.characters.first
                       : '?',
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
@@ -55,7 +55,7 @@ class StockTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(item.name,
+                    Text(item.stockName,
                         style: const TextStyle(
                             fontSize: 15, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 2),

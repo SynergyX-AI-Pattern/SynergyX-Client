@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:stockapp/models/pattern_apply.dart';
 import 'package:stockapp/widgets/common/app_button.dart';
-import 'package:stockapp/widgets/common/backtest_candle_chart.dart';
 import 'package:stockapp/widgets/common/pattern_line_chart.dart';
 import 'package:stockapp/widgets/interest/BacktestResultCard.dart';
 import 'package:stockapp/widgets/interest/pattern_alert_button.dart';
 import 'package:stockapp/widgets/interest/pattern_controls_row.dart';
-import 'package:stockapp/widgets/interest/pattern_section_header.dart';
 
 class PatternExistsView extends StatelessWidget {
   final PatternApply data;

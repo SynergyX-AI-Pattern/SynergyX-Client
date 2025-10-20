@@ -29,7 +29,8 @@ class MainScreen extends StatelessWidget {
                   SizedBox(height: 8),
                   Topstock(),
                   SizedBox(height: 8),
-                  const RecentStockList()
+                  const RecentStockList(),
+                  SizedBox(height: 8)
                 ],
               ),
             ),
