@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class InfoCardGroup extends StatelessWidget {
   final String? title;
   final List<Map<String, dynamic>> rows; // 변경된 타입
+  final EdgeInsetsGeometry padding;
 
   const InfoCardGroup({
     super.key,
     this.title,
     required this.rows,
+    this.padding = const EdgeInsets.all(16),
   });
 
   @override
@@ -15,7 +17,7 @@ class InfoCardGroup extends StatelessWidget {
     final hasTitle = (title != null && title!.isNotEmpty); //title 유무
 
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: padding,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10),
         child: Column(

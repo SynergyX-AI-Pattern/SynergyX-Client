@@ -61,10 +61,14 @@ class _ChartEditScreenState extends State<ChartEditPage> {
     super.initState();
     final data = widget.patternData;
 
-    patternName = data['title'] ?? 'Pattern_${DateTime.now().millisecondsSinceEpoch}';
+    patternName =
+        data['title'] ?? 'Pattern_${DateTime
+            .now()
+            .millisecondsSinceEpoch}';
 
     final pvRaw = data['periodValue'];
-    final int? pv = (pvRaw is int) ? pvRaw : (pvRaw is String ? int.tryParse(pvRaw) : null);
+    final int? pv =
+    (pvRaw is int) ? pvRaw : (pvRaw is String ? int.tryParse(pvRaw) : null);
     periodValue = [3, 5, 7, 15, 30, 60].contains(pv) ? pv ?? 15 : 15;
 
     final puRaw = (data['periodUnit'] ?? 'DAY').toString().toUpperCase();
@@ -73,15 +77,13 @@ class _ChartEditScreenState extends State<ChartEditPage> {
     tolerance = _snapTolerance(data['tolerance']);
 
     final rawPoints = List<num>.from(data['points'] ?? []);
-   final double xStep = rawPoints.length > 1
+    final double xStep =
+    rawPoints.length > 1
         ? (spacing * (gridSize - 1)) / (rawPoints.length - 1)
         : spacing * (gridSize - 1);
     points = List.generate(
       rawPoints.length,
-          (i) => Offset(
-        i * xStep,
-        (rawPoints[i].toDouble() * spacing),
-      ),
+          (i) => Offset(i * xStep, (rawPoints[i].toDouble() * spacing)),
     );
   }
 
@@ -95,18 +97,19 @@ class _ChartEditScreenState extends State<ChartEditPage> {
       patternName: patternName,
       points: convertedPoints,
       tolerance: tolerance,
-      periodValue: periodValue ?? _periodOptions.first, // 미선택이면 3 등 기본
-      periodUnit: periodUnit ?? _unitOptions.last,      // 미선택이면 'DAY'
+      periodValue: periodValue ?? _periodOptions.first,
+      // 미선택이면 3 등 기본
+      periodUnit: periodUnit ?? _unitOptions.last, // 미선택이면 'DAY'
     );
 
     try {
       final body = request.toJson();
-      debugPrint('➡️ updatePattern body=$body');  // 요청 JSON 확인
+      debugPrint('➡️ updatePattern body=$body'); // 요청 JSON 확인
       await PatternApi.updatePattern(id, request);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ 패턴이 수정되었습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('패턴이 수정되었습니다.')));
       final updated = await widget.onSaved();
       if (!mounted) return;
       Navigator.pop(context, updated);
@@ -116,9 +119,9 @@ class _ChartEditScreenState extends State<ChartEditPage> {
         debugPrint('❌ error body=${e.response?.data}'); // 서버 응답 찍기
       }
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('❌ 수정 실패: ${e.toString()}')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('❌ 수정 실패: ${e.toString()}')));
     }
   }
 
@@ -127,16 +130,29 @@ class _ChartEditScreenState extends State<ChartEditPage> {
     final canvasSize = spacing * (gridSize - 1);
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(backgroundColor: Colors.white, title: const Text('패턴 수정')),
+      appBar: AppBar(
+        title: const Text(
+          '패턴 수정',
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+        ),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        centerTitle: true,
+      ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Column(
               children: [
+                // 패턴 이름 수정 입력 필드
                 TextFormField(
                   initialValue: patternName,
-                  decoration: const InputDecoration(labelText: '패턴 이름'),
+                  decoration: const InputDecoration(
+                    labelText: '패턴 이름',
+                    labelStyle: TextStyle(fontSize: 18,
+                        fontWeight: FontWeight.bold), // labelText 크기 키우기
+                  ),
                   onChanged: (val) => setState(() => patternName = val),
                 ),
                 const SizedBox(height: 8),
@@ -146,20 +162,23 @@ class _ChartEditScreenState extends State<ChartEditPage> {
                     const SizedBox(width: 12),
                     DropdownButton<int>(
                       isExpanded: false,
-                      value: (_periodOptions.contains(periodValue)) ? periodValue : null,
+                      value: (_periodOptions.contains(periodValue))
+                          ? periodValue
+                          : null,
                       hint: const Text('값 선택'),
-                      items: _periodOptions
-                          .map((e) => DropdownMenuItem<int>(
-                        value: e,
-                        child: Text('$e'),
-                      ))
-                          .toList(),
+                      items: _periodOptions.map((e) =>
+                          DropdownMenuItem<int>(
+                            value: e,
+                            child: Text('$e'),
+                          )).toList(),
                       onChanged: (val) => setState(() => periodValue = val),
                     ),
                     const SizedBox(width: 12),
                     DropdownButton<String>(
                       isExpanded: false,
-                      value: (_unitOptions.contains(periodUnit)) ? periodUnit : null,
+                      value: (_unitOptions.contains(periodUnit))
+                          ? periodUnit
+                          : null,
                       hint: const Text('단위 선택'),
                       items: const [
                         DropdownMenuItem(value: 'HOUR', child: Text('시간')),
@@ -175,19 +194,22 @@ class _ChartEditScreenState extends State<ChartEditPage> {
                     const Text('오차 범위: '),
                     const SizedBox(width: 12),
                     DropdownButton<double>(
-                      value: _toleranceOptions.contains(tolerance) ? tolerance : null,
+                      value: _toleranceOptions.contains(tolerance)
+                          ? tolerance
+                          : null,
                       hint: const Text('선택'),
-                      items: _toleranceOptions
-                          .map((e) => DropdownMenuItem<double>(
-                        value: e,
-                        child: Text('${(e * 100).toStringAsFixed(0)}%'),
-                      ))
-                          .toList(),
-                      onChanged: (val) => setState(() => tolerance = val ?? tolerance),
+                      items: _toleranceOptions.map((e) =>
+                          DropdownMenuItem<double>(
+                            value: e,
+                            child: Text('${(e * 100).toStringAsFixed(0)}%'),
+                          )).toList(),
+                      onChanged: (val) =>
+                          setState(() => tolerance = val ?? tolerance),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
+                // 수정 버튼을 제일 아래로 배치
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
@@ -200,10 +222,10 @@ class _ChartEditScreenState extends State<ChartEditPage> {
               ],
             ),
           ),
+          const SizedBox(height: 20),
           Expanded(
             child: Column(
               children: [
-                // 각 열별로 점을 추가/삭제할 수 있는 버튼들
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: List.generate(gridSize, (i) {
@@ -212,24 +234,28 @@ class _ChartEditScreenState extends State<ChartEditPage> {
                         GestureDetector(
                           onTap: () {
                             final targetX = i * spacing;
-                            final existing =
-                                points.where((p) => (p.dx - targetX).abs() < 0.1).length;
+                            final existing = points
+                                .where((p) => (p.dx - targetX).abs() < 0.1)
+                                .length;
                             if (existing < 2 && points.length < gridSize * 2) {
                               setState(() {
-                                points.add(Offset(targetX, spacing * (gridSize - 1)));
+                                points.add(
+                                    Offset(targetX, spacing * (gridSize - 1)));
                                 points.sort((a, b) => a.dx.compareTo(b.dx));
                               });
                             }
                           },
-                          child: const Text('➕', style: TextStyle(fontSize: 20)),
+                          child: const Text(
+                            '➕',
+                            style: TextStyle(fontSize: 20),
+                          ),
                         ),
                         const SizedBox(height: 4),
                         GestureDetector(
                           onTap: () {
                             final targetX = i * spacing;
-                            final columnPoints = points
-                                .where((p) => (p.dx - targetX).abs() < 0.1)
-                                .toList();
+                            final columnPoints = points.where((p) =>
+                            (p.dx - targetX).abs() < 0.1).toList();
                             final isFirst = i == 0;
                             final isLast = i == gridSize - 1;
                             final mustKeep = isFirst || isLast;
@@ -239,7 +265,10 @@ class _ChartEditScreenState extends State<ChartEditPage> {
                               });
                             }
                           },
-                          child: const Text('➖', style: TextStyle(fontSize: 20)),
+                          child: const Text(
+                            '➖',
+                            style: TextStyle(fontSize: 20),
+                          ),
                         ),
                       ],
                     );
@@ -265,9 +294,10 @@ class _ChartEditScreenState extends State<ChartEditPage> {
                           if (selectedIndex != null) {
                             final local = details.localPosition;
                             final fixedX = points[selectedIndex!].dx;
-                            final clampedY =
-                            local.dy.clamp(0.0, spacing * (gridSize - 1));
-                            final snappedY = (clampedY / spacing).round() * spacing;
+                            final clampedY = local.dy.clamp(
+                                0.0, spacing * (gridSize - 1));
+                            final snappedY = (clampedY / spacing).round() *
+                                spacing;
                             setState(() {
                               points[selectedIndex!] = Offset(fixedX, snappedY);
                             });
@@ -295,6 +325,7 @@ class _ChartEditScreenState extends State<ChartEditPage> {
     );
   }
 }
+
 class GridPainter extends CustomPainter {
   final List<Offset> points;
   final int gridSize;
@@ -310,26 +341,32 @@ class GridPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final gridPaint = Paint()
-      ..color = Colors.grey
-      ..strokeWidth = 1;
+    final gridPaint =
+        Paint()
+          ..color = Colors.grey
+          ..strokeWidth = 1;
 
     for (int i = 0; i < gridSize; i++) {
       final offset = i * spacing;
-      canvas.drawLine(Offset(offset, 0), Offset(offset, size.height), gridPaint);
+      canvas.drawLine(
+        Offset(offset, 0),
+        Offset(offset, size.height),
+        gridPaint,
+      );
       canvas.drawLine(Offset(0, offset), Offset(size.width, offset), gridPaint);
     }
 
-    final linePaint = Paint()
-      ..color = Colors.blue
-      ..strokeWidth = 2;
+    final linePaint =
+        Paint()
+          ..color = Colors.blue
+          ..strokeWidth = 2;
     for (int i = 0; i < points.length - 1; i++) {
       canvas.drawLine(points[i], points[i + 1], linePaint);
     }
 
     for (int i = 0; i < points.length; i++) {
-      final paint = Paint()
-        ..color = (i == selectedIndex) ? Colors.green : Colors.orange;
+      final paint =
+          Paint()..color = (i == selectedIndex) ? Colors.green : Colors.orange;
       canvas.drawCircle(points[i], (i == selectedIndex) ? 8 : 5, paint);
     }
   }

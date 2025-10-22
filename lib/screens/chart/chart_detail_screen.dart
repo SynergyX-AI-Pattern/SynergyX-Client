@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:interactive_chart/interactive_chart.dart';
 import 'dart:math' as math;
 import 'dart:ui';
 
@@ -8,9 +7,10 @@ import 'package:stockapp/models/pattern.dart';
 import 'package:stockapp/screens/search_info_screen.dart';
 import 'package:stockapp/screens/backtest/backtest_result_screen.dart';
 import 'package:stockapp/screens/backtest/backtest_list_screen.dart';
+import 'package:stockapp/widgets/common/app_button.dart';
+import 'package:stockapp/widgets/common/app_confirm_dialog.dart';
 
 import 'chart_edit_screen.dart';
-import '../../data/candle_api.dart';
 import '../../data/pattern_api.dart';
 import '../../data/backtest_api.dart';
 
@@ -24,7 +24,6 @@ class PatternDetailPage extends StatefulWidget {
   final int patternId;
 
   const PatternDetailPage({super.key, required this.patternId});
-
 
   factory PatternDetailPage.fromPattern(Pattern pattern, {Key? key}) {
     return PatternDetailPage(key: key, patternId: pattern.patternId);
@@ -49,7 +48,9 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
 
   Future<void> _fetchPatternDetail() async {
     try {
-      final detail = await PatternApi.getPatternDetail(widget.patternId); // API 호출
+      final detail = await PatternApi.getPatternDetail(
+        widget.patternId,
+      ); // API 호출
       if (!mounted) return;
       setState(() {
         _pattern = detail; // [정리] as 캐스팅 불필요
@@ -70,9 +71,11 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
 
     // 기존 백테스트의 시작일이 있으면 재사용, 없으면 1년 전으로 기본값 설정
     final startStr = _pattern!.backtestResult?['startDate']?.toString();
-    final startDate = startStr != null
-        ? DateTime.tryParse(startStr) ?? DateTime.now().subtract(const Duration(days: 365))
-        : DateTime.now().subtract(const Duration(days: 365));
+    final startDate =
+        startStr != null
+            ? DateTime.tryParse(startStr) ??
+                DateTime.now().subtract(const Duration(days: 365))
+            : DateTime.now().subtract(const Duration(days: 365));
 
     try {
       final raw = await BacktestService.run(
@@ -83,9 +86,10 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
       );
 
       // API 응답에서 result 래퍼가 있으면 벗겨낸다
-      final normalized = raw['result'] is Map
-          ? Map<String, dynamic>.from(raw['result'])
-          : Map<String, dynamic>.from(raw);
+      final normalized =
+          raw['result'] is Map
+              ? Map<String, dynamic>.from(raw['result'])
+              : Map<String, dynamic>.from(raw);
 
       // 새로운 백테스트 결과로 상태 갱신
       setState(() {
@@ -103,9 +107,9 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
       _edited = true;
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('백테스트 실행 실패: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('백테스트 실행 실패: $e')));
     }
   }
 
@@ -133,16 +137,23 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
       backtestResult: _pattern!.backtestResult,
     );
     try {
-      await PatternApi.updatePattern(updated.patternId, _buildRequestFromDetail(updated));
+      await PatternApi.updatePattern(
+        updated.patternId,
+        _buildRequestFromDetail(updated),
+      );
       if (!mounted) return;
       setState(() {
         _pattern = updated;
       });
       _edited = true;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ 제목이 저장되었습니다.')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('✅ 제목이 저장되었습니다.')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ 제목 저장 실패: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('❌ 제목 저장 실패: $e')));
     }
   }
 
@@ -150,15 +161,12 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
     if (_pattern == null) return;
 
     final current = List<Map<String, dynamic>>.from(_pattern!.appliedStockList);
-    final already = current.any((e) => (e['symbol'] ?? e['stockName'] ?? e['name']) == symbol);
-
+    final already = current.any(
+      (e) => (e['symbol'] ?? e['stockName'] ?? e['name']) == symbol,
+    );
 
     if (!already) {
-      current.add({
-        'symbol': symbol,
-        'stockName': symbol,
-        'stockId': stockId,
-      });
+      current.add({'symbol': symbol, 'stockName': symbol, 'stockId': stockId});
     }
 
     final updated = PatternDetail(
@@ -172,16 +180,23 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
       backtestResult: _pattern!.backtestResult,
     );
     try {
-      await PatternApi.updatePattern(updated.patternId, _buildRequestFromDetail(updated));
+      await PatternApi.updatePattern(
+        updated.patternId,
+        _buildRequestFromDetail(updated),
+      );
       if (!mounted) return;
       setState(() {
         _pattern = updated;
         _edited = true;
       });
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ 종목이 적용되었습니다.')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('✅ 종목이 적용되었습니다.')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ 종목 적용 실패: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('❌ 종목 적용 실패: $e')));
     }
   }
 
@@ -201,7 +216,10 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
       backtestResult: _pattern!.backtestResult,
     );
     try {
-      await PatternApi.updatePattern(updated.patternId, _buildRequestFromDetail(updated));
+      await PatternApi.updatePattern(
+        updated.patternId,
+        _buildRequestFromDetail(updated),
+      );
       if (!mounted) return;
       setState(() {
         _pattern = updated;
@@ -209,7 +227,9 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
       });
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ 종목 삭제 실패: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('❌ 종목 삭제 실패: $e')));
     }
   }
 
@@ -230,15 +250,11 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (_pattern == null) {
-      return const Scaffold(
-        body: Center(child: Text("❌ 패턴 데이터를 불러올 수 없습니다.")),
-      );
+      return const Scaffold(body: Center(child: Text("❌ 패턴 데이터를 불러올 수 없습니다.")));
     }
 
     return Scaffold(
@@ -250,60 +266,37 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context, _edited),
         ),
-
-        title: TextField(
-          controller: _titleController,
-          decoration: const InputDecoration(
-            border: InputBorder.none,
-            hintText: '패턴 이름 입력',
-          ),
-          style: const TextStyle(color: Colors.black, fontSize: 18),
-          onSubmitted: _saveTitle,
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save, color: Colors.black),
-            onPressed: () => _saveTitle(_titleController.text),
-          ),
-          IconButton(
-            icon: const Icon(Icons.play_arrow, color: Colors.black),
-            tooltip: '백테스트 실행',
-            onPressed: () {
-              _showBacktestDialog();             },
-          ),
-        ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               _pattern!.patternName,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             _buildPatternCard(context),
             const SizedBox(height: 20),
             Divider(color: const Color(0xFFD0CECE), thickness: 1),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
             _buildBacktestCard(),
             const SizedBox(height: 8),
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: () {
-                  final backtestId = _pattern!.backtestResult?['backtestId'] as int?;
+                  final backtestId =
+                      _pattern!.backtestResult?['backtestId'] as int?;
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => BacktestListScreen(
-                        patternId: _pattern!.patternId,
-                        backtestId: backtestId,
-                      ),
+                      builder:
+                          (_) => BacktestListScreen(
+                            patternId: _pattern!.patternId,
+                            backtestId: backtestId,
+                          ),
                     ),
                   );
                 },
@@ -312,9 +305,8 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
               ),
             ),
 
-            const SizedBox(height: 20),
             Divider(color: const Color(0xFFD0CECE), thickness: 1),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
             _buildAppliedStocks(),
           ],
         ),
@@ -362,110 +354,80 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
           const SizedBox(height: 12),
 
           // 버튼
-          Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-            OutlinedButton(
-              onPressed: () async {
-                final ok = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => Theme(
-                    data: Theme.of(ctx).copyWith(
-                      dialogTheme: const DialogThemeData(
-                        backgroundColor: Colors.white,
-                        surfaceTintColor: Colors.transparent,
-                      ),
-                    ),
-                    child: AlertDialog(
-                      title: const Text('전략 패턴을 삭제하시겠습니까?'),
-                      content: const Text('이 동작은 취소할 수 없으며 내 전략 차트가 삭제됩니다.'),
-                      actions: [
-                        TextButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.black,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              AppButton(
+                onPressed: () async {
+                  final ok = await showDialog<bool>(
+                    context: context,
+                    builder:
+                        (ctx) => Theme(
+                          data: Theme.of(ctx).copyWith(
+                            dialogTheme: const DialogThemeData(
+                              backgroundColor: Colors.white,
+                              surfaceTintColor: Colors.transparent,
+                            ),
                           ),
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: const Text('취소'),
-                        ),
-                        FilledButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.black,
-                            foregroundColor: Colors.white,
+                          child: AppConfirmDialog(
+                            title: '전략 패턴을 삭제하시겠습니까?',
+                            content: '이 동작은 취소할 수 없으며 내 전략 차트가 삭제됩니다.',
+                            confirmText: '삭제',
                           ),
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text('삭제'),
                         ),
-                      ],
-                    ),
-                  ),
-                );
-
-
-                if (ok != true) return;
-
-                try {
-                  await PatternApi.deletePattern(widget.patternId);
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('✅ 패턴이 삭제되었습니다.')),
                   );
-                  Navigator.pop(context, true);
-                } catch (e) {
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('❌ 삭제 실패: $e')),
-                  );
-                }
-              },
-              style: OutlinedButton.styleFrom(foregroundColor: Colors.black),
-              child: const Text("삭제"),
-            ),
-            const SizedBox(width: 8),
-            ElevatedButton(
-              onPressed: () async {
-                final updated = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ChartEditPage(
-                      patternData: _pattern!.toJson(),
-                      onSaved: () async {
-                        await _fetchPatternDetail();
-                        return _pattern!.toJson();
-                      },
-                    ),
-                  )
-              );
 
-              const SizedBox(height: 16);
+                  if (ok != true) return;
 
-                if (updated != null) {
-                  setState(() => _pattern = PatternDetail.fromJson(updated));
-                  _edited = true;
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
-                foregroundColor: Colors.white,
+                  try {
+                    await PatternApi.deletePattern(widget.patternId);
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('패턴이 삭제되었습니다.')),
+                    );
+                    Navigator.pop(context, true);
+                  } catch (e) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('삭제 실패: $e')));
+                  }
+                },
+                bgColor: Color(0xFFE6E6E6),
+                fgColor: Color(0xFF000000),
+                side: BorderSide(width: 1),
+                label: '삭제',
               ),
-              child: const Text("패턴 수정"),
-            ),
-          ]),
+              const SizedBox(width: 8),
+              AppButton(
+                onPressed: () async {
+                  final updated = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (_) => ChartEditPage(
+                            patternData: _pattern!.toJson(),
+                            onSaved: () async {
+                              await _fetchPatternDetail();
+                              return _pattern!.toJson();
+                            },
+                          ),
+                    ),
+                  );
+
+                  const SizedBox(height: 16);
+
+                  if (updated != null) {
+                    setState(() => _pattern = PatternDetail.fromJson(updated));
+                    _edited = true;
+                  }
+                },
+                label: '패턴 수정',
+              ),
+            ],
+          ),
         ],
       ),
-    );
-  }
-
-  /// 공통 카드 스타일
-  BoxDecoration _cardDecoration() {
-    return BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      boxShadow: const [
-        BoxShadow(
-          color: Colors.black12,
-          blurRadius: 4,
-          offset: Offset(0, 2),
-        ),
-      ],
     );
   }
 
@@ -473,10 +435,21 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
   Widget _buildBacktestCard() {
     final backtest = _pattern!.backtestResult;
     if (backtest == null) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: _cardDecoration(),
-        child: const Text("백테스트 결과 없음", style: TextStyle(color: Colors.grey)),
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start, // 텍스트는 왼쪽 정렬 유지
+        children: [
+          const Text(
+            '최근 백테스팅 결과',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20),
+          ),
+          const SizedBox(height: 13),
+          Center(
+            child: AppButton(
+              label: '백테스팅 진행하기',
+              onPressed: () => _showBacktestDialog(),
+            ),
+          ),
+        ],
       );
     }
 
@@ -519,150 +492,119 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
   Widget _buildAppliedStocks() {
     final stocks = _pattern!.appliedStockList;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text("패턴 적용한 종목",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "패턴 적용한 종목",
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 12),
 
-          if (stocks.isEmpty)
-            const Text("적용된 종목 없음", style: TextStyle(color: Colors.grey))
-          else
-            Column(
-              children: [
-                for (int i = 0; i < stocks.length; i++) ...[
-                  InkWell(
-                    onTap: () {
-                      final dynamic id = stocks[i]['stockId'];
-                      if (id == null) return; // ID 없으면 이동 중지
-                      final int parsedId =
-                      id is int ? id : int.tryParse(id.toString()) ?? 0;
-                      final stockItem = StockItem(
-                        rank: 0,
-                        stockId: parsedId,
-                        name: stocks[i]["stockName"] ?? '',
-                        price: 0,
-                        changeRate: 0,
-                        imageUrl: stocks[i]["stockImage"] ?? '',
-                      );
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => DetailScreen(stock: stockItem)),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 8, horizontal: 12),
-                      margin: const EdgeInsets.only(bottom: 8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF7F7F7),
-                        borderRadius: BorderRadius.circular(8),
+        if (stocks.isEmpty)
+          const Text("적용된 종목 없음", style: TextStyle(color: Colors.grey))
+        else
+          Column(
+            children: [
+              for (int i = 0; i < stocks.length; i++) ...[
+                InkWell(
+                  onTap: () {
+                    final dynamic id = stocks[i]['stockId'];
+                    if (id == null) return; // ID 없으면 이동 중지
+                    final int parsedId =
+                        id is int ? id : int.tryParse(id.toString()) ?? 0;
+                    final stockItem = StockItem(
+                      rank: 0,
+                      stockId: parsedId,
+                      name: stocks[i]["stockName"] ?? '',
+                      price: 0,
+                      changeRate: 0,
+                      imageUrl: stocks[i]["stockImage"] ?? '',
+                    );
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => DetailScreen(stock: stockItem),
                       ),
-                      child: Row(
-                        children: [
-                          ClipOval(
-                            child: _buildStockImage(stocks[i]["stockImage"] as String?),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 12,
+                    ),
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7F7F7),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        ClipOval(
+                          child: _buildStockImage(
+                            stocks[i]["stockImage"] as String?,
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  stocks[i]["stockName"] ??
-                                      stocks[i]['name']?.toString() ?? '',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                stocks[i]["stockName"] ??
+                                    stocks[i]['name']?.toString() ??
+                                    '',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  stocks[i]["symbol"] ?? '',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                      fontSize: 12, color: Colors.grey),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                stocks[i]["symbol"] ?? '',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.close, size: 18),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                            onPressed: () => _removeAppliedStockAt(i),
-                          ),
-                        ],
-                      ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 18),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          onPressed: () => _removeAppliedStockAt(i),
+                        ),
+                      ],
                     ),
                   ),
-                ]
+                ),
               ],
-            ),
-
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerRight,
-            child: OutlinedButton(
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const StockSearchPage(),
-                  ),
-                );
-                if (result is Map<String, dynamic> && result['symbol'] is String) {
-
-                  await _applyStockBySymbol(
-                    result['symbol'],
-                    stockId: result['id'] is int
-                        ? result['id']
-                        : int.tryParse(result['id']?.toString() ?? ''),
-                  );  
-                }
-
-              },
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.black,
-                side: const BorderSide(color: Colors.black12),
-              ),
-              child: const Text('종목 추가'),
-            ),
+            ],
           ),
-        ],
-      ),
+      ],
     );
   }
 
   /// 이미지 URL이 없을 때 기본 아이콘을 표시하는 위젯
   Widget _buildStockImage(String? url) {
     if (url != null && url.isNotEmpty) {
-      return Image.network(
-        url,
-        width: 40,
-        height: 40,
-        fit: BoxFit.cover,
-      );
+      return Image.network(url, width: 40, height: 40, fit: BoxFit.cover);
     }
     return Container(
       width: 40,
       height: 40,
       color: Colors.grey[300],
-      child: const Icon(Icons.image_not_supported,
-          size: 24, color: Colors.grey),
+      child: const Icon(
+        Icons.image_not_supported,
+        size: 24,
+        color: Colors.grey,
+      ),
     );
   }
 
@@ -701,14 +643,10 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
           drawVerticalLine: true,
           horizontalInterval: (maxY / 5).ceilToDouble(),
           verticalInterval: (points.length / 6).ceilToDouble(),
-          getDrawingHorizontalLine: (value) => const FlLine(
-            color: Color(0xFFD0CECE), 
-            strokeWidth: 1,
-          ),
-          getDrawingVerticalLine: (value) => const FlLine(
-            color: Color(0xFFD0CECE),
-            strokeWidth: 1,
-          ),
+          getDrawingHorizontalLine:
+              (value) => const FlLine(color: Color(0xFFD0CECE), strokeWidth: 1),
+          getDrawingVerticalLine:
+              (value) => const FlLine(color: Color(0xFFD0CECE), strokeWidth: 1),
         ),
         borderData: FlBorderData(show: false),
         lineBarsData: [
@@ -724,10 +662,11 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
     );
   }
 }
+
 Future<bool?> openBacktestPopup(
-    BuildContext context,
-    Map<String, dynamic> patternData,
-    ) {
+  BuildContext context,
+  Map<String, dynamic> patternData,
+) {
   return showDialog<bool>(
     context: context,
     barrierDismissible: false,
