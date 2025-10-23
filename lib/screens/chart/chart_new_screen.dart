@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:stockapp/data/pattern_api.dart';
+import 'package:stockapp/widgets/common/app_button.dart';
 
 class ChartNewScreen extends StatefulWidget {
   const ChartNewScreen({super.key});
@@ -85,7 +86,7 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
     });
   }
 
-  int? _pickNearestPoint(Offset localPos, {double radius = 22}) {
+  int? _pickNearestPoint(Offset localPos, {double radius = 40}) {
     int? pick;
     double best = double.infinity;
     for (int i = 0; i < points.length; i++) {
@@ -147,7 +148,7 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('✅ 패턴이 서버에 저장되었습니다!')));
+      ).showSnackBar(const SnackBar(content: Text('패턴이 저장되었습니다!')));
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
@@ -197,7 +198,7 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
             return false;
           },
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -228,13 +229,12 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
                       children: [
                         Positioned.fill(
                           child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
+                            behavior: HitTestBehavior.translucent,  // 터치 범위 확장
 
                             // 빈 영역도 터치 처리
-                            onPanDown: (details) {
-                              final i = _pickNearestPoint(
-                                details.localPosition,
-                              );
+                            onTapDown: (details) {
+                              final localPos = details.localPosition;
+                              final i = _pickNearestPoint(localPos);  // 그리드 바깥에서도 점 선택
                               if (i != null) setState(() => selectedIndex = i);
                             },
 
@@ -270,8 +270,7 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
                                     snappedY,
                                   );
                                   _selectedCol =
-                                      (fixedX / spacing)
-                                          .round();
+                                      (fixedX / spacing).round();
                                 });
                               }
                             },
@@ -298,6 +297,7 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
                           ),
                         ),
 
+                        // 미니 FAB 위치 조정
                         if (_selectedCol != null && selectedX != null)
                           Positioned(
                             left: selectedX - 16,
@@ -311,8 +311,7 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
                                 const SizedBox(height: 6),
                                 _MiniFab(
                                   icon: Icons.remove,
-                                  onTap:
-                                      () => _removeLastInColumn(_selectedCol!),
+                                  onTap: () => _removeLastInColumn(_selectedCol!),
                                 ),
                               ],
                             ),
@@ -431,18 +430,11 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: SizedBox(
-                    width: 100,
+                    width: 80,
                     height: 40,
-                    child: ElevatedButton(
+                    child: AppButton(
                       onPressed: _savePattern,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text("생성"),
+                      label: "생성",
                     ),
                   ),
                 ),
@@ -515,7 +507,7 @@ class _GridPainter extends CustomPainter {
                 (i == selectedIndex)
                     ? const Color(0xFF2ECC71)
                     : const Color(0xFFFFA500);
-      canvas.drawCircle(points[i], (i == selectedIndex) ? 8 : 5, paint);
+      canvas.drawCircle(points[i], (i == selectedIndex) ? 10 : 8, paint);
     }
   }
 

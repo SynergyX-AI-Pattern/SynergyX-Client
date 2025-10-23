@@ -293,7 +293,7 @@ class _BacktestResultChartState extends State<BacktestResultChart> {
         _highlightEnd = null;
         _patternPoints = const <int>[];
         _loading = false;
-        _error = '캔들 데이터를 불러오지 못했습니다.';
+        _error = '매칭된 데이터가 없습니다.';
       });
     }
   }

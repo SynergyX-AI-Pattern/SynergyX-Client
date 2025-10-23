@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:stockapp/screens/backtest/backtest_result_screen.dart';
 import 'package:stockapp/data/backtest_api.dart';
-
 import 'package:stockapp/widgets/backtest/backtest_result_chart.dart';
 import 'package:stockapp/widgets/common/InfoCardGroup.dart';
 
@@ -39,18 +38,24 @@ class _BacktestListScreenState extends State<BacktestListScreen> {
   @override
   Widget build(BuildContext context) {
     // 현재 화면이 어떤 맥락인지에 따라 제목을 다르게 노출한다.
-    final title = widget.showAll
-        ? '전체 백테스트 목록'
-        : widget.backtestId != null
-        ? '패턴 백테스트 목록'
-        : '백테스트 목록';
+    final title =
+        widget.showAll
+            ? '전체 백테스트 목록'
+            : widget.backtestId != null
+            ? '패턴 백테스트 목록'
+            : '백테스트 목록';
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: Text(title, style: const TextStyle(color: Colors.black)),
+        title: Text(
+          title,
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+        ),
+        foregroundColor: Colors.black,
+        centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.black),
         actions: [
           if (widget.patternId != null && !widget.showAll)
@@ -59,15 +64,16 @@ class _BacktestListScreenState extends State<BacktestListScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => BacktestListScreen(
-                      // 전체 보기는 패턴 제한 없이 전부를 보여준다.
-                      patternId: widget.patternId,
-                      showAll: true,
-                    ),
+                    builder:
+                        (_) => BacktestListScreen(
+                          // 전체 보기는 패턴 제한 없이 전부를 보여준다.
+                          patternId: widget.patternId,
+                          showAll: true,
+                        ),
                   ),
                 );
               },
-              child: const Text('전체 보기', style: TextStyle(color: Colors.black)),
+              child: const Text('전체보기', style: TextStyle(color: Colors.black)),
             ),
         ],
       ),
@@ -204,99 +210,118 @@ class _BacktestResultCardState extends State<_BacktestResultCard> {
     final maxReturnDt = _result['maxReturnDate'];
 
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: _cardDecoration(),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '최근 백테스팅 결과',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          Row(
-            children: [
-              Text(
-                '실행한 날짜: $executedAt',
-                style: const TextStyle(fontSize: 13, color: Colors.grey),
-              ),
-              const Spacer(),
-              Text(
-                '매칭 횟수: $matchedCount',
-                style: const TextStyle(fontSize: 13, color: Colors.grey),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundImage: safeNetworkImage(stockImage),
-                child: (stockImage == null || stockImage.toString().trim().isEmpty)
-                    ? const Icon(Icons.image_not_supported, size: 18, color: Colors.grey)
-                    : null,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                stockName,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 200,
-            child: BacktestResultChart(
-              summary: widget.summary,
-              onDetailLoaded: _handleDetailLoaded,
+          Container(
+            padding: const EdgeInsets.only(left: 16, right: 16, top: 10),
+            //decoration: _cardDecoration(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '백테스팅 결과',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                ),
+                Row(
+                  children: [
+                    Text('실행한 날짜: ', style: TextStyles.partName),
+                    Text('$executedAt', style: TextStyles.valueText),
+                    Spacer(),
+                    Text('매칭 횟수: ', style: TextStyles.partName),
+                    Text('$matchedCount', style: TextStyles.valueText),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 20,
+                      backgroundImage: safeNetworkImage(stockImage),
+                      child:
+                          (stockImage == null ||
+                                  stockImage.toString().trim().isEmpty)
+                              ? const Icon(
+                                Icons.image_not_supported,
+                                size: 18,
+                                color: Colors.grey,
+                              )
+                              : null,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      stockName,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 200,
+                  child: BacktestResultChart(
+                    summary: widget.summary,
+                    onDetailLoaded: _handleDetailLoaded,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Text('시작 날짜: ', style: TextStyles.partName),
+                    Text('$startDate', style: TextStyles.valueText),
+                    const SizedBox(width: 16),
+                    Text('수익률: ', style: TextStyles.partName),
+                    Text(
+                      '${_formatPercent(avgReturn)}',
+                      style: TextStyles.valueText,
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: widget.onMore,
+                      style: TextButton.styleFrom(
+                        foregroundColor: Color(0xFF9D9D9D),
+                      ),
+                      child: const Text('더보기'),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Text(
-                '시작 날짜: $startDate',
-                style: const TextStyle(fontSize: 13, color: Colors.grey),
-              ),
-              const SizedBox(width: 16),
-              Text(
-                '수익률: ${_formatPercent(avgReturn)}',
-                style: const TextStyle(fontSize: 13, color: Colors.grey),
-              ),
-              const Spacer(),
-              TextButton(
-                onPressed: widget.onMore,
-                style: TextButton.styleFrom(foregroundColor: Colors.black),
-                child: const Text('더보기'),
-              ),
-            ],
-          ),
-          InfoCardGroup(
-            rows: [
-              {'label': '승률', 'value': _formatPercent(winRate)},
-              {
-                'label': '평균 수익률',
-                'value': _formatPercent(avgReturn, isRatio: true),
-                'color': const Color(0xFF289BF6)
-              },
-              {
-                'label': '최대 수익률',
-                'value': _formatPercent(maxReturn),
-                'subValue': maxReturnDt,
-                'color': const Color(0xFF289BF6)
-              },
-            ],
-          ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: widget.onRerun,
-              style: TextButton.styleFrom(foregroundColor: Colors.black),
-              child: const Text('다시 실행'),
+          Transform.translate(
+            offset: const Offset(0, -15),
+            child: InfoCardGroup(
+              rows: [
+                {'label': '승률', 'value': _formatPercent(winRate)},
+                {
+                  'label': '평균 수익률',
+                  'value': _formatPercent(avgReturn, isRatio: true),
+                  'color': const Color(0xFF289BF6),
+                },
+                {
+                  'label': '최대 수익률',
+                  'value': _formatPercent(maxReturn),
+                  'subValue': maxReturnDt,
+                  'color': const Color(0xFF289BF6),
+                },
+              ],
             ),
           ),
         ],
       ),
     );
   }
+}
+
+class TextStyles {
+  static const TextStyle partName = TextStyle(
+    color: Color(0xFF8198A5),
+    fontSize: 14,
+  );
+  static const TextStyle valueText = TextStyle(
+    fontWeight: FontWeight.w500,
+    fontSize: 14,
+  );
 }

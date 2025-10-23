@@ -124,9 +124,9 @@ class _ChartScreenState extends State<ChartScreen> {
         return GestureDetector(
           onTap: () => _openDetail(pattern),
           child: Card(
-            margin: const EdgeInsets.all(12),
+            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12)),
+                borderRadius: BorderRadius.circular(8)),
             elevation: 0,
             color: const Color(0x4DD9D9D9),
             child: Padding(
@@ -162,11 +162,11 @@ class _ChartScreenState extends State<ChartScreen> {
                   const Text(
                     "최근 백테스팅 결과",
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
 
                   if (pattern.recentBacktestResults.isNotEmpty)
                     Column(
@@ -174,11 +174,11 @@ class _ChartScreenState extends State<ChartScreen> {
                       children: [
                         for (final bt in pattern.recentBacktestResults.take(3))
                           Container(
-                            margin: const EdgeInsets.symmetric(vertical: 4),
-                            padding: const EdgeInsets.all(12),
+                            margin: const EdgeInsets.symmetric(vertical: 3),
+                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                             decoration: BoxDecoration(
                               color: const Color(0xFFE6E6E6), // 결과 박스 회색
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,7 +199,7 @@ class _ChartScreenState extends State<ChartScreen> {
                       ],
                     )
                   else
-                    const Text("백테스트 결과 없음",
+                    const Text("백테스팅 결과 없음",
                         style: TextStyle(color: Colors.grey)),
                 ],
               ),
@@ -212,8 +212,11 @@ class _ChartScreenState extends State<ChartScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        title: const Text('전략 패턴',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
         backgroundColor: Colors.white,
-        title: const Text('전략 패턴'),
+        foregroundColor: Colors.black,
+        centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.add, color: Colors.black),

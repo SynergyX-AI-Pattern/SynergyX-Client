@@ -1,4 +1,3 @@
-// lib/widgets/common/app_button.dart
 import 'package:flutter/material.dart';
 
 class AppButton extends StatelessWidget {

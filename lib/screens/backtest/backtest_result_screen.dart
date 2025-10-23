@@ -2,10 +2,12 @@
 import 'package:flutter/material.dart';
 
 import 'package:stockapp/widgets/backtest/backtest_result_chart.dart';
+import 'package:stockapp/widgets/common/InfoCardGroup.dart';
 
 /// 백테스트 결과 상세 화면
 class BacktestResultScreen extends StatefulWidget {
   final Map<String, dynamic> result;
+
   const BacktestResultScreen({super.key, required this.result});
 
   @override
@@ -54,11 +56,11 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
     final res = _res;
 
     final stockName =
-    (res['stockName'] ??
-        (res['stock'] is Map ? res['stock']['name'] : null) ??
-        widget.result['stockName'] ??
-        '-')
-        .toString();
+        (res['stockName'] ??
+                (res['stock'] is Map ? res['stock']['name'] : null) ??
+                widget.result['stockName'] ??
+                '-')
+            .toString();
 
     final String? startDate =
         res['startDate']?.toString() ?? widget.result['startDate']?.toString();
@@ -70,7 +72,7 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('백테스팅 결과', style: TextStyle(color: Colors.black)),
+        // title: const Text('백테스팅 결과', style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -79,17 +81,27 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text(
+              '백테스팅 결과',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+            ),
             Row(
               children: [
-                Text('실행일: ${res["executedAt"] ?? "-"}',
-                    style: const TextStyle(color: Colors.grey)),
-                const Spacer(),
-                Text('매칭 횟수: ${res["matchedCount"] ?? "-"}',
-                    style: const TextStyle(color: Colors.grey)),
+                Text('실행한 날짜: ', style: TextStyles.partName),
+                Text(
+                  '${res["executedAt"] ?? "-"}',
+                  style: TextStyles.valueText,
+                ),
+                SizedBox(width: 13),
+                Text('매칭 횟수: ', style: TextStyles.partName),
+                Text(
+                  '${res["matchedCount"] ?? "-"}',
+                  style: TextStyles.valueText,
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -99,21 +111,28 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
                 CircleAvatar(
                   radius: 20,
                   backgroundColor: Colors.grey.shade200,
-                  backgroundImage: (res["stockImage"] != null &&
-                      (res["stockImage"] as String).isNotEmpty)
-                      ? NetworkImage(res["stockImage"])
-                      : null,
-                  child: (res["stockImage"] == null ||
-                      (res["stockImage"] as String).isEmpty)
-                      ? const Icon(Icons.image_not_supported,
-                      color: Colors.grey, size: 18)
-                      : null,
+                  backgroundImage:
+                      (res["stockImage"] != null &&
+                              (res["stockImage"] as String).isNotEmpty)
+                          ? NetworkImage(res["stockImage"])
+                          : null,
+                  child:
+                      (res["stockImage"] == null ||
+                              (res["stockImage"] as String).isEmpty)
+                          ? const Icon(
+                            Icons.image_not_supported,
+                            color: Colors.grey,
+                            size: 18,
+                          )
+                          : null,
                 ),
                 const SizedBox(width: 12),
                 Text(
                   stockName,
                   style: const TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.bold),
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
@@ -129,26 +148,18 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
             ),
             const SizedBox(height: 16),
 
-            Container(
-              width: double.infinity,
-              padding:
-              const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: const [
-                  BoxShadow(color: Colors.black12, blurRadius: 4)
-                ],
-              ),
-              child: Row(
-                children: [
-                  Text('기간: ${_fmtDate(startDate)} ~ ${_fmtDate(endDate)}'),
-                  const Spacer(),
-                  if (target != null) Text('수익률: ${target.toStringAsFixed(2)}%'),
-                ],
-              ),
+            Row(
+              children: [
+                Text('기간: ', style: TextStyles.partName),
+                Text(
+                  '${_fmtDate(startDate)} ~ ${_fmtDate(endDate)}',
+                  style: TextStyles.valueText,
+                ),
+                const Spacer(),
+                if (target != null) Text('수익률: ${target.toStringAsFixed(2)}%'),
+              ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
 
             Container(
               width: double.infinity,
@@ -157,7 +168,7 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: const [
-                  BoxShadow(color: Colors.black12, blurRadius: 4)
+                  BoxShadow(color: Colors.black12, blurRadius: 4),
                 ],
               ),
               child: Column(
@@ -167,42 +178,40 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
                       Expanded(
                         child: Column(
                           children: [
-                            const Text("승률",
-                                style: TextStyle(color: Colors.grey)),
+                            const Text("승률", style: CardStyles.subtitle),
                             const SizedBox(height: 4),
-                            Text(_fmtPercent(res['winRate']),
-                                style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black)),
+                            Text(
+                              _fmtPercent(res['winRate']),
+                              style: CardStyles.cost,
+                            ),
                           ],
                         ),
                       ),
                       Expanded(
                         child: Column(
                           children: [
-                            const Text("평균 수익률",
-                                style: TextStyle(color: Colors.grey)),
+                            const Text("평균 수익률", style: CardStyles.subtitle),
                             const SizedBox(height: 4),
-                            Text(_fmtPercent(res['averageReturn']),
-                                style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF289BF6))),
+                            Text(
+                              _fmtPercent(res['averageReturn']),
+                              style: CardStyles.cost.copyWith(
+                                color: const Color(0xFF289BF6),
+                              ),
+                            ),
                           ],
                         ),
                       ),
                       Expanded(
                         child: Column(
                           children: [
-                            const Text("최대 수익률",
-                                style: TextStyle(color: Colors.grey)),
+                            const Text("최대 수익률", style: CardStyles.subtitle),
                             const SizedBox(height: 4),
-                            Text(_fmtPercent(res['maxReturn']),
-                                style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF289BF6))),
+                            Text(
+                              _fmtPercent(res['maxReturn']),
+                              style: CardStyles.cost.copyWith(
+                                color: const Color(0xFF289BF6),
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -214,57 +223,62 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
                       Expanded(
                         child: Column(
                           children: [
-                            const Text("최대 손실률",
-                                style: TextStyle(color: Colors.grey)),
+                            const Text("최대 손실률", style: CardStyles.subtitle),
                             const SizedBox(height: 4),
                             Text(
-                                _fmtPercent(
-                                    res['maxLoss'] ?? res['minReturn']),
-                                style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.red)),
+                              _fmtPercent(res['maxLoss'] ?? res['minReturn']),
+                              style: CardStyles.cost.copyWith(
+                                color: const Color(0xFFEC221F),
+                              ),
+                            ),
                           ],
                         ),
                       ),
                       Expanded(
                         child: Column(
                           children: [
-                            const Text("누적 수익률",
-                                style: TextStyle(color: Colors.grey)),
+                            const Text("누적 수익률", style: CardStyles.subtitle),
                             const SizedBox(height: 4),
                             Text(
-                                _fmtPercent(res['cumulativeReturn'] ??
-                                    res['totalReturn']),
-                                style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF289BF6))),
+                              _fmtPercent(
+                                res['cumulativeReturn'] ?? res['totalReturn'],
+                              ),
+                              style: CardStyles.cost.copyWith(
+                                color: const Color(0xFF289BF6),
+                              ),
+                            ),
                           ],
                         ),
                       ),
                       Expanded(
                         child: Column(
                           children: [
-                            const Text("마지막 수익률",
-                                style: TextStyle(color: Colors.grey)),
+                            const Text("마지막 수익률", style: CardStyles.subtitle),
                             const SizedBox(height: 4),
                             Text(
-                                _fmtPercent(res['lastReturn'] ??
-                                    res['lastMatchedReturn']),
-                                style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF289BF6))),
+                              _fmtPercent(
+                                res['lastReturn'] ?? res['lastMatchedReturn'],
+                              ),
+                              style: CardStyles.cost.copyWith(
+                                color: const Color(0xFF289BF6),
+                              ),
+                            ),
                           ],
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                      "마지막 매칭일: ${res["lastMatchDate"] ?? res["lastMatchedDate"] ?? "-"}",
-                      style: const TextStyle(color: Colors.grey)),
+                  Column(
+                    children: [
+                      Text("마지막 매칭일", style: CardStyles.subtitle),
+                      const SizedBox(height: 4),
+                      Text(
+                        "${res["lastMatchDate"] ?? res["lastMatchedDate"] ?? "-"}",
+                        style: CardStyles.cost,
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -273,4 +287,40 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
       ),
     );
   }
+}
+
+class TextStyles {
+  static const TextStyle partName = TextStyle(
+    color: Color(0xFF8198A5),
+    fontSize: 14,
+  );
+  static const TextStyle valueText = TextStyle(
+    fontWeight: FontWeight.w500,
+    fontSize: 14,
+  );
+}
+
+// styles
+class CardStyles {
+  static const TextStyle title = TextStyle(
+    fontWeight: FontWeight.w700,
+    fontSize: 16,
+    color: Color(0xFF03314B),
+  );
+
+  static const TextStyle subtitle = TextStyle(
+    color: Color(0xFF8198A5),
+    fontWeight: FontWeight.w400,
+    fontSize: 13,
+  );
+
+  static const TextStyle cost = TextStyle(
+    fontWeight: FontWeight.w600,
+    fontSize: 16,
+  );
+
+  static const TextStyle subvalue = TextStyle(
+    fontWeight: FontWeight.w600,
+    fontSize: 12,
+  );
 }
