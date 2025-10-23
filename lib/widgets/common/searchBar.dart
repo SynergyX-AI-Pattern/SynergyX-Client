@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:stockapp/screens/search_screen.dart';
+import 'package:stockapp/screens/main_search_screen.dart';
 import 'package:stockapp/screens/image_search_screen.dart';
 
 class StockSerachBar extends StatelessWidget {
@@ -10,7 +10,7 @@ class StockSerachBar extends StatelessWidget {
   void _handleDetail2(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const StockSearchPage()),
+      MaterialPageRoute(builder: (context) => const MainSearchPage()),
     );
   }
 
