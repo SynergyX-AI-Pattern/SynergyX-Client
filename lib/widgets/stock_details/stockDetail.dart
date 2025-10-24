@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:stockapp/models/stock_detail_model.dart';
 import 'package:stockapp/widgets/common/TopTabSelector.dart';
 import 'package:stockapp/widgets/common/InfoCardGroup.dart';
+import 'package:stockapp/widgets/common/toggle_info.dart'; // ToggleInfo import
 
 class StockDetail extends StatefulWidget {
   final StockDetailResponse detail;
@@ -14,6 +15,33 @@ class StockDetail extends StatefulWidget {
 
 class _StockDetailScreenState extends State<StockDetail> {
   int _selectedTabIndex = 0;
+  bool _showInfo = false;
+
+  // BottomSheet를 호출하는 함수
+  void _showInfoBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,  // 스크롤 가능하도록 설정
+      builder: (BuildContext context) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ToggleInfo(
+                showInfo: _showInfo,  // 현재 토글 상태 전달
+                toggleInfo: () {
+                  setState(() {
+                    _showInfo = !_showInfo;  // 토글 상태 변경
+                  });
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,14 +49,22 @@ class _StockDetailScreenState extends State<StockDetail> {
 
     return Column(
       children: [
-        TopTabSelector(
-          tabs: const ['AI 예측', '재무정보'],
-          selectedIndex: _selectedTabIndex,
-          onTap: (index) {
-            setState(() {
-              _selectedTabIndex = index;
-            });
-          },
+        Row(
+          children: [
+            TopTabSelector(
+              tabs: const ['AI 예측', '재무정보'],
+              selectedIndex: _selectedTabIndex,
+              onTap: (index) {
+                setState(() {
+                  _selectedTabIndex = index;
+                });
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.info_outline),  // Info 버튼
+              onPressed: _showInfoBottomSheet,  // BottomSheet 호출
+            ),
+          ],
         ),
         Expanded(
           child: _selectedTabIndex == 0
