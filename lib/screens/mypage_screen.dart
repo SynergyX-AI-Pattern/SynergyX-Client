@@ -14,7 +14,6 @@ class MypageScreen extends StatefulWidget {
   @override
   State<MypageScreen> createState() => _MypageScreenState();
 }
-
 class _MypageScreenState extends State<MypageScreen> {
   // 화면에 표시할 사용자명과 이메일을 상태로 관리
   String _userName = AuthState.username ?? '';
@@ -25,19 +24,81 @@ class _MypageScreenState extends State<MypageScreen> {
     final controller = TextEditingController(text: _userName);
     final newName = await showDialog<String>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('이름 수정'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(labelText: '새 이름'),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('취소')),
-          TextButton(
-            onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: const Text('저장'),
+      builder: (_) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFF2F2F2),
+            borderRadius: BorderRadius.circular(18),
           ),
-        ],
+          padding: const EdgeInsets.fromLTRB(22, 26, 22, 10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 팝업 제목: 시안과 동일한 톤의 안내 문구 표현
+              const Text(
+                '아이디를 수정할까요?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF333333),
+                ),
+              ),
+              const SizedBox(height: 18),
+              // 사용자 이름 입력 필드: 단색 배경과 부드러운 음영만 적용
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x1A000000),
+                      offset: Offset(0, 1),
+                      blurRadius: 1.5,
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: TextField(
+                  controller: controller,
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    hintText: '새 아이디를 입력해 주세요.',
+                  ),
+                ),
+              ),
+              const SizedBox(height: 26),
+              // 버튼 영역: 회색 분리선 없이 동일 톤의 버튼 배치를 구현
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF5F5F5F),
+                        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                      ),
+                      child: const Text('취소'),
+                    ),
+                  ),
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context, controller.text.trim()),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF3B3B3B),
+                        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                      ),
+                      child: const Text('확인'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
 
