@@ -72,7 +72,6 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        // title: const Text('백테스팅 결과', style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(

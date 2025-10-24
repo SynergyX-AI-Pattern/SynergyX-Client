@@ -9,6 +9,7 @@ import 'package:stockapp/screens/backtest/backtest_result_screen.dart';
 import 'package:stockapp/screens/backtest/backtest_list_screen.dart';
 import 'package:stockapp/widgets/common/app_button.dart';
 import 'package:stockapp/widgets/common/app_confirm_dialog.dart';
+import 'package:stockapp/widgets/common/dialog/info_dialog.dart';
 
 import 'chart_edit_screen.dart';
 import '../../data/pattern_api.dart';
@@ -438,9 +439,28 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start, // 텍스트는 왼쪽 정렬 유지
         children: [
-          const Text(
-            '최근 백테스팅 결과',
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20),
+          Row(
+            children: [
+              const Text(
+                '최근 백테스팅 결과',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20),
+              ),
+              SizedBox(width: 8),
+              GestureDetector(
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) => const InfoDialog(
+                        title: '백테스팅이란?',
+                        description:
+                        '내 전략 패턴이 실제 투자에 도움이 되는지를 \n과거 주가 데이터를 기반으로 검증하는 기능입니다.\n\n'
+                            '패턴이 일어난 구간의 수익률, 승률, 최대 수익일 등을 통해 패턴의 신뢰도를 확인할 수 있습니다.'
+                    ),
+                  );
+                },
+                child: const Icon(Icons.info_outline, size: 20, color: Colors.grey),
+              ),
+            ],
           ),
           const SizedBox(height: 13),
           Center(
