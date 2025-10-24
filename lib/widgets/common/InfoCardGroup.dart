@@ -1,16 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:stockapp/widgets/bottom_sheet/ai_info_bottom_sheet.dart';
+import 'package:stockapp/widgets/bottom_sheet/financial_info_bottom_sheet.dart';
 
 class InfoCardGroup extends StatelessWidget {
   final String? title;
   final List<Map<String, dynamic>> rows; // 변경된 타입
   final EdgeInsetsGeometry padding;
+  final String? infoType;
 
   const InfoCardGroup({
     super.key,
     this.title,
     required this.rows,
+    this.infoType,
     this.padding = const EdgeInsets.all(16),
   });
+
+  // BottomSheet를 호출하는 함수
+  void _showInfoBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      isScrollControlled: true,
+      builder: (context) {
+        // infoType에 따라 다른 위젯을 표시
+        switch (infoType) {
+          case 'ai':
+            return const AiInfoBottomSheet();
+          case 'financial':
+          default:
+            return const FinancialInfoBottomSheet();
+        }
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +49,16 @@ class InfoCardGroup extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (hasTitle) Text(title!, style: CardStyles.title),  //title 존재시 출력
+            if (hasTitle) Row(
+              children: [
+                Text(title!, style: CardStyles.title),
+                SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () => _showInfoBottomSheet(context),
+                  child: const Icon(Icons.info_outline, size: 20, color: Colors.grey),
+                ),
+              ],
+            ),  //title 존재시 출력
             if (hasTitle) const SizedBox(height: 10),
             Container(
               padding: const EdgeInsets.all(20),
