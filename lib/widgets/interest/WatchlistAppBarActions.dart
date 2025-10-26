@@ -4,6 +4,7 @@ import 'package:stockapp/data/recent_api.dart';
 import '../../models/stock_brief.dart';
 import '../../widgets/common/TopTabSelector.dart';
 import '../../widgets/interest/WatchlistItem.dart';
+import '../../services/watchlist_event.dart';
 
 class WatchlistView extends StatefulWidget {
   final int initialIndex;
@@ -31,6 +32,17 @@ class _WatchlistViewState extends State<WatchlistView> {
     _pageController = PageController(initialPage: _selectedIndex);
     _watchFuture = _api.fetchWatchlist();
     _recentFuture = _recentApi.fetchRecent();
+
+
+    // 관심종목 변경 시 자동 새로고침
+    watchlistChangedNotifier.addListener(() {
+      if (watchlistChangedNotifier.value) {
+        setState(() {
+          _watchFuture = _api.fetchWatchlist();
+        });
+        watchlistChangedNotifier.value = false;
+      }
+    });
   }
 
   Future<void> _reloadCurrent() async {
