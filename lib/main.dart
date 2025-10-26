@@ -6,7 +6,6 @@ import 'package:stockapp/routes/TabView.dart';
 import 'package:stockapp/services/auth_state.dart';
 import 'package:stockapp/services/push_notification_service.dart';
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -26,6 +25,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false, // debug 배너 비활성화
       title: 'My App',
       theme: ThemeData(
         primarySwatch: Colors.blue,
@@ -40,9 +40,8 @@ class MyApp extends StatelessWidget {
       ),
 
       // 토큰이 있으면 바로 Tabview로 진입하여 자동 로그인
-      home: AuthState.accessToken != null
-          ? const Tabview()
-          : const LoginScreen(),
+      home:
+          AuthState.accessToken != null ? const Tabview() : const LoginScreen(),
     );
   }
 }
