@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:stockapp/screens/backtest/backtest_ranking_screen.dart';
-import 'package:stockapp/screens/interest/interest_screen.dart';
 import 'package:stockapp/screens/login_screen.dart';
 import 'package:stockapp/screens/mypage_interest_screen.dart';
 import 'package:stockapp/screens/notification_settings_screen.dart';

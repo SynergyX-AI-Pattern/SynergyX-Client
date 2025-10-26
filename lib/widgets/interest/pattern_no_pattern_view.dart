@@ -23,8 +23,6 @@ class PatternNoPatternView extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
           ),
-          // if (onCreate != null)
-          //   FilledButton(onPressed: onCreate, child: const Text('패턴 설정하러 가기')),
         ],
       ),
     );
