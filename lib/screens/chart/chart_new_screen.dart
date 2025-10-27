@@ -229,7 +229,8 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
                       children: [
                         Positioned.fill(
                           child: GestureDetector(
-                            behavior: HitTestBehavior.translucent, // 터치 범위 확장
+                            behavior: HitTestBehavior.translucent,
+                            // 터치 범위 확장
 
                             // 빈 영역도 터치 처리
                             onTapDown: (details) {
@@ -522,18 +523,34 @@ class _MiniFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      elevation: 2,
-      shape: const CircleBorder(),
-      color: Colors.black,
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: SizedBox(
-          width: 32,
-          height: 32,
-          child: Center(
-            child: Icon(icon, size: 18, color: Colors.white), // ← 전달된 icon 사용
+    // 아이콘 종류에 따라 패딩 다르게 적용
+    final isAddButton = icon == Icons.add;
+    final isRemoveButton = icon == Icons.remove;
+
+    // 위/아래 겹치는 패딩 제거
+    final padding = EdgeInsets.only(
+      top: isRemoveButton ? 0 : 8,
+      bottom: isAddButton ? 0 : 8,
+      left: 8,
+      right: 8,
+    );
+
+    return Transform.translate(
+      offset: const Offset(-8, 0), // 왼쪽으로 8px 이동
+      child: Padding(
+        padding: padding,
+        child: Material(
+          elevation: 2,
+          shape: const CircleBorder(),
+          color: Colors.black,
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: onTap,
+            child: SizedBox(
+              width: 32,
+              height: 32,
+              child: Center(child: Icon(icon, size: 18, color: Colors.white)),
+            ),
           ),
         ),
       ),
