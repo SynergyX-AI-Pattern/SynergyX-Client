@@ -11,7 +11,6 @@ class ChartNewScreen extends StatefulWidget {
 }
 
 class _ChartNewScreenState extends State<ChartNewScreen> {
-
   final int gridSize = 7;
   final double spacing = 50;
   late List<Offset> points;
@@ -86,7 +85,7 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
     });
   }
 
-  int? _pickNearestPoint(Offset localPos, {double radius = 40}) {
+  int? _pickNearestPoint(Offset localPos, {double radius = 120}) {
     int? pick;
     double best = double.infinity;
     for (int i = 0; i < points.length; i++) {
@@ -197,7 +196,8 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
             FocusScope.of(context).unfocus();
             return false;
           },
-          child: SingleChildScrollView(
+          // 스크롤 비활성화: SingleChildScrollView → Column
+          child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -229,12 +229,14 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
                       children: [
                         Positioned.fill(
                           child: GestureDetector(
-                            behavior: HitTestBehavior.translucent,  // 터치 범위 확장
+                            behavior: HitTestBehavior.translucent, // 터치 범위 확장
 
                             // 빈 영역도 터치 처리
                             onTapDown: (details) {
                               final localPos = details.localPosition;
-                              final i = _pickNearestPoint(localPos);  // 그리드 바깥에서도 점 선택
+                              final i = _pickNearestPoint(
+                                localPos,
+                              ); // 그리드 바깥에서도 점 선택
                               if (i != null) setState(() => selectedIndex = i);
                             },
 
@@ -269,8 +271,7 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
                                     fixedX,
                                     snappedY,
                                   );
-                                  _selectedCol =
-                                      (fixedX / spacing).round();
+                                  _selectedCol = (fixedX / spacing).round();
                                 });
                               }
                             },
@@ -293,6 +294,7 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
                                 selectedIndex: selectedIndex,
                                 selectedColumn: _selectedCol,
                               ),
+                              child: Container(),
                             ),
                           ),
                         ),
@@ -311,7 +313,8 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
                                 const SizedBox(height: 6),
                                 _MiniFab(
                                   icon: Icons.remove,
-                                  onTap: () => _removeLastInColumn(_selectedCol!),
+                                  onTap:
+                                      () => _removeLastInColumn(_selectedCol!),
                                 ),
                               ],
                             ),
@@ -342,14 +345,8 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
                             dropdownColor: Colors.white,
                             items:
                                 (periodUnit == "HOUR"
-                                        ? List.generate(
-                                          23,
-                                          (i) => i + 1,
-                                        )
-                                        : List.generate(
-                                          30,
-                                          (i) => i + 1,
-                                        ))
+                                        ? List.generate(23, (i) => i + 1)
+                                        : List.generate(30, (i) => i + 1))
                                     .map(
                                       (e) => DropdownMenuItem(
                                         value: e,
@@ -432,10 +429,7 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
                   child: SizedBox(
                     width: 80,
                     height: 40,
-                    child: AppButton(
-                      onPressed: _savePattern,
-                      label: "생성",
-                    ),
+                    child: AppButton(onPressed: _savePattern, label: "생성"),
                   ),
                 ),
               ],
