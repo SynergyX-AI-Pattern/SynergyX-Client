@@ -85,7 +85,7 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
     });
   }
 
-  int? _pickNearestPoint(Offset localPos, {double radius = 120}) {
+  int? _pickNearestPoint(Offset localPos, {double radius = 90}) {
     int? pick;
     double best = double.infinity;
     for (int i = 0; i < points.length; i++) {
