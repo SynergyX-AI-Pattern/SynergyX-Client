@@ -54,18 +54,27 @@ class _DetailScreenState extends State<DetailScreen> {
               onPressed: () => Navigator.pop(context),
             ),
           ),
-          body: Column(
-            children: [
-              StockName(detail: detail, stockId: widget.stock.stockId.toString(), ),
-              Expanded(
-                child: CandlestickChart(
-                  stockId: widget.stock.stockId.toString(),
-                ),
+          body: SafeArea(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  StockName(
+                    detail: detail,
+                    stockId: widget.stock.stockId.toString(),
+                  ),
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.4,
+                    child: CandlestickChart(
+                      stockId: widget.stock.stockId.toString(),
+                    ),
+                  ),
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.4,
+                    child: StockDetail(detail: detail),
+                  ),
+                ],
               ),
-              Expanded(
-                child: StockDetail(detail: detail),
-              ),
-            ],
+            ),
           ),
         );
       },

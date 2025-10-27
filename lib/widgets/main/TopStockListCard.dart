@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:stockapp/screens/stock_detail_screen.dart';
 import 'package:stockapp/screens/topStock_screen.dart';
@@ -13,7 +12,11 @@ class TopStockListCard extends StatelessWidget {
   final List<StockItem> stockList;
   final String title;
 
-  const TopStockListCard({super.key, required this.stockList, required this.title});
+  const TopStockListCard({
+    super.key,
+    required this.stockList,
+    required this.title,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -53,8 +56,8 @@ class TopStockListCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  HourBasisText(style: TextStyles.timeText),
-
+                  // title을 HourBasisText로 전달
+                  HourBasisText(style: TextStyles.timeText, title: title),
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 5),
                     child: Row(
@@ -89,12 +92,14 @@ class TopStockListCard extends StatelessWidget {
             // 종목 리스트
             ...topFive.map((stock) {
               return GestureDetector(
-                //종목 상세 페이지로 이동
+                // 종목 상세 페이지로 이동
                 onTap: () {
                   RecentStocks.add(stock);
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => DetailScreen(stock: stock)),
+                    MaterialPageRoute(
+                      builder: (_) => DetailScreen(stock: stock),
+                    ),
                   );
                 },
                 child: StockRankItem(stock: stock),
@@ -120,7 +125,10 @@ class TopStockListCard extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder:
-                          (_) => TopStocksScreen(stockList: stockList, stockTitle: title),
+                          (_) => TopStocksScreen(
+                            stockList: stockList,
+                            stockTitle: title,
+                          ),
                     ),
                   );
                 },
@@ -150,10 +158,10 @@ class TextStyles {
   static const TextStyle buttonText = TextStyle(fontWeight: FontWeight.w700);
 }
 
-
 class HourBasisText extends StatefulWidget {
   final TextStyle? style;
-  const HourBasisText({super.key, this.style});
+  final String title; // 추가
+  const HourBasisText({super.key, this.style, required this.title});
 
   @override
   State<HourBasisText> createState() => _HourBasisTextState();
@@ -164,8 +172,37 @@ class _HourBasisTextState extends State<HourBasisText> {
   late String _label;
 
   void _update() {
-    final now = DateTime.now();
-    _label = '${now.hour}시 기준'; // 8:56 -> 8시 기준, 16:45 -> 16시 기준
+    final now = DateTime.now().toUtc().add(const Duration(hours: 9));
+
+    // 한국 기준 평일 기준 계산
+    DateTime lastBusinessDay;
+    if (now.weekday == DateTime.monday) {
+      lastBusinessDay = now.subtract(const Duration(days: 3));
+    } else if (now.weekday == DateTime.saturday) {
+      lastBusinessDay = now.subtract(const Duration(days: 1));
+    } else if (now.weekday == DateTime.sunday) {
+      lastBusinessDay = now.subtract(const Duration(days: 2));
+    } else {
+      lastBusinessDay = now.subtract(const Duration(days: 1));
+    }
+
+    // 연도는 제외하고 MM-dd 형식으로 표시
+    final formattedDate =
+        "${lastBusinessDay.month.toString().padLeft(2, '0')}/${lastBusinessDay.day.toString().padLeft(2, '0')}";
+
+    // title에 따라 라벨 다르게 표시
+    if (widget.title.contains('AI Top 20')) {
+      _label = '$formattedDate 기준';
+    } else {
+      // 기존 코드: 시 단위만 표시
+      // _label = '${now.hour}시 기준';
+
+      // 수정: 현재 시각(시:분) 기준으로 표시
+      final hour = now.hour.toString().padLeft(2, '0');
+      final minute = now.minute.toString().padLeft(2, '0');
+      _label = '$hour:$minute 기준';
+    }
+
     if (mounted) setState(() {});
   }
 
@@ -175,8 +212,9 @@ class _HourBasisTextState extends State<HourBasisText> {
     _update();
     // 다음 분 경계에 맞춰 1분마다 업데이트
     final now = DateTime.now();
-    final toNextMinute = Duration(minutes: 1)
-        - Duration(seconds: now.second, milliseconds: now.millisecond);
+    final toNextMinute =
+        Duration(minutes: 1) -
+        Duration(seconds: now.second, milliseconds: now.millisecond);
     _timer = Timer(toNextMinute, () {
       _update();
       _timer = Timer.periodic(const Duration(minutes: 1), (_) => _update());

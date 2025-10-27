@@ -138,17 +138,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 36),
 
-                    const Text('아이디',
+                    const Text('이메일',
                         style: TextStyle(
                             fontSize: 14, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _emailController,
                       textInputAction: TextInputAction.next,
-                      decoration: _fieldDecoration('아이디를 입력해 주세요.'),
+                      decoration: _fieldDecoration('이메일을 입력해 주세요.'),
                       validator: (v) {
                         if ((v ?? '').trim().isEmpty) {
-                          return '아이디를 입력해 주세요.';
+                          return '이메일을 입력해 주세요.';
                         }
                         return null;
                       },

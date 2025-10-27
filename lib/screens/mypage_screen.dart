@@ -39,7 +39,7 @@ class _MypageScreenState extends State<MypageScreen> {
             children: [
               // 팝업 제목: 시안과 동일한 톤의 안내 문구 표현
               const Text(
-                '아이디를 수정할까요?',
+                '이메일을 수정할까요?',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 18,
@@ -66,7 +66,7 @@ class _MypageScreenState extends State<MypageScreen> {
                   controller: controller,
                   decoration: const InputDecoration(
                     border: InputBorder.none,
-                    hintText: '새 아이디를 입력해 주세요.',
+                    hintText: '새 이메일을 입력해 주세요.',
                   ),
                 ),
               ),
