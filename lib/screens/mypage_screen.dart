@@ -219,7 +219,7 @@ class _MypageScreenState extends State<MypageScreen> {
         backgroundColor: Colors.white,
         elevation: 0.3,
         centerTitle: true,
-        title: const Text('MyPage', style: TextStyle(fontWeight: FontWeight.w600)),
+        title: const Text('MyPage', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
       ),
       body: SafeArea(
         child: ListView(
