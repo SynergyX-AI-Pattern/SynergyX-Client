@@ -137,7 +137,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 onChanged: (_) => setState(() {}),
               ),
               _buildLabeledField(
-                label: '아이디',
+                label: '이메일',
                 hint: '이메일을 입력해 주세요.',
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
