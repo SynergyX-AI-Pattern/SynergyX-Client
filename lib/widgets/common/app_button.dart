@@ -65,7 +65,12 @@ class AppButton extends StatelessWidget {
           shadowColor: shadowColor,
           elevation: elevation ?? 0,
           padding: padding ?? const EdgeInsets.symmetric(horizontal: 16),
-          textStyle: textStyle ?? const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+          textStyle: (textStyle ??
+              const TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+              ))
+              .copyWith(fontFamily: 'Pretendard'),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius)),
           side: side,
           minimumSize: Size(block ? double.infinity : 0, minHeight), // 여기서 높이만 조정

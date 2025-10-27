@@ -358,6 +358,7 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               AppButton(
+                label: '삭제',
                 onPressed: () async {
                   final ok = await showDialog<bool>(
                     context: context,
@@ -393,13 +394,13 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                     ).showSnackBar(SnackBar(content: Text('삭제 실패: $e')));
                   }
                 },
-                bgColor: Color(0xFFE6E6E6),
-                fgColor: Color(0xFF000000),
-                side: BorderSide(width: 1),
-                label: '삭제',
+                bgColor: const Color(0xFFE6E6E6),
+                fgColor: const Color(0xFF000000),
+                side: const BorderSide(width: 1),
               ),
               const SizedBox(width: 8),
               AppButton(
+                label: '패턴 수정',
                 onPressed: () async {
                   final updated = await Navigator.push(
                     context,
@@ -422,7 +423,6 @@ class _PatternDetailPageState extends State<PatternDetailPage> {
                     _edited = true;
                   }
                 },
-                label: '패턴 수정',
               ),
             ],
           ),
