@@ -8,12 +8,23 @@ class PatternNoPatternView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        const Text('등록된 패턴이 없습니다.'),
-        const SizedBox(height: 10),
-        if (onCreate != null)
-          FilledButton(onPressed: onCreate, child: const Text('패턴 설정하러 가기')),
-      ]),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            '설정한 전략 패턴이 없습니다.',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            '패턴 페이지에서 패턴을 추가해 주세요.',
+            style: TextStyle(
+              color: Color(0xFF807F7F),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

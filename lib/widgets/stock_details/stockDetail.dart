@@ -30,13 +30,15 @@ class _StockDetailScreenState extends State<StockDetail> {
             });
           },
         ),
+
         Expanded(
-          child: _selectedTabIndex == 0
-              ? AIPredictionView(
-            prediction: data.prediction,
-            currentPrice: data.price,
-          )
-              : FinancialInfoView(financials: data.financials),
+          child:
+              _selectedTabIndex == 0
+                  ? AIPredictionView(
+                    prediction: data.prediction,
+                    currentPrice: data.price,
+                  )
+                  : FinancialInfoView(financials: data.financials),
         ),
       ],
     );
@@ -57,10 +59,23 @@ class AIPredictionView extends StatelessWidget {
   Widget build(BuildContext context) {
     return InfoCardGroup(
       title: 'AI 예측 주가',
+      infoType: 'ai',
       rows: [
-        {'label': '현재가', 'value': currentPrice, 'color': const Color(0xFFF99F01)},
-        {'label': '상한 예측가', 'value': prediction.upperBound, 'color': const Color(0xFFEC221F)},
-        {'label': '하한 예측가', 'value': prediction.lowerBound, 'color': const Color(0xFF289BF6)},
+        {
+          'label': '현재가',
+          'value': currentPrice,
+          'color': const Color(0xFFF99F01),
+        },
+        {
+          'label': '상한 예측가',
+          'value': prediction.upperBound,
+          'color': const Color(0xFFEC221F),
+        },
+        {
+          'label': '하한 예측가',
+          'value': prediction.lowerBound,
+          'color': const Color(0xFF289BF6),
+        },
         {'label': '적정 매도 가격', 'value': prediction.sellPrice},
         {'label': '적정 매수 가격', 'value': prediction.buyPrice},
         {'label': '예측 범위', 'value': prediction.targetRange},
@@ -78,6 +93,7 @@ class FinancialInfoView extends StatelessWidget {
   Widget build(BuildContext context) {
     return InfoCardGroup(
       title: '재무 정보',
+      infoType: 'financial',
       rows: [
         {'label': '시가총액', 'value': financials.marketCap},
         {'label': '배당수익률', 'value': financials.dividendYield ?? '2.56%'},

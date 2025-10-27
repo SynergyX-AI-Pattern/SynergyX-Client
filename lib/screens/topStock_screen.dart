@@ -20,7 +20,7 @@ class TopStocksScreen extends StatelessWidget {
         centerTitle: true,
       ),
       body: ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        padding: const EdgeInsets.fromLTRB(13, 2, 15, 10),
         itemCount: stockList.length,
         itemBuilder: (context, index) {
           final stock = stockList[index];
@@ -45,7 +45,7 @@ class TopStocksScreen extends StatelessWidget {
 class TextStyles {
   static const TextStyle title = TextStyle(
     fontWeight: FontWeight.w700,
-    fontSize: 20,
+    fontSize: 18,
   );
 
 }

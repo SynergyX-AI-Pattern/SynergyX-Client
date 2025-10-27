@@ -4,6 +4,7 @@ import 'package:stockapp/data/watchlist_api.dart';
 import 'package:stockapp/models/stock_brief.dart';
 import 'package:stockapp/widgets/mypage/interest/empty_state.dart';
 import 'package:stockapp/widgets/mypage/interest/stock_tile.dart';
+import 'package:stockapp/services/watchlist_event.dart';
 
 class WatchlistEditPage extends StatefulWidget {
   const WatchlistEditPage({super.key});
@@ -69,11 +70,12 @@ class _WatchlistEditPageState extends State<WatchlistEditPage> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('✅ ${idsToDelete.length}개 종목 삭제됨')),
+        SnackBar(content: Text('${idsToDelete.length}개 종목 삭제됨')),
       );
+      watchlistChangedNotifier.value = true;
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('❌ 삭제 실패: $e')),
+        SnackBar(content: Text('삭제 실패: $e')),
       );
     }
   }
