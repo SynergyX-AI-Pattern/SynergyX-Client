@@ -17,38 +17,6 @@ class AuthService {
     return LoginResponse.fromJson(res.data!);
   }
 
-  Future<LoginResponse> refresh({
-    required String email,
-    required String password,
-    required String refreshToken,
-  }) async {
-    final refreshClient = Dio(
-      BaseOptions(
-        baseUrl: _dio.options.baseUrl,
-        contentType: Headers.jsonContentType,
-        connectTimeout: _dio.options.connectTimeout,
-        receiveTimeout: _dio.options.receiveTimeout,
-        headers: {'Accept': 'application/json'},
-      ),
-    );
-
-    final res = await refreshClient.post<Map<String, dynamic>>(
-      '/auth/login',
-      data: {
-        'email': email,
-        'password': password,
-        'refreshToken': refreshToken,
-      },
-      options: Options(validateStatus: (s) => s != null && s < 500),
-    );
-
-    if (res.data == null) {
-      throw Exception('서버 응답이 비어있습니다.');
-    }
-
-    return LoginResponse.fromJson(res.data!);
-  }
-
   Future<SimpleResponse> signup(
       String name,
       String email,
@@ -67,33 +35,25 @@ class AuthService {
       },
       options: Options(validateStatus: (s) => s != null && s < 500),
     );
-    if (res.data == null) {
-      throw Exception('서버 응답이 비어있습니다.');
-    }
+    if (res.data == null) throw Exception('서버 응답이 비어있습니다.');
     return SimpleResponse.fromJson(res.data!);
   }
-
 
   Future<SimpleResponse> logout() async {
     final res = await _dio.post<Map<String, dynamic>>(
       '/auth/logout',
       options: Options(validateStatus: (s) => s != null && s < 500),
     );
-    if (res.data == null) {
-      throw Exception('서버 응답이 비어있습니다.');
-    }
+    if (res.data == null) throw Exception('서버 응답이 비어있습니다.');
     return SimpleResponse.fromJson(res.data!);
   }
-
 
   Future<SimpleResponse> withdraw() async {
     final res = await _dio.post<Map<String, dynamic>>(
       '/auth/withdraw',
       options: Options(validateStatus: (s) => s != null && s < 500),
     );
-    if (res.data == null) {
-      throw Exception('서버 응답이 비어있습니다.');
-    }
+    if (res.data == null) throw Exception('서버 응답이 비어있습니다.');
     return SimpleResponse.fromJson(res.data!);
   }
 }

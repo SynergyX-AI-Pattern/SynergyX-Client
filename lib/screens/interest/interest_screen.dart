@@ -3,6 +3,7 @@ import 'package:stockapp/data/watchlist_api.dart';
 import 'package:stockapp/models/StockItemModel.dart';
 import 'package:stockapp/screens/mypage_interest_screen.dart';
 import 'package:stockapp/widgets/interest/WatchlistAppBarActions.dart';
+import 'package:stockapp/services/watchlist_event.dart';
 
 final interestTabNotifier = ValueNotifier<int>(0);
 
@@ -15,20 +16,6 @@ class InterestScreen extends StatefulWidget {
 
 class _InterestScreenState extends State<InterestScreen> {
   final WatchlistApiService _apiService = WatchlistApiService();
-  late Future<List<StockItem>> _watchlistFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _watchlistFuture = _apiService.fetchWatchlist();
-  }
-
-  Future<void> _reload() async {
-    final result = await _apiService.fetchWatchlist();
-    setState(() {
-      _watchlistFuture = Future.value(result);
-    });
-  }
 
   @override
   Widget build(BuildContext context) {

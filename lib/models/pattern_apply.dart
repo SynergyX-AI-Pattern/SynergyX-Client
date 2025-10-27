@@ -45,7 +45,7 @@ class PatternApply {
       backtest: bt == null ? null : BacktestResult.fromJson(bt),
 
       patternApplyId: r['patternApplyId'] as int?,
-      isAlertEnabled: r['isAlertEnabled'] as bool?,
+      isAlertEnabled: patt?['isAlertEnabled'] as bool?,
     );
   }
 

@@ -1,10 +1,10 @@
-// lib/services/api_client.dart
 import 'dart:async';
-
 import 'package:dio/dio.dart';
-
 import '../models/auth_response.dart';
 import 'auth_state.dart';
+import '../screens/login_screen.dart';
+import 'package:stockapp/main.dart';
+import 'package:flutter/material.dart';
 
 class ApiClient {
   static final String _baseUrl = const String.fromEnvironment(
@@ -25,13 +25,10 @@ class ApiClient {
       InterceptorsWrapper(
         onRequest: (options, handler) {
           final token = AuthState.accessToken;
-          if (token == null || token.isEmpty) {
-            // 최신 토큰이 없는 경우, 서버에 인증 없이 접근하도록 둔다.
-            print('🔴 No access token on request: ${options.method} ${options.uri}');
-          } else {
-            // 항상 최신 access token을 헤더에 주입한다.
-            print('🟢 Using token (len=${token.length}) for ${options.method} ${options.uri}');
+          if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
+          } else {
+            print('🔴 No access token for ${options.method} ${options.uri}');
           }
           handler.next(options);
         },
@@ -41,8 +38,9 @@ class ApiClient {
 
           final hasRetried = requestOptions.extra['retried'] == true;
           final isUnauthorized = statusCode == 401;
-          final isAuthEndpoint = requestOptions.path.contains('/auth/login');
+          final isAuthEndpoint = requestOptions.path.contains('/auth');
 
+          // refresh 로직
           if (isUnauthorized && !hasRetried && !isAuthEndpoint) {
             try {
               await _refreshAccessToken();
@@ -56,9 +54,13 @@ class ApiClient {
 
               final response = await dio.fetch<dynamic>(requestOptions);
               return handler.resolve(response);
-            } catch (refreshError) {
-              // refresh token 갱신에 실패하면 기존 에러를 그대로 전달한다.
-              handler.next(error);
+            } catch (_) {
+              await AuthState.clear();
+              // 🔥 refresh 실패 → 로그인 화면으로 이동
+              navigatorKey.currentState?.pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    (route) => false,
+              );
               return;
             }
           }
@@ -71,7 +73,6 @@ class ApiClient {
       LogInterceptor(
         request: true,
         requestBody: true,
-        requestHeader: true,
         responseBody: true,
         error: true,
       ),
@@ -89,11 +90,9 @@ class ApiClient {
 
   static Future<void>? _refreshFuture;
 
-  /// refresh token으로 access token을 재발급한다.
+  /// Refresh token으로 access token을 갱신
   static Future<void> _refreshAccessToken() {
-    if (_refreshFuture != null) {
-      return _refreshFuture!;
-    }
+    if (_refreshFuture != null) return _refreshFuture!;
 
     final completer = Completer<void>();
     _refreshFuture = completer.future;
@@ -111,36 +110,20 @@ class ApiClient {
 
   static Future<void> _performTokenRefresh() async {
     final refreshToken = AuthState.refreshToken;
-    final savedEmail = AuthState.email;
-    final savedPassword = AuthState.password;
 
     if (refreshToken == null || refreshToken.isEmpty) {
       await AuthState.clear();
       throw DioException(
-        requestOptions: RequestOptions(path: '/auth/login'),
-        error: 'No refresh token',
+        requestOptions: RequestOptions(path: '/auth/refresh'),
+        error: 'No refresh token found',
         type: DioExceptionType.unknown,
       );
     }
 
-    if (savedEmail == null || savedEmail.isEmpty ||
-        savedPassword == null || savedPassword.isEmpty) {
-      // 이메일/비밀번호가 없으면 자동 재로그인을 수행할 수 없다.
-      await AuthState.clear();
-      throw DioException(
-        requestOptions: RequestOptions(path: '/auth/login'),
-        error: 'Missing cached credentials',
-        type: DioExceptionType.unknown,
-      );
-    }
-
+    // ✅ refresh 전용 API 호출
     final response = await _refreshDio.post<Map<String, dynamic>>(
-      '/auth/login',
-      data: {
-        'email': savedEmail,
-        'password': savedPassword,
-        'refreshToken': refreshToken,
-      },
+      '/auth/refresh',
+      data: {'refreshToken': refreshToken},
       options: Options(validateStatus: (s) => s != null && s < 500),
     );
 
@@ -156,9 +139,7 @@ class ApiClient {
     }
 
     final loginResponse = LoginResponse.fromJson(data);
-
-    if (!loginResponse.isSuccess ||
-        (loginResponse.accessToken ?? '').isEmpty) {
+    if (!loginResponse.isSuccess || (loginResponse.accessToken ?? '').isEmpty) {
       await AuthState.clear();
       throw DioException(
         requestOptions: response.requestOptions,
@@ -168,10 +149,9 @@ class ApiClient {
       );
     }
 
-    await AuthState.updateFromLogin(
-      loginResponse,
-      savedEmail,
-      userPassword: savedPassword,
+    await AuthState.updateTokens(
+      newAccessToken: loginResponse.accessToken!,
+      newRefreshToken: loginResponse.refreshToken,
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:stockapp/models/pattern_apply.dart';
 import 'package:stockapp/widgets/common/app_button.dart';
+import 'package:stockapp/widgets/common/dialog/info_dialog.dart';
 import 'package:stockapp/widgets/common/pattern_line_chart.dart';
 import 'package:stockapp/widgets/interest/BacktestResultCard.dart';
 import 'package:stockapp/widgets/interest/pattern_alert_button.dart';
@@ -90,7 +91,31 @@ class PatternExistsView extends StatelessWidget {
         // 백테스팅
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 15),
-          child: Text('최근 백테스팅 결과', style: TextStyles.sectionHeader),
+          child: Row(
+            children: [
+              Text('최근 백테스팅 결과', style: TextStyles.sectionHeader),
+              SizedBox(width: 8),
+              GestureDetector(
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder:
+                        (_) => const InfoDialog(
+                          title: '백테스팅이란?',
+                          description:
+                              '내 전략 패턴이 실제 투자에 도움이 되는지를 \n과거 주가 데이터를 기반으로 검증하는 기능입니다.\n\n'
+                              '패턴이 일어난 구간의 수익률, 승률, 최대 수익일 등을 통해 패턴의 신뢰도를 확인할 수 있습니다.',
+                        ),
+                  );
+                },
+                child: const Icon(
+                  Icons.info_outline,
+                  size: 20,
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          ),
         ),
         if (data.hasBacktest)
           Column(
@@ -108,8 +133,10 @@ class PatternExistsView extends StatelessWidget {
           )
         else
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: AppButton(label: '백테스팅 진행하기', onPressed: onRunBacktest),
+            padding: const EdgeInsets.symmetric(vertical: 15),
+            child: Center(
+              child: AppButton(label: '백테스팅 진행하기', onPressed: onRunBacktest),
+            ),
           ),
         const SizedBox(height: 24),
       ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:stockapp/data/watchlist_api.dart';
 import 'package:stockapp/models/stock_detail_model.dart';
+import 'package:stockapp/services/watchlist_event.dart';
 
 class StockName extends StatefulWidget {
   final StockDetailResponse detail;
@@ -65,6 +66,8 @@ class _StockNameState extends State<StockName> {
                       const SnackBar(content: Text('관심종목에서 해제되었습니다.')),
                     );
                   }
+                  // 관심목록이 바뀌었음을 알림
+                  watchlistChangedNotifier.value = true;
                 } catch (e) {
                   setState(() {
                     isFavorite = previousState;
