@@ -45,6 +45,18 @@ class _BacktestPopupState extends State<BacktestPopup> {
   final _profitController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    // 시작일 기본값을 2023년 1월 1일로 설정
+    _startDate ??= DateTime(2023, 1, 1);
+    _startDateController.text = _startDate!.toIso8601String().split('T').first;
+
+    // 종료일은 기본값을 오늘 날짜로 설정
+    _endDate ??= DateTime.now();
+    _endDateController.text = _endDate!.toIso8601String().split('T').first;
+  }
+
+  @override
   void dispose() {
     _startDateController.dispose();
     _endDateController.dispose();
@@ -255,8 +267,10 @@ class _BacktestPopupState extends State<BacktestPopup> {
                 onTap: () async {
                   final picked = await showDatePicker(
                     context: context,
-                    initialDate: _startDate ?? DateTime.now(),
-                    firstDate: DateTime(2000),
+                    // 기본값을 2023년 1월 1일로 설정
+                    initialDate: _startDate ?? DateTime(2023, 1, 1),
+                    // 2020년 10월 1일 이전은 선택 불가
+                    firstDate: DateTime(2020, 10, 1),
                     lastDate: DateTime.now(),
                     // 날짜 피커 흰 배경 + 선택일 검정
                     builder: (context, child) {
@@ -312,8 +326,8 @@ class _BacktestPopupState extends State<BacktestPopup> {
                 onTap: () async {
                   final picked = await showDatePicker(
                     context: context,
-                    initialDate: _endDate ?? _startDate ?? DateTime.now(),
-                    firstDate: _startDate ?? DateTime(2000),
+                    initialDate: _endDate ?? DateTime.now(),
+                    firstDate: _startDate ?? DateTime(2020, 10, 1),
                     lastDate: DateTime.now(),
                     builder: (context, child) {
                       final base = Theme.of(context);
@@ -353,8 +367,8 @@ class _BacktestPopupState extends State<BacktestPopup> {
                 controller: _profitController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: const InputDecoration(
-                  labelText: '백테스팅 수익률 설정',
-                  hintText: '예: 12.5  →  12.5%',
+                  labelText: '백테스팅 최소 수익률 설정 (선택)',
+                  hintText: '예: 12.5',
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(),
