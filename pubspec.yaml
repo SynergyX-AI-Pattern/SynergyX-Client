@@ -109,6 +109,8 @@ flutter:
         - asset: assets/fonts/Pretendard-Bold.ttf
           weight: 700
 
+  assets:
+    - assets/icon2.png
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
