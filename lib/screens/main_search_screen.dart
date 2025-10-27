@@ -5,9 +5,10 @@ import '../models/stock.dart';
 import 'stock_detail_screen.dart';
 import 'package:stockapp/screens/image_search_screen.dart';
 import 'package:stockapp/models/StockItemModel.dart';
+import 'dart:async';
 
 class MainSearchPage extends StatefulWidget {
-  final void Function(String stockCode)? onStockSelected;
+  final void Function(String stockName)? onStockSelected;
 
   const MainSearchPage({super.key, this.onStockSelected});
 
@@ -19,6 +20,7 @@ class _MainSearchPageState extends State<MainSearchPage> {
   final TextEditingController _controller = TextEditingController();
   List<Stock> filtered = [];
   bool isLoading = false;
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -26,31 +28,36 @@ class _MainSearchPageState extends State<MainSearchPage> {
     _controller.addListener(_onSearchChanged);
   }
 
-  void _onSearchChanged() async {
-    final input = _controller.text.trim();
-    if (input.isEmpty) {
-      setState(() => filtered = []);
-      return;
-    }
+  void _onSearchChanged() {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
 
-    setState(() => isLoading = true);
-    try {
-      final results = await fetchSearchedStocks(input);
-      setState(() {
-        filtered = results;
-      });
-    } catch (e) {
-      print('검색 실패: $e');
-      setState(() {
-        filtered = [];
-      });
-    } finally {
-      setState(() => isLoading = false);
-    }
+    _debounce = Timer(const Duration(milliseconds: 300), () async {
+      final input = _controller.text.trim();
+      if (input.isEmpty) {
+        setState(() => filtered = []);
+        return;
+      }
+
+      setState(() => isLoading = true);
+      try {
+        final results = await fetchSearchedStocks(input);
+        setState(() {
+          filtered = results;
+        });
+      } catch (e) {
+        print('검색 실패: $e');
+        setState(() {
+          filtered = [];
+        });
+      } finally {
+        setState(() => isLoading = false);
+      }
+    });
   }
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -99,40 +106,45 @@ class _MainSearchPageState extends State<MainSearchPage> {
                             minWidth: 40,
                             minHeight: 40,
                           ),
-                          suffixIcon: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (_controller.text.isNotEmpty)
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.highlight_remove,
-                                    size: 18,
-                                  ),
-                                  onPressed: () {
-                                    _controller.clear();
-                                    _onSearchChanged();
-                                  },
-                                  padding: const EdgeInsets.only(right: 0),
-                                  constraints: const BoxConstraints(),
-                                ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.photo_camera,
-                                  color: Colors.black,
-                                  size: 26,
-                                ),
-                                onPressed: () {
-                                  Navigator.of(
-                                    context,
-                                    rootNavigator: false,
-                                  ).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => const ImageSearchScreen(),
+                          suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                            valueListenable: _controller,
+                            builder: (context, value, child) {
+                              return Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (value.text.isNotEmpty)
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.highlight_remove,
+                                        size: 18,
+                                      ),
+                                      onPressed: () {
+                                        _controller.clear();
+                                      },
+                                      padding: const EdgeInsets.only(right: 0),
+                                      constraints: const BoxConstraints(),
                                     ),
-                                  );
-                                },
-                              ),
-                            ],
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.photo_camera,
+                                      color: Colors.black,
+                                      size: 26,
+                                    ),
+                                    onPressed: () {
+                                      Navigator.of(
+                                        context,
+                                        rootNavigator: false,
+                                      ).push(
+                                        MaterialPageRoute(
+                                          builder:
+                                              (_) => const ImageSearchScreen(),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              );
+                            },
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                             vertical: 11,
@@ -148,29 +160,37 @@ class _MainSearchPageState extends State<MainSearchPage> {
             // 검색 결과 리스트
             Expanded(
               child:
-              isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : filtered.isEmpty
-                  ? const Center(child: Text('검색 결과가 없습니다'))
-                  : ListView.builder(
-                itemCount: filtered.length,
-                itemBuilder: (context, index) {
-                  final stock = filtered[index];
-                  return SearchStockItem(
-                    stock: stock,
-                    onTap: () {
-                      if (widget.onStockSelected != null) {
-                          widget.onStockSelected!(stock.name); // 또는 stock.id
-                         }
-                         Navigator.push(
-                         context,
-                         MaterialPageRoute(
-                           builder: (_) => DetailScreen(stock: StockItem(rank: 0, stockId: stock.id, name: stock.name, price: 0, changeRate: 0, imageUrl: stock.imageUrl)), ),
-                         );
-                    },
-                  );
-                },
-              ),
+                  isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : filtered.isEmpty
+                      ? const Center(child: Text('검색 결과가 없습니다'))
+                      : ListView.builder(
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final stock = filtered[index];
+                          return SearchStockItem(
+                            stock: stock,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) => DetailScreen(
+                                        stock: StockItem(
+                                          rank: 0,
+                                          stockId: stock.id,
+                                          name: stock.name,
+                                          price: 0,
+                                          changeRate: 0,
+                                          imageUrl: stock.imageUrl,
+                                        ),
+                                      ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
             ),
           ],
         ),
