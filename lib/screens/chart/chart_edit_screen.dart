@@ -212,12 +212,15 @@ class _ChartEditScreenState extends State<ChartEditPage> {
                 // 수정 버튼을 제일 아래로 배치
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
+                    backgroundColor: const Color(0xFF2C2C2C),
+                    foregroundColor: Colors.white,
                     side: const BorderSide(color: Colors.black12),
                   ),
                   onPressed: _updatePattern,
-                  child: const Text('패턴 수정'),
+                  child: const Text(
+                    '저장',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),
