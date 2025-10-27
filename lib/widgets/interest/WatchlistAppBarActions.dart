@@ -4,7 +4,7 @@ import 'package:stockapp/data/recent_api.dart';
 import '../../models/stock_brief.dart';
 import '../../widgets/common/TopTabSelector.dart';
 import '../../widgets/interest/WatchlistItem.dart';
-import '../../services/watchlist_event.dart';
+import '../../services/list_refresh_notifiers.dart';
 
 class WatchlistView extends StatefulWidget {
   final int initialIndex;
@@ -25,6 +25,15 @@ class _WatchlistViewState extends State<WatchlistView> {
   late Future<List<StockBrief>> _watchFuture;
   late Future<List<StockBrief>> _recentFuture;
 
+  void _onWatchlistChanged() {
+    if(watchlistChangedNotifier.value){
+      setState(() {
+        _watchFuture = _api.fetchWatchlist();
+      });
+      watchlistChangedNotifier.value = false;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -35,13 +44,14 @@ class _WatchlistViewState extends State<WatchlistView> {
 
 
     // 관심종목 변경 시 자동 새로고침
-    watchlistChangedNotifier.addListener(() {
-      if (watchlistChangedNotifier.value) {
-        setState(() {
-          _watchFuture = _api.fetchWatchlist();
-        });
-        watchlistChangedNotifier.value = false;
-      }
+    watchlistChangedNotifier.addListener(_onWatchlistChanged);
+
+    // 최근 조회 변경 시 자동 새로고침
+    recentRefreshNotifier.addListener(() async {
+      await Future.delayed(const Duration(milliseconds: 400)); // 백엔드 반영 대기
+      setState(() {
+        _recentFuture = _recentApi.fetchRecent();
+      });
     });
   }
 
@@ -67,6 +77,7 @@ class _WatchlistViewState extends State<WatchlistView> {
 
   @override
   void dispose() {
+    watchlistChangedNotifier.removeListener(_onWatchlistChanged); //메모리 누수 방지
     _pageController.dispose();
     super.dispose();
   }

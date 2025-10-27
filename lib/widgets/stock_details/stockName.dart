@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:stockapp/data/watchlist_api.dart';
 import 'package:stockapp/models/stock_detail_model.dart';
-import 'package:stockapp/services/watchlist_event.dart';
+import 'package:stockapp/services/list_refresh_notifiers.dart';
 
 class StockName extends StatefulWidget {
   final StockDetailResponse detail;

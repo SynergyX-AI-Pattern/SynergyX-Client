@@ -6,6 +6,7 @@ import 'stock_detail_screen.dart';
 import 'package:stockapp/screens/image_search_screen.dart';
 import 'package:stockapp/models/StockItemModel.dart';
 import 'dart:async';
+import 'package:stockapp/services/list_refresh_notifiers.dart';
 
 class MainSearchPage extends StatefulWidget {
   final void Function(String stockName)? onStockSelected;
@@ -186,7 +187,10 @@ class _MainSearchPageState extends State<MainSearchPage> {
                                         ),
                                       ),
                                 ),
-                              );
+                              ).then((_) async {
+                                await Future.delayed(const Duration(milliseconds: 400));
+                                recentRefreshNotifier.value = !recentRefreshNotifier.value;
+                              });
                             },
                           );
                         },

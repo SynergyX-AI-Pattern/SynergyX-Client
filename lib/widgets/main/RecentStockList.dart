@@ -6,6 +6,7 @@ import 'package:stockapp/screens/interest/interest_screen.dart';
 import 'package:stockapp/screens/stock_detail_screen.dart';
 import 'package:stockapp/widgets/main/StockItems.dart';
 import 'package:stockapp/routes/TabView.dart';
+import 'package:stockapp/services/list_refresh_notifiers.dart';
 
 class RecentStockList extends StatefulWidget {
   const RecentStockList({super.key});
@@ -16,17 +17,28 @@ class RecentStockList extends StatefulWidget {
 
 class _RecentStockListState extends State<RecentStockList> {
   final _api = RecentApi();
-  late Future<List<StockBrief>> _future;
+  Future<List<StockBrief>>? _future;
 
   @override
   void initState() {
     super.initState();
     _future = _api.fetchRecent();
+
+    // 최근 조회 변경 시 자동 새로고침
+    recentRefreshNotifier.addListener(_reload);
+  }
+
+  @override
+  void dispose() {
+    // 리스너 해제
+    recentRefreshNotifier.removeListener(_reload);
+    super.dispose();
   }
 
   Future<void> _reload() async {
-    setState(() => _future = _api.fetchRecent());
-    await _future;
+    setState(() {
+      _future = _api.fetchRecent();
+    });
   }
 
   @override
@@ -37,7 +49,10 @@ class _RecentStockListState extends State<RecentStockList> {
         if (snap.connectionState == ConnectionState.waiting) {
           return const Padding(
             padding: EdgeInsets.all(16),
-            child: SizedBox(height: 56, child: Center(child: CircularProgressIndicator())),
+            child: SizedBox(
+              height: 56,
+              child: Center(child: CircularProgressIndicator()),
+            ),
           );
         }
         if (snap.hasError) {
@@ -51,9 +66,9 @@ class _RecentStockListState extends State<RecentStockList> {
           );
         }
 
-        // 전체 결과에서 최신순 3개만 사용 (API가 최신순으로 내려준다는 가정)
+        // 전체 결과에서 최신순 3개만 사용
         final all = snap.data ?? const <StockBrief>[];
-        final items = all.take(3).toList(); // ← 여기!
+        final items = all.take(3).toList();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -62,16 +77,22 @@ class _RecentStockListState extends State<RecentStockList> {
               padding: EdgeInsets.only(left: 16, right: 16, bottom: 8),
               child: Row(
                 children: [
-                  Text('최근 조회 종목',
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20)),
+                  Text(
+                    '최근 조회 종목',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20),
+                  ),
                   Spacer(flex: 1),
                   TextButton(
-                      onPressed: () {
-                        tabIndexNotifier.value = 1;        // BottomNav → 관심종목 탭
-                        interestTabNotifier.value = 1;     // WatchlistView 내부 탭 → '최근' 탭
-                  },
-                      child: const Text('더보기', style: TextStyle(color: Color(
-                          0xFF858585)),))
+                    onPressed: () {
+                      tabIndexNotifier.value = 1; // BottomNav → 관심종목 탭
+                      interestTabNotifier.value =
+                          1; // WatchlistView 내부 탭 → '최근' 탭
+                    },
+                    child: const Text(
+                      '더보기',
+                      style: TextStyle(color: Color(0xFF858585)),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -80,15 +101,23 @@ class _RecentStockListState extends State<RecentStockList> {
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: Text('최근 조회한 종목이 없습니다.',
-                      style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFFAEAEAE))),
+                  child: Text(
+                    '최근 조회한 종목이 없습니다.',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFFAEAEAE),
+                    ),
+                  ),
                 ),
               )
             else
               ...List.generate(items.length, (i) {
                 final s = items[i];
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8,
+                  ),
                   child: Column(
                     children: [
                       StockItems(
@@ -96,7 +125,11 @@ class _RecentStockListState extends State<RecentStockList> {
                           stockId: s.stockId,
                           name: s.stockName,
                           price: int.tryParse(s.price.replaceAll(',', '')) ?? 0,
-                          changeRate: double.tryParse(s.changeRate.replaceAll('%', '')) ?? 0.0,
+                          changeRate:
+                              double.tryParse(
+                                s.changeRate.replaceAll('%', ''),
+                              ) ??
+                              0.0,
                           imageUrl: s.imageUrl,
                           rank: 0,
                         ),
@@ -105,18 +138,33 @@ class _RecentStockListState extends State<RecentStockList> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => DetailScreen(
-                                stock: StockItem(
-                                  stockId: s.stockId,
-                                  name: s.stockName,
-                                  price: int.tryParse(s.price.replaceAll(',', '')) ?? 0,
-                                  changeRate: double.tryParse(s.changeRate.replaceAll('%', '')) ?? 0.0,
-                                  imageUrl: s.imageUrl,
-                                  rank: 0,
-                                ),
-                              ),
+                              builder:
+                                  (_) => DetailScreen(
+                                    stock: StockItem(
+                                      stockId: s.stockId,
+                                      name: s.stockName,
+                                      price:
+                                          int.tryParse(
+                                            s.price.replaceAll(',', ''),
+                                          ) ??
+                                          0,
+                                      changeRate:
+                                          double.tryParse(
+                                            s.changeRate.replaceAll('%', ''),
+                                          ) ??
+                                          0.0,
+                                      imageUrl: s.imageUrl,
+                                      rank: 0,
+                                    ),
+                                  ),
                             ),
-                          );
+                          ).then((_) async {
+                            await Future.delayed(
+                              const Duration(milliseconds: 400),
+                            );
+                            recentRefreshNotifier.value =
+                                !recentRefreshNotifier.value;
+                          });
                         },
                       ),
                     ],
