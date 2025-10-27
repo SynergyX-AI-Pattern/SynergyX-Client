@@ -61,7 +61,7 @@ class ApiClient {
                 MaterialPageRoute(builder: (_) => const LoginScreen()),
                     (route) => false,
               );
-              return;
+              return handler.reject(error);
             }
           }
 
@@ -139,7 +139,7 @@ class ApiClient {
     }
 
     final loginResponse = LoginResponse.fromJson(data);
-    if (!loginResponse.isSuccess || (loginResponse.accessToken ?? '').isEmpty) {
+    if ((loginResponse.accessToken ?? '').isEmpty) {
       await AuthState.clear();
       throw DioException(
         requestOptions: response.requestOptions,
