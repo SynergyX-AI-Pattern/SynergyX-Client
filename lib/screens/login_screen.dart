@@ -111,7 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Form(
                 key: _formKey,
                 autovalidateMode: _showErrors
@@ -120,11 +120,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 36),
+                    const SizedBox(height: 46),
                     CircleAvatar(
                       radius: 42,
-                      backgroundColor: Colors.grey.shade300,
-                      child: const Icon(Icons.image, size: 52, color: Colors.black54),
+                      // backgroundColor: Colors.grey.shade300,
+                      child: ClipOval(
+                        child: Image.asset(
+                          'assets/icon2.png', // ← 여기에 넣고 싶은 이미지 경로
+                          fit: BoxFit.cover,
+                          width: 100,
+                          height: 100,
+                        ),
+                      ),
+                    ),
+                    Center(
+                        child: Text('패턴캐처', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700),)
                     ),
                     const SizedBox(height: 36),
 
