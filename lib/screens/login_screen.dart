@@ -72,11 +72,8 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (res.isSuccess) {
-      await AuthState.updateFromLogin(
-        res,
-        email,
-        userPassword: password,
-      );
+      await AuthState.updateFromLogin(res, email);
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const Tabview()),
