@@ -59,12 +59,10 @@ class _RecentBacktestResultCardState extends State<RecentBacktestResultCard> {
   }
 
   /// 퍼센트 값을 보기 좋게 포매팅한다.
-  /// - isRatio=true 인 경우 0.123 -> "12.30%"
-  String _formatPercent(dynamic value, {bool isRatio = false}) {
+  String _formatPercent(dynamic value) {
     if (value == null) return '0.00%';
     final numVal = (value is num) ? value : num.tryParse(value.toString()) ?? 0;
-    final p = isRatio ? (numVal * 100) : numVal;
-    return '${p.toStringAsFixed(2)}%';
+    return '${numVal.toStringAsFixed(2)}%';
   }
 
   @override
@@ -164,7 +162,7 @@ class _RecentBacktestResultCardState extends State<RecentBacktestResultCard> {
             const SizedBox(width: 13),
             Text('수익률: ', style: TextStyles.partName),
             Text(
-              '${_formatPercent(_result["averageReturn"], isRatio: true)}',
+              '${_formatPercent(_result["averageReturn"])}',
               style: TextStyles.valueText,
             ),
             const Spacer(),
@@ -180,16 +178,16 @@ class _RecentBacktestResultCardState extends State<RecentBacktestResultCard> {
           rows: [
             {
               'label': '승률',
-              'value': _formatPercent(_result['winRate'], isRatio: true),
+              'value': _formatPercent(_result['winRate']),
             },
             {
               'label': '평균 수익률',
-              'value': _formatPercent(_result['averageReturn'], isRatio: true),
+              'value': _formatPercent(_result['averageReturn']),
               'color': const Color(0xFF289BF6),
             },
             {
               'label': '최대 수익률',
-              'value': _formatPercent(_result['maxReturn'], isRatio: true),
+              'value': _formatPercent(_result['maxReturn']),
               'subValue': _result['maxReturnDate'],
               'color': const Color(0xFF289BF6),
             },
