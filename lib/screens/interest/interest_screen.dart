@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:stockapp/data/watchlist_api.dart';
-import 'package:stockapp/models/StockItemModel.dart';
 import 'package:stockapp/screens/mypage_interest_screen.dart';
 import 'package:stockapp/widgets/interest/WatchlistAppBarActions.dart';
-import 'package:stockapp/services/watchlist_event.dart';
 
 final interestTabNotifier = ValueNotifier<int>(0);
 

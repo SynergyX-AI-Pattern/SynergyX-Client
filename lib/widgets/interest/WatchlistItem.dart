@@ -5,6 +5,7 @@ import 'package:stockapp/screens/interest/interest_pattern_screen.dart';
 import 'package:stockapp/screens/stock_detail_screen.dart';
 import 'package:stockapp/widgets/common/app_button.dart';
 import 'package:stockapp/widgets/main/StockItems.dart'; // 재사용 타일
+import 'package:stockapp/services/list_refresh_notifiers.dart';
 
 class WatchlistItem extends StatelessWidget {
   final StockBrief stock;
@@ -27,22 +28,27 @@ class WatchlistItem extends StatelessWidget {
 
     return StockItems(
       stock: merged,
-      onTap: (){
+      onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => DetailScreen(
-              stock: StockItem(
-                stockId: stock.stockId,
-                name: stock.stockName,
-                price: int.tryParse(stock.price.replaceAll(',', '')) ?? 0,
-                changeRate: double.tryParse(stock.changeRate.replaceAll('%', '')) ?? 0.0,
-                imageUrl: stock.imageUrl,
-                rank: 0,
-              ),
-            ),
+            builder:
+                (_) => DetailScreen(
+                  stock: StockItem(
+                    stockId: stock.stockId,
+                    name: stock.stockName,
+                    price: int.tryParse(stock.price.replaceAll(',', '')) ?? 0,
+                    changeRate:
+                        double.tryParse(stock.changeRate.replaceAll('%', '')) ??
+                        0.0,
+                    imageUrl: stock.imageUrl,
+                    rank: 0,
+                  ),
+                ),
           ),
-        );
+        ).then((_) async {
+          recentRefreshNotifier.value = !recentRefreshNotifier.value;
+        });
       },
       // 관심종목 전용 오른쪽 액션들
       trailing: Row(

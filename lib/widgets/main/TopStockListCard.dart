@@ -6,6 +6,7 @@ import 'package:stockapp/models/StockItemModel.dart';
 import 'package:stockapp/widgets/common/RecentStocks.dart';
 import 'package:stockapp/widgets/common/dialog/info_dialog.dart';
 import 'package:stockapp/widgets/main/StockRankItem.dart';
+import 'package:stockapp/services/list_refresh_notifiers.dart';
 
 // Top 20 리스트 카드
 class TopStockListCard extends StatelessWidget {
@@ -29,13 +30,13 @@ class TopStockListCard extends StatelessWidget {
     if (title.contains('AI')) {
       dialogTitle = 'AI Top 20 종목';
       dialogDescription =
-      'AI 모델이 최근 시장 데이터를 분석하여 가격 \n상승 가능성이 높은 상위 20개 종목을 선별한 리스트입니다.\n\n'
+          'AI 모델이 최근 시장 데이터를 분석하여 가격 \n상승 가능성이 높은 상위 20개 종목을 선별한 리스트입니다.\n\n'
           '매일 갱신되며, 예측 알고리즘에 기반해\n'
           '투자 참고용으로 제공됩니다.';
     } else {
       dialogTitle = 'Top 20 종목';
       dialogDescription =
-      '실시간 거래량, 변동률, 관심도 등을 종합해\n'
+          '실시간 거래량, 변동률, 관심도 등을 종합해\n'
           '현재 시장에서 가장 주목받는 상위 20개 종목을 보여줍니다.\n\n'
           '데이터는 일정 주기로 자동 갱신됩니다.';
     }
@@ -68,13 +69,18 @@ class TopStockListCard extends StatelessWidget {
                           onTap: () {
                             showDialog(
                               context: context,
-                              builder: (_) => InfoDialog(
-                                title: dialogTitle,
-                                description: dialogDescription,
-                              ),
+                              builder:
+                                  (_) => InfoDialog(
+                                    title: dialogTitle,
+                                    description: dialogDescription,
+                                  ),
                             );
                           },
-                          child: const Icon(Icons.info_outline, size: 20, color: Colors.grey),
+                          child: const Icon(
+                            Icons.info_outline,
+                            size: 20,
+                            color: Colors.grey,
+                          ),
                         ),
                       ],
                     ),
@@ -100,7 +106,10 @@ class TopStockListCard extends StatelessWidget {
                     MaterialPageRoute(
                       builder: (_) => DetailScreen(stock: stock),
                     ),
-                  );
+                  ).then((_) async {
+                    await Future.delayed(const Duration(milliseconds: 400));
+                    recentRefreshNotifier.value = !recentRefreshNotifier.value;
+                  });
                 },
                 child: StockRankItem(stock: stock),
               );
