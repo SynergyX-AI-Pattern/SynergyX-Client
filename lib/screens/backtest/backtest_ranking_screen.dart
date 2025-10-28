@@ -46,8 +46,7 @@ class _BacktestRankingScreenState extends State<BacktestRankingScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: const Text('백테스팅 랭킹'),
+        backgroundColor: Colors.white
       ),
       body: SafeArea(
         child: RefreshIndicator(
@@ -131,6 +130,32 @@ class _BacktestRankingScreenState extends State<BacktestRankingScreen> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                 children: [
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      SizedBox(height: 12),
+                      Text(
+                        '🏆 10월의 백테스팅 랭킹 🏆',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.black,
+                        ),
+                      ),
+                      SizedBox(height: 6),
+                      Text(
+                        '(최대 수익률 기준)',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF9CA3AF),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      SizedBox(height: 24),
+                    ],
+                  ),
                   // 상위 1~3위 타일
                   ...topThree.map((r) => Padding(
                     padding: const EdgeInsets.only(bottom: 12),
