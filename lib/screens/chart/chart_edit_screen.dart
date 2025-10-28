@@ -31,9 +31,27 @@ class _ChartEditScreenState extends State<ChartEditPage> {
 
   int? selectedIndex;
 
-  static const List<int> _periodOptions = [3, 5, 7, 15, 30, 60];
   static const List<String> _unitOptions = ['HOUR', 'DAY'];
-  static const List<double> _toleranceOptions = [0.1, 0.2, 0.5, 0.8, 1.0];
+  static const int _minHourValue = 7;
+  static const int _maxHourValue = 24;
+  static const int _maxDayValue = 31;
+  static final List<double> _toleranceOptions = List<double>.generate(
+    20,
+        (index) => double.parse(((index + 1) * 0.05).toStringAsFixed(2)),
+  );
+
+  String _formatToleranceLabel(double value) {
+    var text = value.toStringAsFixed(2);
+    if (text.contains('.')) {
+      while (text.endsWith('0')) {
+        text = text.substring(0, text.length - 1);
+      }
+      if (text.endsWith('.')) {
+        text = text.substring(0, text.length - 1);
+      }
+    }
+    return text;
+  }
 
   double _snapTolerance(dynamic raw) {
     double x;
@@ -56,23 +74,74 @@ class _ChartEditScreenState extends State<ChartEditPage> {
     return best;
   }
 
+  List<int> _periodOptionsFor(String unit) {
+    // 생성 화면과 동일한 규칙 적용 (시간은 7시간 이상)
+    if (unit == 'HOUR') {
+      return List<int>.generate(
+        _maxHourValue - _minHourValue + 1,
+            (index) => _minHourValue + index,
+      );
+    }
+    return List<int>.generate(_maxDayValue, (index) => index + 1);
+  }
+
+  List<int> _periodDropdownValues(String unit, int? current) {
+    // 이미 저장된 값이 목록에 없더라도 그대로 보여 주기 위해 병합한다.
+    final merged = <int>[];
+    if (current != null) {
+      merged.add(current);
+    }
+    for (final option in _periodOptionsFor(unit)) {
+      if (!merged.contains(option)) {
+        merged.add(option);
+      }
+    }
+    return merged;
+  }
+
+  bool _isDurationValid({required int pointCount}) {
+    final unit = (periodUnit ?? 'DAY').toUpperCase();
+    final value = periodValue ?? _periodOptionsFor(unit).first;
+    final totalHoursPerStep = unit == 'HOUR' ? value : value * 24;
+    final totalPatternHours = totalHoursPerStep * pointCount;
+    return totalPatternHours >= 24;
+  }
+
+  Future<void> _showInvalidDurationDialog() async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('패턴 길이 확인'),
+        content: const Text('기간 × 점 개수는 24시간 이상이어야 합니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('확인'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
     final data = widget.patternData;
 
-    patternName =
-        data['title'] ?? 'Pattern_${DateTime
-            .now()
-            .millisecondsSinceEpoch}';
+    patternName = (data['patternName'] ?? data['title'] ??
+        'Pattern_${DateTime.now().millisecondsSinceEpoch}')
+        .toString();
 
     final pvRaw = data['periodValue'];
     final int? pv =
     (pvRaw is int) ? pvRaw : (pvRaw is String ? int.tryParse(pvRaw) : null);
-    periodValue = [3, 5, 7, 15, 30, 60].contains(pv) ? pv ?? 15 : 15;
 
     final puRaw = (data['periodUnit'] ?? 'DAY').toString().toUpperCase();
     periodUnit = (puRaw == 'HOUR' || puRaw == 'DAY') ? puRaw : 'DAY';
+
+    final currentOptions = _periodOptionsFor(periodUnit!);
+    // 기존에 저장된 값이 있으면 그대로 유지하여 화면에 노출한다.
+    periodValue = pv ?? (currentOptions.isNotEmpty ? currentOptions.first : null);
 
     tolerance = _snapTolerance(data['tolerance']);
 
@@ -90,15 +159,30 @@ class _ChartEditScreenState extends State<ChartEditPage> {
   void _updatePattern() async {
     points.sort((a, b) => a.dx.compareTo(b.dx));
     final convertedPoints = points.map((p) => (p.dy ~/ spacing)).toList();
-    final id = widget.patternData['id'];
+    final rawId = widget.patternData['patternId'] ?? widget.patternData['id'];
+    final String rawIdStr = rawId == null ? '' : rawId.toString();
+    final int id = rawId is int ? rawId : int.tryParse(rawIdStr) ?? 0;
+
+    if (id == 0) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('패턴 정보를 확인할 수 없습니다.')),
+      );
+      return;
+    }
+
+    if (!_isDurationValid(pointCount: convertedPoints.length)) {
+      await _showInvalidDurationDialog();
+      return;
+    }
 
     final request = PatternRequest(
       patternId: id,
       patternName: patternName,
       points: convertedPoints,
       tolerance: tolerance,
-      periodValue: periodValue ?? _periodOptions.first,
-      // 미선택이면 3 등 기본
+      periodValue: periodValue ?? _periodOptionsFor(periodUnit ?? 'DAY').first,
+      // 미선택이면 기본값으로 전송
       periodUnit: periodUnit ?? _unitOptions.last, // 미선택이면 'DAY'
     );
 
@@ -162,19 +246,22 @@ class _ChartEditScreenState extends State<ChartEditPage> {
                     const SizedBox(width: 12),
                     DropdownButton<int>(
                       isExpanded: false,
-                      value: (_periodOptions.contains(periodValue))
-                          ? periodValue
-                          : null,
+                      dropdownColor: Colors.white,
+                      value: periodValue,
                       hint: const Text('값 선택'),
-                      items: _periodOptions.map((e) =>
-                          DropdownMenuItem<int>(
-                            value: e,
-                            child: Text('$e'),
-                          )).toList(),
+                      items: _periodDropdownValues(periodUnit ?? 'DAY', periodValue)
+                          .map(
+                            (e) => DropdownMenuItem<int>(
+                          value: e,
+                          child: Text('$e'),
+                        ),
+                      )
+                          .toList(),
                       onChanged: (val) => setState(() => periodValue = val),
                     ),
                     const SizedBox(width: 12),
                     DropdownButton<String>(
+                      dropdownColor: Colors.white,
                       isExpanded: false,
                       value: (_unitOptions.contains(periodUnit))
                           ? periodUnit
@@ -184,7 +271,18 @@ class _ChartEditScreenState extends State<ChartEditPage> {
                         DropdownMenuItem(value: 'HOUR', child: Text('시간')),
                         DropdownMenuItem(value: 'DAY', child: Text('일')),
                       ],
-                      onChanged: (val) => setState(() => periodUnit = val),
+                      onChanged: (val) {
+                        if (val == null) return;
+                        setState(() {
+                          // 단위만 교체하고 값은 유지하여 사용자가 저장된 수치를 확인할 수 있게 한다.
+                          periodUnit = val;
+                          if (periodValue == null) {
+                            final newOptions = _periodOptionsFor(val);
+                            periodValue =
+                            newOptions.isNotEmpty ? newOptions.first : null;
+                          }
+                        });
+                      },
                     ),
                   ],
                 ),
@@ -198,10 +296,11 @@ class _ChartEditScreenState extends State<ChartEditPage> {
                           ? tolerance
                           : null,
                       hint: const Text('선택'),
+                      dropdownColor: Colors.white,
                       items: _toleranceOptions.map((e) =>
                           DropdownMenuItem<double>(
                             value: e,
-                            child: Text('${(e * 100).toStringAsFixed(0)}%'),
+                            child: Text(_formatToleranceLabel(e)),
                           )).toList(),
                       onChanged: (val) =>
                           setState(() => tolerance = val ?? tolerance),

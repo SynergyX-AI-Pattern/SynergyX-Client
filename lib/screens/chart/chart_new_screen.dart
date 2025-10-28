@@ -17,10 +17,31 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
   int? selectedIndex;
   int? _selectedCol;
 
-  // ===== 폼 값 =====
   double tolerance = 0.5;
   int periodValue = 15;
   String periodUnit = 'DAY'; // "HOUR" or "DAY"
+
+  static const int _minHourValue = 7;
+  static const int _maxHourValue = 24;
+  static const int _maxDayValue = 31;
+  static final List<double> _toleranceOptions = List<double>.generate(
+    20,
+    (index) => double.parse(((index + 1) * 0.05).toStringAsFixed(2)),
+  );
+
+  // 0.05 단위 값을 UI에서 자연스럽게 보이도록 불필요한 0을 제거한다.
+  String _formatToleranceLabel(double value) {
+    var text = value.toStringAsFixed(2);
+    if (text.contains('.')) {
+      while (text.endsWith('0')) {
+        text = text.substring(0, text.length - 1);
+      }
+      if (text.endsWith('.')) {
+        text = text.substring(0, text.length - 1);
+      }
+    }
+    return text;
+  }
 
   // ===== 메타 =====
   late int _timestamp;
@@ -117,11 +138,66 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
 
     // 캔버스 바깥을 누른 경우만 선택 해제
     if (!rect.contains(pos)) {
-      FocusScope.of(context).unfocus(); // 키보드 닫기(이름/입력 필드 등)
+      FocusScope.of(context).unfocus();
       if (_selectedCol != null) {
         setState(() => _selectedCol = null);
       }
     }
+  }
+
+  List<int> _periodOptionsFor(String unit) {
+    if (unit == 'HOUR') {
+      return List<int>.generate(
+        _maxHourValue - _minHourValue + 1,
+        (index) => _minHourValue + index,
+      );
+    }
+    return List<int>.generate(_maxDayValue, (index) => index + 1);
+  }
+
+  List<int> _periodDropdownValues(String unit, int current) {
+    // 단위 전환 시에도 기존 값이 보이도록 하되, 이미 허용 목록에 존재하는 값이면 순서를 건드리지 않는다.
+    final options = _periodOptionsFor(unit);
+    if (options.contains(current)) {
+      return options;
+    }
+
+    final merged = List<int>.from(options)..add(current);
+    merged.sort();
+    return merged;
+  }
+
+  bool _isDurationValid({required int pointCount}) {
+    // 총 시간(시간 단위로 환산) * 점 개수 >= 24 를 만족해야 한다.
+    final unit = periodUnit.toUpperCase();
+    final totalHoursPerStep = unit == 'HOUR' ? periodValue : periodValue * 24;
+    final totalPatternHours = totalHoursPerStep * pointCount;
+    return totalPatternHours >= 24;
+  }
+
+  Future<void> _showInvalidDurationDialog() async {
+    await showDialog<void>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: Colors.white,
+            title: const Text('패턴 길이 확인'),
+            content: const Text('기간 × 점 개수는 24시간 이상이어야 합니다.'),
+            actions: [
+              TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF5F5F5F),
+                  textStyle: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('확인'),
+              ),
+            ],
+          ),
+    );
   }
 
   Future<void> _savePattern() async {
@@ -132,6 +208,12 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
 
     // y를 0~6 정수로 저장(아랫줄이 6, 윗줄이 0)
     final convertedPoints = points.map((p) => (p.dy ~/ spacing)).toList();
+
+    // 패턴 길이 유효성 검사
+    if (!_isDurationValid(pointCount: convertedPoints.length)) {
+      await _showInvalidDurationDialog();
+      return;
+    }
 
     final request = PatternRequest(
       patternId: id,
@@ -341,13 +423,11 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
                           ),
                           const SizedBox(height: 4),
                           DropdownButtonFormField<int>(
-                            value: periodValue,
+                            initialValue: periodValue,
                             decoration: _inputDecoration(),
                             dropdownColor: Colors.white,
                             items:
-                                (periodUnit == "HOUR"
-                                        ? List.generate(23, (i) => i + 1)
-                                        : List.generate(30, (i) => i + 1))
+                                _periodDropdownValues(periodUnit, periodValue)
                                     .map(
                                       (e) => DropdownMenuItem(
                                         value: e,
@@ -375,7 +455,7 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
                           ),
                           const SizedBox(height: 4),
                           DropdownButtonFormField<String>(
-                            value: periodUnit,
+                            initialValue: periodUnit,
                             decoration: _inputDecoration(),
                             dropdownColor: Colors.white,
                             items: const [
@@ -384,8 +464,10 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
                             ],
                             onChanged: (val) {
                               setState(() {
-                                periodUnit = val ?? periodUnit;
-                                periodValue = 1;
+                                if (val != null) {
+                                  // 값은 유지하고 단위만 변경하여 사용자가 선택한 수치를 보존한다.
+                                  periodUnit = val;
+                                }
                               });
                             },
                           ),
@@ -404,17 +486,25 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
                             style: TextStyle(fontSize: 12, color: Colors.grey),
                           ),
                           const SizedBox(height: 4),
-                          TextFormField(
-                            initialValue: tolerance.toString(),
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
+                          DropdownButtonFormField<double>(
+                            initialValue:
+                                _toleranceOptions.contains(tolerance)
+                                    ? tolerance
+                                    : _toleranceOptions.first,
                             decoration: _inputDecoration(),
+                            dropdownColor: Colors.white,
+                            items:
+                                _toleranceOptions
+                                    .map(
+                                      (e) => DropdownMenuItem(
+                                        value: e,
+                                        child: Text(_formatToleranceLabel(e)),
+                                      ),
+                                    )
+                                    .toList(),
                             onChanged: (val) {
-                              final parsed = double.tryParse(val);
-                              if (parsed != null) {
-                                setState(() => tolerance = parsed);
-                              }
+                              if (val == null) return;
+                              setState(() => tolerance = val);
                             },
                           ),
                         ],
