@@ -15,7 +15,12 @@ class InterestPatternScreen extends StatefulWidget {
   final String? stockName;
   final String? stockImageUrl;
 
-  const InterestPatternScreen({super.key, required this.stockId, this.stockName, this.stockImageUrl,});
+  const InterestPatternScreen({
+    super.key,
+    required this.stockId,
+    this.stockName,
+    this.stockImageUrl,
+  });
 
   @override
   State<InterestPatternScreen> createState() => _InterestPatternScreenState();
@@ -44,8 +49,9 @@ class _InterestPatternScreenState extends State<InterestPatternScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('백테스팅이 실행되었습니다.')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('백테스팅이 실행되었습니다.')));
 
       // 3) 결과 새로고침
       await Future.delayed(const Duration(seconds: 1));
@@ -55,17 +61,15 @@ class _InterestPatternScreenState extends State<InterestPatternScreen> {
       } catch (e) {
         debugPrint('새로고침 실패: $e');
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('결과가 아직 준비 중입니다. 잠시 후 다시 시도해주세요.')),
-          );
+          print('결과가 아직 준비 중입니다. 잠시 후 다시 시도해주세요.');
         }
       }
     } catch (e) {
       if (!mounted) return;
       // 실행 자체가 실패한 경우에만 이쪽으로 옴
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('백테스팅 실행 실패: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('백테스팅 실행 실패: $e')));
     } finally {
       if (mounted) setState(() => _runningBacktest = false);
     }
@@ -88,7 +92,7 @@ class _InterestPatternScreenState extends State<InterestPatternScreen> {
       title: "전략 패턴을 삭제하시겠습니까?",
       content: "이 동작은 취소할 수 없으며 내 전략 차트가 삭제됩니다.",
       cancelText: '취소',
-      confirmText: '삭제'
+      confirmText: '삭제',
     );
     if (ok != true) return;
 
@@ -102,28 +106,31 @@ class _InterestPatternScreenState extends State<InterestPatternScreen> {
         _future = Future<PatternApply?>.value(null);
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('패턴이 해제되었습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('패턴이 해제되었습니다.')));
 
       // ★ 2) 서버 상태 동기화: 약간의 지연 후 재조회(백엔드 반영 지연 대비)
       await Future.delayed(const Duration(milliseconds: 150));
       _reload();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('패턴 해제 실패: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('패턴 해제 실패: $e')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<PatternApply?>( // 그대로 OK
+    return FutureBuilder<PatternApply?>(
+      // 그대로 OK
       future: _future,
       builder: (context, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
         if (snap.hasError) {
           return Scaffold(
@@ -139,89 +146,100 @@ class _InterestPatternScreenState extends State<InterestPatternScreen> {
         }
 
         final data = snap.data; // null = 패턴 없음
-        final title = data != null && data.stockName.isNotEmpty
-            ? data.stockName
-            : (widget.stockName ?? '패턴');
+        final title =
+            data != null && data.stockName.isNotEmpty
+                ? data.stockName
+                : (widget.stockName ?? '패턴');
         final hasPattern = data != null && data.hasPattern;
-        final headerImg = (data?.stockImage.isNotEmpty ?? false)
-            ? data!.stockImage
-            : widget.stockImageUrl;
+        final headerImg =
+            (data?.stockImage.isNotEmpty ?? false)
+                ? data!.stockImage
+                : widget.stockImageUrl;
 
         return Scaffold(
           appBar: AppBar(backgroundColor: Colors.white),
           backgroundColor: Colors.white,
           body: RefreshIndicator(
-          onRefresh: _reload,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                StockHeader(name: title, imageUrl: headerImg),
+            onRefresh: _reload,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  StockHeader(name: title, imageUrl: headerImg),
 
-                const Divider(
-                  color: Color(0xFFB5B5B5), // 선 색상
-                  thickness: 1,             // 두께
-                  height: 13,               // 위아래 여백 포함
-                  indent: 16,               // 왼쪽 들여쓰기
-                  endIndent: 16,            // 오른쪽 들여쓰기
-                ),
-
-                if (hasPattern)
-                  PatternExistsView(
-                    data: data!,
-                    onDelete: () {
-                      final id = data.patternApplyId;
-                      if (id == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('패턴 식별자를 찾을 수 없습니다.')),
-                        );
-                        return;
-                      }
-                      _confirmAndDelete(id);
-                    },
-                    onEdit: () {
-                      final id = data.patternApplyId;
-                      if (id == null) return;
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PatternLibraryScreen(
-                            stockId: widget.stockId,
-                            stockName: widget.stockName,
-                            patternApplyId: id,
-                          ),
-                        ),
-                      );
-                    },
-                    onRunBacktest: _runningBacktest
-                        ? null
-                        : () => _onRunBacktest(data.pattern!.patternId),
-                  )
-                else
-                  PatternEmptyView(
-                    onAdd: () async {
-                      final applied = await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PatternLibraryScreen(
-                            stockId: widget.stockId,
-                            stockName: title,
-                          ),
-                        ),
-                      );
-
-                      if (applied == true) {
-                        setState(() => _future = Future.value(null));
-                        await Future.delayed(const Duration(milliseconds: 120));
-                        _reload();
-                      }
-                    },
+                  const Divider(
+                    color: Color(0xFFB5B5B5),
+                    // 선 색상
+                    thickness: 1,
+                    // 두께
+                    height: 13,
+                    // 위아래 여백 포함
+                    indent: 16,
+                    // 왼쪽 들여쓰기
+                    endIndent: 16, // 오른쪽 들여쓰기
                   ),
-              ],
+
+                  if (hasPattern)
+                    PatternExistsView(
+                      data: data!,
+                      onDelete: () {
+                        final id = data.patternApplyId;
+                        if (id == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('패턴 식별자를 찾을 수 없습니다.')),
+                          );
+                          return;
+                        }
+                        _confirmAndDelete(id);
+                      },
+                      onEdit: () {
+                        final id = data.patternApplyId;
+                        if (id == null) return;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (_) => PatternLibraryScreen(
+                                  stockId: widget.stockId,
+                                  stockName: widget.stockName,
+                                  patternApplyId: id,
+                                ),
+                          ),
+                        );
+                      },
+                      onRunBacktest:
+                          _runningBacktest
+                              ? null
+                              : () => _onRunBacktest(data.pattern!.patternId),
+                    )
+                  else
+                    PatternEmptyView(
+                      onAdd: () async {
+                        final applied = await Navigator.push<bool>(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (_) => PatternLibraryScreen(
+                                  stockId: widget.stockId,
+                                  stockName: title,
+                                ),
+                          ),
+                        );
+
+                        if (applied == true) {
+                          setState(() => _future = Future.value(null));
+                          await Future.delayed(
+                            const Duration(milliseconds: 120),
+                          );
+                          _reload();
+                        }
+                      },
+                    ),
+                ],
+              ),
             ),
           ),
-        ),
         );
       },
     );
