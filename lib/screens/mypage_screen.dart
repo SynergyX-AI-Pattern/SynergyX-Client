@@ -261,8 +261,8 @@ class _MypageScreenState extends State<MypageScreen> {
             // 메뉴 섹션 1
             _MenuTile(
               icon: Icons.person_outline,
-              title: '프로필수정',
-              onTap: () => _editProfile(context),
+              title: '프로필 수정',
+              // onTap: () => _editProfile(context),
             ),
             _divider(),
             _MenuTile(
@@ -274,7 +274,7 @@ class _MypageScreenState extends State<MypageScreen> {
             _MenuTile(
               icon: Icons.notifications_none,
               title: '알림 설정',
-              onTap: () => _goToNotificationSettings(context),
+              // onTap: () => _goToNotificationSettings(context),
             ),
             _divider(),
             _MenuTile(
