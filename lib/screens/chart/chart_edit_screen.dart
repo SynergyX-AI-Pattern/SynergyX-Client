@@ -32,7 +32,7 @@ class _ChartEditScreenState extends State<ChartEditPage> {
   int? selectedIndex;
 
   static const List<String> _unitOptions = ['HOUR', 'DAY'];
-  static const int _minHourValue = 7;
+  static const int _minHourValue = 1;
   static const int _maxHourValue = 24;
   static const int _maxDayValue = 31;
   static final List<double> _toleranceOptions = List<double>.generate(

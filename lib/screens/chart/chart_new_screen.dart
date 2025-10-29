@@ -21,7 +21,7 @@ class _ChartNewScreenState extends State<ChartNewScreen> {
   int periodValue = 15;
   String periodUnit = 'DAY'; // "HOUR" or "DAY"
 
-  static const int _minHourValue = 7;
+  static const int _minHourValue = 1;
   static const int _maxHourValue = 24;
   static const int _maxDayValue = 31;
   static final List<double> _toleranceOptions = List<double>.generate(
