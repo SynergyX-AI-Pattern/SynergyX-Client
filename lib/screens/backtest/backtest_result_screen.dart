@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:stockapp/widgets/backtest/backtest_result_chart.dart';
-import 'package:stockapp/widgets/common/InfoCardGroup.dart';
+import 'package:stockapp/widgets/bottom_sheet/backtest_bottom_sheet.dart';
 
 /// 백테스트 결과 상세 화면
 class BacktestResultScreen extends StatefulWidget {
@@ -51,6 +51,21 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
     });
   }
 
+  // BottomSheet를 호출하는 함수
+  void _showInfoBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      isScrollControlled: true,
+      builder: (context) {
+        return const BacktestBottomSheet();
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final res = _res;
@@ -84,9 +99,22 @@ class _BacktestResultScreenState extends State<BacktestResultScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              '백테스팅 결과',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+            Row(
+              children: [
+                Text(
+                  '백테스팅 결과',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                ),
+                SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () => _showInfoBottomSheet(context),
+                  child: const Icon(
+                    Icons.info_outline,
+                    size: 20,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
             ),
             Row(
               children: [
