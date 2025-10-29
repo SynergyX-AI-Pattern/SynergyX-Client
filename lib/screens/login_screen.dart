@@ -35,8 +35,9 @@ class _LoginScreenState extends State<LoginScreen> {
     _emailController.addListener(() => setState(() => _serverError = null));
     _passwordController.addListener(() => setState(() => _serverError = null));
     // 화면이 로드되었을 때 이메일 입력 필드에 포커스를 자동으로 맞춤
-    Future.delayed(Duration(milliseconds: 100), () {
-      FocusScope.of(context).requestFocus(_emailFocusNode);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _emailFocusNode.requestFocus();
     });
   }
 
@@ -113,6 +114,10 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
