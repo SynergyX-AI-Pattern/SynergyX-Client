@@ -25,6 +25,16 @@ class _LoginScreenState extends State<LoginScreen> {
   final FocusNode _emailFocusNode = FocusNode();
   final FocusNode _passwordFocusNode = FocusNode();
 
+  // 메모리 누수 방지
+  @override
+  void dispose() {
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   bool get _bothFilled =>
       _emailController.text.trim().isNotEmpty &&
       _passwordController.text.trim().isNotEmpty;
